@@ -96,6 +96,37 @@ def export_report(df, config, path_dict):
     chart.set_categories(cats_ref)
     ws.add_chart(chart, "F2")
 
+    # 👉 ADD REPORT PER PROJECT
+    for project in df['Project name'].unique():
+        df_proj = df[df['Project name'] == project]
+        ws_proj = wb.create_sheet(title=project[:31])
+
+        # Write full data
+        for r_idx, row in enumerate(df_proj.itertuples(index=False), start=2):
+            for c_idx, value in enumerate(row, start=1):
+                ws_proj.cell(row=r_idx, column=c_idx, value=value)
+
+        # Add summary by Workcentre
+        summary_wc = df_proj.groupby('Workcentre')['Hours'].sum().reset_index()
+        start_row = len(df_proj) + 4
+        ws_proj.cell(row=start_row, column=1, value="Workcentre")
+        ws_proj.cell(row=start_row, column=2, value="Hours")
+        for i, row in enumerate(summary_wc.itertuples(index=False), start=start_row + 1):
+            ws_proj.cell(row=i, column=1, value=row.Workcentre)
+            ws_proj.cell(row=i, column=2, value=row.Hours)
+
+        # Add chart
+        chart = BarChart()
+        chart.title = f"{project} - Hours by Workcentre"
+        chart.x_axis.title = "Workcentre"
+        chart.y_axis.title = "Hours"
+        data_ref = Reference(ws_proj, min_col=2, min_row=start_row, max_row=start_row + len(summary_wc))
+        cats_ref = Reference(ws_proj, min_col=1, min_row=start_row + 1, max_row=start_row + len(summary_wc))
+        chart.add_data(data_ref, titles_from_data=True)
+        chart.set_categories(cats_ref)
+        ws_proj.add_chart(chart, f"E{start_row}")
+
+    # Config sheet
     ws_config = wb.create_sheet("Config_Info")
     ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
     ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config['years'])) if 'years' in config else str(config['year'])
