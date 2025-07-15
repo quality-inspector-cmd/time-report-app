@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
-    apply_filters, export_report, export_all_charts_to_pdf
+    apply_filters, export_report
 )
 
 # Set page and branding
