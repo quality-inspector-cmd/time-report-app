@@ -13,7 +13,7 @@ def setup_paths():
     return {
         'template_file': "Time_report.xlsm",
         'output_file': f"Time_report_{today}.xlsx",
-        'pdf_report': f"Time_report_{today}.pdf"
+        'pdf_report': f"Time_report_{today}.pdf"  # giữ nguyên cho tương thích, không dùng đến
     }
 
 def read_configs(path_dict):
@@ -43,6 +43,8 @@ def load_raw_data(path_dict):
     df['Year'] = df['Date'].dt.year
     df['MonthName'] = df['Date'].dt.month_name()
     df['Week'] = df['Date'].dt.isocalendar().week
+    if 'Task' not in df.columns:
+        df['Task'] = "Unknown"
     return df
 
 def apply_filters(df, config):
@@ -102,27 +104,52 @@ def export_report(df, config, path_dict):
         df_proj = df[df['Project name'] == project]
         ws_proj = wb.create_sheet(title=project[:31])
 
-        for r_idx, row in enumerate(df_proj.itertuples(index=False), start=2):
-            for c_idx, value in enumerate(row, start=1):
-                ws_proj.cell(row=r_idx, column=c_idx, value=value)
+        # === 1. Task Summary Table ===
+        task_summary = df_proj.groupby('Task')['Hours'].sum().reset_index()
+        ws_proj.cell(row=1, column=1, value="Task")
+        ws_proj.cell(row=1, column=2, value="Hours")
+        for i, row in enumerate(task_summary.itertuples(index=False), start=2):
+            ws_proj.cell(row=i, column=1, value=row.Task)
+            ws_proj.cell(row=i, column=2, value=row.Hours)
 
-        summary_wc = df_proj.groupby('Workcentre')['Hours'].sum().reset_index()
-        start_row = len(df_proj) + 4
-        ws_proj.cell(row=start_row, column=1, value="Workcentre")
-        ws_proj.cell(row=start_row, column=2, value="Hours")
-        for i, row in enumerate(summary_wc.itertuples(index=False), start=start_row + 1):
+        # === 2. Task Chart ===
+        task_chart = BarChart()
+        task_chart.title = f"{project} - Hours by Task"
+        task_chart.x_axis.title = "Task"
+        task_chart.y_axis.title = "Hours"
+        task_data_ref = Reference(ws_proj, min_col=2, min_row=1, max_row=1 + len(task_summary))
+        task_cats_ref = Reference(ws_proj, min_col=1, min_row=2, max_row=1 + len(task_summary))
+        task_chart.add_data(task_data_ref, titles_from_data=True)
+        task_chart.set_categories(task_cats_ref)
+        ws_proj.add_chart(task_chart, "E2")
+
+        # === 3. Workcentre Summary Table ===
+        wc_start_row = len(task_summary) + 5
+        wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().reset_index()
+        ws_proj.cell(row=wc_start_row, column=1, value="Workcentre")
+        ws_proj.cell(row=wc_start_row, column=2, value="Hours")
+        for i, row in enumerate(wc_summary.itertuples(index=False), start=wc_start_row + 1):
             ws_proj.cell(row=i, column=1, value=row.Workcentre)
             ws_proj.cell(row=i, column=2, value=row.Hours)
 
-        chart = BarChart()
-        chart.title = f"{project} - Hours by Workcentre"
-        chart.x_axis.title = "Workcentre"
-        chart.y_axis.title = "Hours"
-        data_ref = Reference(ws_proj, min_col=2, min_row=start_row, max_row=start_row + len(summary_wc))
-        cats_ref = Reference(ws_proj, min_col=1, min_row=start_row + 1, max_row=start_row + len(summary_wc))
-        chart.add_data(data_ref, titles_from_data=True)
-        chart.set_categories(cats_ref)
-        ws_proj.add_chart(chart, f"E{start_row}")
+        # === 4. Workcentre Chart ===
+        wc_chart = BarChart()
+        wc_chart.title = f"{project} - Hours by Workcentre"
+        wc_chart.x_axis.title = "Workcentre"
+        wc_chart.y_axis.title = "Hours"
+        wc_data_ref = Reference(ws_proj, min_col=2, min_row=wc_start_row, max_row=wc_start_row + len(wc_summary))
+        wc_cats_ref = Reference(ws_proj, min_col=1, min_row=wc_start_row + 1, max_row=wc_start_row + len(wc_summary))
+        wc_chart.add_data(wc_data_ref, titles_from_data=True)
+        wc_chart.set_categories(wc_cats_ref)
+        ws_proj.add_chart(wc_chart, f"E{wc_start_row}")
+
+        # === 5. Raw Data (after summaries) ===
+        data_start_row = wc_start_row + len(wc_summary) + 5
+        for col_idx, col_name in enumerate(df_proj.columns, start=1):
+            ws_proj.cell(row=data_start_row, column=col_idx, value=col_name)
+        for r_idx, row in enumerate(df_proj.itertuples(index=False), start=data_start_row + 1):
+            for c_idx, value in enumerate(row, start=1):
+                ws_proj.cell(row=r_idx, column=c_idx, value=value)
 
     ws_config = wb.create_sheet("Config_Info")
     ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
