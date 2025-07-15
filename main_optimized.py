@@ -1,4 +1,4 @@
-import streamlit as st 
+import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
@@ -7,8 +7,27 @@ from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     apply_filters, export_report
 )
 
-st.set_page_config(page_title="Time Report Generator (v2)", layout="centered")
-st.title("📊 Time Report Generator (v2.1)")
+st.set_page_config(page_title="Time Report Generator (v2.1)", layout="wide")
+
+col1, col2 = st.columns([0.15, 0.85])
+with col1:
+    st.image("triac_logo.png", width=120)  # Make sure triac_logo.png is in the same folder
+with col2:
+    st.markdown("""
+    <div style='padding-top:10px'>
+        <h1 style='color:#003366; font-size:32px;'>📊 Time Report Generator (v2.1)</h1>
+        <p style='color:gray; font-size:16px;'>Generate customized time tracking reports for Triac Composites.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+st.markdown("""
+    <style>
+        footer {visibility: hidden;}
+        .block-container {
+            padding-top: 2rem;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 path_dict = setup_paths()
 
@@ -28,7 +47,7 @@ with st.spinner("🔄 Loading data..."):
     df_raw = cached_load_raw_data(path_dict)
     config_data = cached_read_configs(path_dict)
 
-tab1, tab2 = st.tabs(["Report configuration", "Data preview"])
+tab1, tab2 = st.tabs(["⚙️ Report Configuration", "📂 Raw Data Preview"])
 
 with tab1:
     mode = st.selectbox("Select analysis mode:", options=['year', 'month', 'week'],
@@ -40,12 +59,12 @@ with tab1:
                            default=[default_year] if default_year else all_years)
 
     all_months = list(df_raw['MonthName'].dropna().unique())
-    months = st.multiselect("Select month:", options=all_months,
+    months = st.multiselect("Select month(s):", options=all_months,
                             default=config_data['months'] if config_data['months'] else all_months)
 
     project_df = config_data['project_filter_df']
     included_projects = project_df[project_df['Include'].str.lower() == 'yes']['Project Name'].tolist()
-    project_selection = st.multiselect("Select project:",
+    project_selection = st.multiselect("Select project(s):",
                                        options=sorted(project_df['Project Name'].unique()),
                                        default=included_projects)
 
