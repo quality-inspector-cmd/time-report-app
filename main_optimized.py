@@ -125,8 +125,7 @@ with tab2:
 with tab3:
     st.markdown(f"### {T['user_guide']}")
     st.markdown("""
-    - 📤 Upload `Raw_data.xlsx` and `Time_report.xlsm`
-    - 🗂 Chọn bộ lọc: Chế độ, năm, tháng, dự án
-    - 🚀 Nhấn **Tạo báo cáo**
-    - 📥 Tải báo cáo Excel hoặc PDF
+    - 🗂 Select filters: Mode, year, month, project
+    - 🚀 Click **Generate report**
+    - 📥 Download Excel or PDF report
     """)
