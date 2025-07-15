@@ -12,7 +12,8 @@ def setup_paths():
     today = datetime.datetime.today().strftime('%Y%m%d')
     return {
         'template_file': "Time_report.xlsm",
-        'output_file': f"Time_report_{today}.xlsx"
+        'output_file': f"Time_report_{today}.xlsx",
+        'pdf_report': f"Time_report_{today}.pdf"
     }
 
 def read_configs(path_dict):
@@ -127,7 +128,6 @@ def export_report(df, config, path_dict):
     ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
     ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config['years'])) if 'years' in config else str(config['year'])
     ws_config['A3'], ws_config['B3'] = "Months", ', '.join(config['months']) if config['months'] else "All"
-
     project_names = config['project_filter_df']['Project Name'].dropna()
     ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(map(str, project_names))
 
