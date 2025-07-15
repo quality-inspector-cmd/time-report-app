@@ -109,7 +109,6 @@ with tab1:
                 st.warning(T["no_data"])
             else:
                 export_report(df_filtered, config, path_dict)
-                export_all_charts_to_pdf(path_dict)
                 st.success(f"✅ {T['report_done']}: {os.path.basename(path_dict['output_file'])}")
 
                 with open(path_dict['output_file'], "rb") as f:
@@ -127,5 +126,5 @@ with tab3:
     st.markdown("""
     - 🗂 Select filters: Mode, year, month, project
     - 🚀 Click **Generate report**
-    - 📥 Download Excel or PDF report
+    - 📥 Download Excel report
     """)
