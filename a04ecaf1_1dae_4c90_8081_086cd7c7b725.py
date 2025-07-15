@@ -131,6 +131,8 @@ def export_report(df, config, path_dict):
     ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
     ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config['years'])) if 'years' in config else str(config['year'])
     ws_config['A3'], ws_config['B3'] = "Months", ', '.join(config['months']) if config['months'] else "All"
-    ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(config['project_filter_df']['Project Name'])
+
+    project_names = config['project_filter_df']['Project Name'].dropna()
+    ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(map(str, project_names))
 
     wb.save(path_dict['output_file'])
