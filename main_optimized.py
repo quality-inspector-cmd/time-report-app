@@ -4,15 +4,19 @@ import os
 from datetime import datetime
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import setup_paths, apply_filters, export_report
 
-st.set_page_config(page_title="Time Report Generator", layout="centered")
+st.set_page_config(page_title="Time Report Generator (Cloud)", layout="centered")
 st.title("📊 Time Report Generator (v2)")
 
+# ⚠️ Override template path to use local file in repo (cloud-compatible)
 path_dict = setup_paths()
+path_dict['template_file'] = "Time_report.xlsm"  # Fix for cloud
 
+# 🚫 Check if the template file exists
 if not os.path.exists(path_dict['template_file']):
     st.error(f"❌ Template file not found: {path_dict['template_file']}")
     st.stop()
 
+# 📥 Cached loading for performance
 @st.cache_data
 def cached_load_raw_data(path_dict):
     from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import load_raw_data
@@ -27,8 +31,10 @@ with st.spinner("🔄 Loading data..."):
     df_raw = cached_load_raw_data(path_dict)
     config_data = cached_read_configs(path_dict)
 
+# 🧭 Tab interface
 tab1, tab2 = st.tabs(["Report configuration", "Data preview"])
 
+# 🔧 Tab 1: Report configuration
 with tab1:
     mode = st.selectbox("Select analysis mode:", options=['year', 'month', 'week'],
                         index=['year', 'month', 'week'].index(config_data['mode']))
@@ -49,9 +55,12 @@ with tab1:
                 'mode': mode,
                 'year': year,
                 'months': months,
-                'project_filter_df': project_df[project_df['Project Name'].isin(project_selection) & 
-                                                (project_df['Include'].str.lower() == 'yes')]
+                'project_filter_df': project_df[
+                    project_df['Project Name'].isin(project_selection) &
+                    (project_df['Include'].str.lower() == 'yes')
+                ]
             }
+
             df_filtered = apply_filters(df_raw, config)
 
             if df_filtered.empty:
@@ -63,6 +72,7 @@ with tab1:
                     st.download_button("📥 Download Excel report", data=f,
                                        file_name=os.path.basename(path_dict['output_file']))
 
+# 📊 Tab 2: Preview
 with tab2:
     st.subheader("📂 Input data (first 100 rows)")
     with st.expander("Click to view raw data sample"):
