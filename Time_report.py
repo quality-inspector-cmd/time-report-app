@@ -12,7 +12,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 sns.set(style="whitegrid")
 
 def setup_paths():
-    base_dir = r"D:\New\1. Time report"
+    base_dir = "Time_report.xlsm"
     today = datetime.datetime.today().strftime('%Y%m%d')
     return {
         'base_dir': base_dir,
