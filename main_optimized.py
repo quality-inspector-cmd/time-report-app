@@ -113,8 +113,6 @@ with tab1:
 
                 with open(path_dict['output_file'], "rb") as f:
                     st.download_button(T["download_excel"], data=f, file_name=os.path.basename(path_dict['output_file']))
-                with open(path_dict['pdf_report'], "rb") as f:
-                    st.download_button(T["download_pdf"], data=f, file_name=os.path.basename(path_dict['pdf_report']))
 
 with tab2:
     st.subheader(T["data_preview"])
