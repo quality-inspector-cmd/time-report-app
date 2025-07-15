@@ -1,7 +1,0 @@
-streamlit
-pandas
-openpyxl
-matplotlib
-seaborn
-python-docx
-pillow
