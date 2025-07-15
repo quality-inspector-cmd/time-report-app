@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-from datetime import datetime
+import time
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
     apply_filters, export_report
@@ -65,44 +65,56 @@ translations = {
         "user_guide": "📘 Hướng dẫn sử dụng",
     }
 }
-
 lang = st.sidebar.selectbox("🌐 Language / Ngôn ngữ", ["English", "Tiếng Việt"])
 T = translations[lang]
 
-# --- LOAD DATA ---
+# --- SETUP PATH ---
 path_dict = setup_paths()
 
 if not os.path.exists(path_dict['template_file']):
     st.error(f"❌ Template file not found: {path_dict['template_file']}")
     st.stop()
 
-@st.cache_data(ttl=60)
-def cached_load_raw_data(path_dict):
-    return load_raw_data(path_dict)
+# --- CACHE LOAD DATA ---
+@st.cache_data(ttl=300)
+def load_all_data(path_dict):
+    df_raw = load_raw_data(path_dict)
+    config_data = read_configs(path_dict)
+    return df_raw, config_data
 
-@st.cache_data(ttl=60)
-def cached_read_configs(path_dict):
-    return read_configs(path_dict)
-
-with st.spinner("🔄 Loading data..."):
-    df_raw = cached_load_raw_data(path_dict)
-    config_data = cached_read_configs(path_dict)
+# --- LOAD DATA IF NOT IN SESSION ---
+if 'df_raw' not in st.session_state or 'config_data' not in st.session_state:
+    start = time.time()
+    with st.spinner("🔄 Loading data..."):
+        df_raw, config_data = load_all_data(path_dict)
+        st.session_state['df_raw'] = df_raw
+        st.session_state['config_data'] = config_data
+    st.caption(f"⚡ Loaded in {time.time() - start:.2f} seconds")
+else:
+    df_raw = st.session_state['df_raw']
+    config_data = st.session_state['config_data']
 
 # --- TABS ---
 tab1, tab2, tab3 = st.tabs(["⚙️ Report Generator", T["data_preview"], T["user_guide"]])
 
 # --- REPORT TAB ---
 with tab1:
-    mode = st.selectbox(T["mode"], options=['year', 'month', 'week'], index=['year', 'month', 'week'].index(config_data['mode']))
+    mode = st.selectbox(T["mode"], options=['year', 'month', 'week'],
+                        index=['year', 'month', 'week'].index(config_data['mode']))
+    
     all_years = sorted(df_raw['Year'].dropna().unique())
-    years = st.multiselect(T["year"], options=all_years, default=[config_data['year']] if config_data['year'] else all_years)
+    years = st.multiselect(T["year"], options=all_years,
+                           default=[config_data['year']] if config_data['year'] else all_years)
 
     all_months = list(df_raw['MonthName'].dropna().unique())
-    months = st.multiselect(T["month"], options=all_months, default=config_data['months'] if config_data['months'] else all_months)
+    months = st.multiselect(T["month"], options=all_months,
+                            default=config_data['months'] if config_data['months'] else all_months)
 
     project_df = config_data['project_filter_df']
     included_projects = project_df[project_df['Include'].str.lower() == 'yes']['Project Name'].tolist()
-    project_selection = st.multiselect(T["project"], options=sorted(project_df['Project Name'].unique()), default=included_projects)
+    project_selection = st.multiselect(T["project"],
+                                       options=sorted(project_df['Project Name'].unique()),
+                                       default=included_projects)
 
     st.markdown("---")
 
@@ -126,7 +138,9 @@ with tab1:
                 st.success(f"{T['report_done']}: `{os.path.basename(path_dict['output_file'])}`")
 
                 with open(path_dict['output_file'], "rb") as f:
-                    st.download_button(T["download_excel"], data=f, file_name=os.path.basename(path_dict['output_file']), use_container_width=True)
+                    st.download_button(T["download_excel"], data=f,
+                                       file_name=os.path.basename(path_dict['output_file']),
+                                       use_container_width=True)
 
 # --- DATA PREVIEW TAB ---
 with tab2:
@@ -137,7 +151,7 @@ with tab2:
 with tab3:
     st.markdown(f"### {T['user_guide']}")
     st.markdown("""
-    - 🗂 Select filters: Mode, year, month, project
-    - 🚀 Click **Generate report**
-    - 📥 Download the Excel report from the button
+    - 🗂 Select filters: Mode, year, month, project  
+    - 🚀 Click **Generate report**  
+    - 📥 Download the Excel report from the button  
     """)
