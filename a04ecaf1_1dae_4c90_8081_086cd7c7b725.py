@@ -19,7 +19,8 @@ def read_configs(path_dict):
     year_mode_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Year_Mode', engine='openpyxl')
     project_filter_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Project_Filter', engine='openpyxl')
 
-    mode = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'mode', 'Value'].values[0].strip().lower()
+    mode_raw = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'mode', 'Value'].values[0]
+    mode = str(mode_raw).strip().lower()
 
     year_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'year', 'Value']
     year = int(year_row.values[0]) if not year_row.empty and pd.notna(year_row.values[0]) else None
@@ -96,17 +97,14 @@ def export_report(df, config, path_dict):
     chart.set_categories(cats_ref)
     ws.add_chart(chart, "F2")
 
-    # 👉 ADD REPORT PER PROJECT
     for project in df['Project name'].unique():
         df_proj = df[df['Project name'] == project]
         ws_proj = wb.create_sheet(title=project[:31])
 
-        # Write full data
         for r_idx, row in enumerate(df_proj.itertuples(index=False), start=2):
             for c_idx, value in enumerate(row, start=1):
                 ws_proj.cell(row=r_idx, column=c_idx, value=value)
 
-        # Add summary by Workcentre
         summary_wc = df_proj.groupby('Workcentre')['Hours'].sum().reset_index()
         start_row = len(df_proj) + 4
         ws_proj.cell(row=start_row, column=1, value="Workcentre")
@@ -115,7 +113,6 @@ def export_report(df, config, path_dict):
             ws_proj.cell(row=i, column=1, value=row.Workcentre)
             ws_proj.cell(row=i, column=2, value=row.Hours)
 
-        # Add chart
         chart = BarChart()
         chart.title = f"{project} - Hours by Workcentre"
         chart.x_axis.title = "Workcentre"
@@ -126,7 +123,6 @@ def export_report(df, config, path_dict):
         chart.set_categories(cats_ref)
         ws_proj.add_chart(chart, f"E{start_row}")
 
-    # Config sheet
     ws_config = wb.create_sheet("Config_Info")
     ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
     ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config['years'])) if 'years' in config else str(config['year'])
@@ -136,3 +132,10 @@ def export_report(df, config, path_dict):
     ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(map(str, project_names))
 
     wb.save(path_dict['output_file'])
+
+if __name__ == "__main__":
+    paths = setup_paths()
+    config = read_configs(paths)
+    data = load_raw_data(paths)
+    filtered_data = apply_filters(data, config)
+    export_report(filtered_data, config, paths)
