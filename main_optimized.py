@@ -5,7 +5,7 @@ from datetime import datetime
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import setup_paths, apply_filters, export_report
 
 st.set_page_config(page_title="Time Report Generator", layout="centered")
-st.title("📊 Time Report Generator")
+st.title("📊 Time Report Generator (v3)")
 
 path_dict = setup_paths()
 
