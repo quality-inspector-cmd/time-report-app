@@ -1,216 +1,133 @@
-import streamlit as st
+# a04ecaf1_1dae_4c90_8081_086cd7c7b725.py
 import pandas as pd
 import os
-from datetime import datetime
+# import các thư viện khác bạn cần cho việc xử lý và xuất báo cáo (ví dụ: openpyxl, reportlab, matplotlib/plotly)
 
-# ==============================================================================
-# ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰM CÙNG THƯ MỤC
-# HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
-# ==============================================================================
-from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
-    setup_paths, load_raw_data, read_configs,
-    apply_filters, export_report, export_pdf_report
-)
-# ==============================================================================
-
-script_dir = os.path.dirname(__file__)
-csv_file_path = os.path.join(script_dir, "invited_emails.csv")
-
-# ---------------------------
-# PHẦN XÁC THỰC TRUY CẬP
-# ---------------------------
-
-@st.cache_data
-def load_invited_emails():
-    try:
-        # Thử đọc file mà KHÔNG giả định có header.
-        # Điều này sẽ khiến cột đầu tiên có tên mặc định là 0.
-        df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        
-        # In ra để kiểm tra các cột được phát hiện (hiển thị trong console)
-        print(f"DEBUG: File path being read: {csv_file_path}")
-        print(f"DEBUG: Columns detected by pandas (after header=None): {df.columns.tolist()}")
-        print(f"DEBUG: First 5 rows of DataFrame (after header=None):\n{df.head()}")
-
-        # Lấy dữ liệu từ cột đầu tiên (chỉ số 0), loại bỏ khoảng trắng và chuyển về chữ thường
-        emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
-        
-        print(f"DEBUG: Loaded invited emails list: {emails}") # In ra danh sách email đã xử lý
-        return emails
-    except FileNotFoundError:
-        print(f"ERROR: invited_emails.csv not found at {csv_file_path}")
-        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
-        return []
-    except Exception as e:
-        print(f"ERROR: An error occurred while loading invited_emails.csv: {e}")
-        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
-        return []
-
-# Tải danh sách email được mời một lần
-INVITED_EMAILS = load_invited_emails()
-
-# Hàm ghi log truy cập
-def log_user_access(email):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = {"Time": timestamp, "Email": email}
-    if "access_log" not in st.session_state:
-        st.session_state.access_log = []
-    st.session_state.access_log.append(log_entry)
-
-# Logic xác thực người dùng
-if "user_email" not in st.session_state:
-    st.set_page_config(page_title="Triac Time Report", layout="wide")
-    st.title("🔐 Access authentication")
-    email_input = st.text_input("📧 Enter the invited email to access:")
-
-    if email_input:
-        email = email_input.strip().lower()
-        print(f"DEBUG: User input email (processed): '{email}'") # In ra email người dùng nhập
-        if email in INVITED_EMAILS:
-            st.session_state.user_email = email
-            log_user_access(email) # Kích hoạt lại hàm log nếu bạn muốn dùng
-            st.success("✅ Valid email! Entering application...")
-            st.rerun() # Đã sửa từ experimental_rerun()
-        else:
-            st.error("❌ Email is not on the invitation list.")
-    st.stop() # Dừng thực thi nếu chưa xác thực
-
-# ---------------------------
-# PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
-# ---------------------------
-
-# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
-st.set_page_config(page_title="Triac Time Report", layout="wide")
-
-st.markdown("""
-    <style>
-        .report-title {font-size: 30px; color: #003366; font-weight: bold;}
-        .report-subtitle {font-size: 14px; color: gray;}
-        footer {visibility: hidden;}
-    </style>
-""", unsafe_allow_html=True)
-
-col1, col2 = st.columns([0.12, 0.88])
-with col1:
-    st.image("triac_logo.png", width=110)
-with col2:
-    st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True)
-    st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True)
-
-# Thiết lập đa ngôn ngữ
-translations = {
-    "English": {
-        "mode": "Select mode",
-        "year": "Select year(s)",
-        "month": "Select month(s)",
-        "project": "Select project(s)",
-        "report_button": "Generate report",
-        "no_data": "No data after filtering",
-        "report_done": "Report created successfully",
-        "download_excel": "Download Excel",
-        "download_pdf": "Download PDF",
-        "data_preview": "Data preview",
-        "user_guide": "User Guide",
-        "export_options": "Export Options", # Thêm bản dịch mới
-        "export_excel_option": "Export as Excel (.xlsx)", # Thêm bản dịch mới
-        "export_pdf_option": "Export as PDF (.pdf)" # Thêm bản dịch mới
-    },
-    "Tiếng Việt": {
-        "mode": "Chọn chế độ",
-        "year": "Chọn năm",
-        "month": "Chọn tháng",
-        "project": "Chọn dự án",
-        "report_button": "Tạo báo cáo",
-        "no_data": "Không có dữ liệu sau khi lọc",
-        "report_done": "Đã tạo báo cáo",
-        "download_excel": "Tải Excel",
-        "download_pdf": "Tải PDF",
-        "data_preview": "Xem dữ liệu",
-        "user_guide": "Hướng dẫn",
-        "export_options": "Tùy chọn xuất báo cáo", # Thêm bản dịch mới
-        "export_excel_option": "Xuất ra Excel (.xlsx)", # Thêm bản dịch mới
-        "export_pdf_option": "Xuất ra PDF (.pdf)" # Thêm bản dịch mới
+def setup_paths():
+    # ... (logic hiện tại của bạn) ...
+    # Có thể thêm các đường dẫn riêng cho báo cáo so sánh nếu cần
+    return {
+        'output_file': 'TimeReport_Standard.xlsx',
+        'pdf_report': 'TimeReport_Standard.pdf',
+        'comparison_output_file': 'TimeReport_Comparison.xlsx', # Đường dẫn mới
+        'comparison_pdf_report': 'TimeReport_Comparison.pdf' # Đường dẫn mới
     }
-}
 
-lang = st.sidebar.selectbox("Language / Ngôn ngữ", ["English", "Tiếng Việt"])
-T = translations[lang]
+def load_raw_data(path_dict):
+    # ... (logic hiện tại của bạn) ...
+    pass
 
-# Gọi hàm setup_paths từ file logic báo cáo
-path_dict = setup_paths()
+def read_configs(path_dict):
+    # ... (logic hiện tại của bạn) ...
+    pass
 
-@st.cache_data(ttl=1800)
-def cached_load():
-    # Gọi load_raw_data và read_configs từ file logic báo cáo
-    return load_raw_data(path_dict), read_configs(path_dict)
+def apply_filters(df_raw, config):
+    # ... (logic hiện tại của bạn) ...
+    pass
 
-with st.spinner("Đang tải dữ liệu..."):
-    df_raw, config_data = cached_load()
+def export_report(df_filtered, config, path_dict):
+    # ... (logic hiện tại của bạn để xuất Excel tiêu chuẩn) ...
+    pass
 
-# Tạo các tab
-tab1, tab2, tab3 = st.tabs(["Report", T["data_preview"], T["user_guide"]])
+def export_pdf_report(df_filtered, config, path_dict):
+    # ... (logic hiện tại của bạn để xuất PDF tiêu chuẩn) ...
+    pass
 
-with tab1:
-    mode = st.selectbox(T["mode"], ['year', 'month', 'week'], index=['year', 'month', 'week'].index(config_data['mode']))
-    years = st.multiselect(T["year"], sorted(df_raw['Year'].dropna().unique()), default=[config_data['year']])
-    months = st.multiselect(T["month"], df_raw['MonthName'].dropna().unique(), default=config_data['months'])
+# =========================================================================
+# CÁC HÀM MỚI CHO BÁO CÁO SO SÁNH - BẠN CẦN TRIỂN KHAI LOGIC TẠI ĐÂY
+# =========================================================================
 
-    project_df = config_data['project_filter_df']
-    included = project_df[project_df['Include'].str.lower() == 'yes']['Project Name'].tolist()
-    selected_projects = st.multiselect(T["project"], sorted(project_df['Project Name'].unique()), default=included)
+def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
+    """
+    Lọc và chuẩn bị dữ liệu cho báo cáo so sánh dựa trên comparison_mode.
+    Trả về DataFrame đã được tổng hợp/pivot.
+    """
+    years = comparison_config['years']
+    months = comparison_config['months']
+    selected_projects = comparison_config['selected_projects']
 
-    st.markdown("---") # Đường phân cách
-    st.subheader(T["export_options"]) # Tiêu đề cho tùy chọn xuất
-    export_excel = st.checkbox(T["export_excel_option"], value=True) # Mặc định chọn Excel
-    export_pdf = st.checkbox(T["export_pdf_option"], value=False) # Mặc định không chọn PDF
+    df_filtered = df_raw[
+        df_raw['Year'].isin(years) &
+        df_raw['MonthName'].isin(months) &
+        df_raw['Project Name'].isin(selected_projects)
+    ].copy() # Luôn tạo bản sao khi lọc để tránh SettingWithCopyWarning
 
-    if st.button(T["report_button"], use_container_width=True):
-        if not export_excel and not export_pdf:
-            st.warning("Please select at least one report export format (Excel or PDF).")
+    if df_filtered.empty:
+        return pd.DataFrame()
+
+    if comparison_mode == "So Sánh Dự Án Trong Một Tháng" or comparison_mode == "Compare Projects in a Month":
+        # Tổng hợp giờ theo Project cho một tháng/năm cụ thể
+        # Giả sử bạn có cột 'Hours' chứa số giờ làm việc
+        df_comparison = df_filtered.groupby('Project Name')['Hours'].sum().reset_index()
+        df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+        return df_comparison
+
+    elif comparison_mode == "So Sánh Dự Án Trong Một Năm" or comparison_mode == "Compare Projects in a Year":
+        # Tổng hợp giờ theo Project và Month cho một năm
+        df_comparison = df_filtered.groupby(['Project Name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
+        df_comparison.loc['Total'] = df_comparison.sum() # Thêm dòng tổng
+        return df_comparison
+
+    elif comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
+        # Tổng hợp giờ cho một Project theo Month và Year
+        if len(selected_projects) == 1:
+            df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
+            df_comparison.loc['Total'] = df_comparison.sum() # Thêm dòng tổng
+            return df_comparison
         else:
-            with st.spinner("Generating report..."):
-                config = {
-                    'mode': mode,
-                    'years': years,
-                    'months': months,
-                    'project_filter_df': project_df[
-                        project_df['Project Name'].isin(selected_projects) &
-                        (project_df['Include'].str.lower() == 'yes')
-                    ]
-                }
-                df_filtered = apply_filters(df_raw, config)
-                if df_filtered.empty:
-                    st.warning(T["no_data"])
-                else:
-                    report_generated = False
-                    if export_excel:
-                        export_report(df_filtered, config, path_dict)
-                        report_generated = True
-                    if export_pdf:
-                        export_pdf_report(df_filtered, config, path_dict)
-                        report_generated = True
-                    
-                    if report_generated:
-                        st.success(f"{T['report_done']}.")
-                        
-                        if export_excel:
-                            with open(path_dict['output_file'], "rb") as f:
-                                st.download_button(T["download_excel"], f, file_name=os.path.basename(path_dict['output_file']), use_container_width=True)
-                        if export_pdf:
-                            with open(path_dict['pdf_report'], "rb") as f:
-                                st.download_button(T["download_pdf"], f, file_name=os.path.basename(path_dict['pdf_report']), use_container_width=True)
-                    else:
-                        st.error("Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.")
+            return pd.DataFrame() # Hoặc xử lý lỗi nếu không phải một dự án
 
-with tab2:
-    st.subheader(T["data_preview"])
-    st.dataframe(df_raw.head(100), use_container_width=True)
+    return pd.DataFrame() # Trả về DataFrame rỗng nếu không khớp chế độ nào
 
-with tab3:
-    st.markdown(f"### {T['user_guide']}")
-    st.markdown("""
-    - Select filters: mode, year, month, project
-    - Select report export format (Excel, PDF or both)
-    - Click "Create report"
-    - Download generated report
-    """)
+def export_comparison_report(df_comparison, comparison_config, path_dict, comparison_mode):
+    """
+    Xuất báo cáo so sánh ra file Excel.
+    Sử dụng path_dict['comparison_output_file'] để lưu.
+    """
+    output_file = path_dict['comparison_output_file']
+
+    # Ví dụ đơn giản: ghi DataFrame vào Excel
+    with pd.ExcelWriter(output_file, engine='xlsxwriter') as writer:
+        df_comparison.to_excel(writer, sheet_name='Comparison Report', index=True)
+        workbook = writer.book
+        worksheet = writer.sheets['Comparison Report']
+
+        # Thêm tiêu đề báo cáo vào Excel
+        title_format = workbook.add_format({'bold': True, 'font_size': 14, 'align': 'center'})
+        worksheet.merge_range('A1:C1', 'BÁO CÁO SO SÁNH', title_format) # Điều chỉnh phạm vi merge
+
+        # Thêm thông tin cấu hình
+        info_format = workbook.add_format({'font_size': 10})
+        worksheet.write('A2', f"Chế độ so sánh: {comparison_mode}", info_format)
+        worksheet.write('A3', f"Năm: {comparison_config['years']}", info_format)
+        worksheet.write('A4', f"Tháng: {comparison_config['months']}", info_format)
+        worksheet.write('A5', f"Dự án: {comparison_config['selected_projects']}", info_format)
+
+        # Tự động điều chỉnh độ rộng cột (ví dụ)
+        for i, col in enumerate(df_comparison.columns):
+            max_len = max(df_comparison[col].astype(str).map(len).max(), len(str(col)))
+            worksheet.set_column(i + 1, i + 1, max_len + 2) # +1 vì cột A là index
+
+    print(f"DEBUG: Comparison Excel report generated at {output_file}")
+    return True # Trả về True nếu thành công
+
+def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, comparison_mode):
+    """
+    Xuất báo cáo so sánh ra file PDF.
+    Sử dụng path_dict['comparison_pdf_report'] để lưu.
+    Bạn có thể dùng ReportLab, FPDF, hoặc Matplotlib để vẽ biểu đồ và xuất PDF.
+    """
+    pdf_file = path_dict['comparison_pdf_report']
+
+    # Đây là một placeholder đơn giản.
+    # Thực tế bạn sẽ cần thư viện như ReportLab hoặc fpdf để tạo PDF phức tạp hơn,
+    # hoặc matplotlib/seaborn để tạo biểu đồ rồi lưu thành ảnh, nhúng vào PDF.
+
+    with open(pdf_file, 'w', encoding='utf-8') as f:
+        f.write(f"BÁO CÁO SO SÁNH - {comparison_mode}\n\n")
+        f.write(f"Cấu hình: Năm={comparison_config['years']}, Tháng={comparison_config['months']}, Dự án={comparison_config['selected_projects']}\n\n")
+        f.write("Dữ liệu:\n")
+        f.write(df_comparison.to_string()) # Chuyển DataFrame thành chuỗi để ghi vào PDF đơn giản
+
+    print(f"DEBUG: Comparison PDF report generated at {pdf_file}")
+    return True # Trả về True nếu thành công
