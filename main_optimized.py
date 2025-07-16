@@ -86,7 +86,7 @@ st.markdown("""
 
 # Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'vi' # Mặc định là tiếng Việt
+    st.session_state.lang = 'en' # Mặc định là tiếng Anh (ĐÃ ĐIỀU CHỈNH TỪ 'vi' SANG 'en')
 
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
@@ -615,48 +615,52 @@ with tab_comparison_report_main:
     export_pdf_comp = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_comp')
 
     if st.button(get_text('generate_comparison_report_btn'), key='generate_comparison_report_btn_tab'):
-        if validation_error: # Kiểm tra nếu có lỗi xác thực từ UI
-            st.error("Vui lòng sửa các lựa chọn được đánh dấu phía trên.")
-        elif not export_excel_comp and not export_pdf_comp:
+        if not export_excel_comp and not export_pdf_comp:
             st.warning(get_text("warning_select_export_format"))
+        elif validation_error:
+            st.error(get_text('error_generating_report')) # Generic error for validation issues
+        elif not comp_projects:
+            st.warning(get_text('no_project_selected_warning_standard')) # Re-using standard warning for now
+        elif not comp_years and not comp_months: # This catches cases where no time filter is selected
+            st.warning(get_text('no_comparison_criteria_selected'))
         else:
-            comparison_config = {
+            comparison_report_config = {
+                'mode': comparison_mode, # This is the internal string
                 'years': comp_years,
                 'months': comp_months,
-                'selected_projects': comp_projects,
+                'projects': comp_projects,
+                'original_selected_mode_key': st.session_state.selected_comparison_mode_key # Keep original key for chart titles
             }
 
-            # Hàm backend apply_comparison_filters và export_comparison_report
-            # sẽ cần diễn giải đúng comparison_mode và comparison_config.
-            df_comparison, message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
+            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_report_config)
 
-            if df_comparison.empty:
-                st.warning(get_text('no_data_after_filter_comparison').format(message))
+            if df_filtered_comparison.empty:
+                st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
                 st.success(get_text('data_filtered_success'))
-                st.subheader(get_text('comparison_data_preview'))
-                st.dataframe(df_comparison)
+                st.markdown(f"**{get_text('comparison_data_preview')}**")
+                st.dataframe(df_filtered_comparison.head(10))
 
-                report_generated_comp = False
+                comp_report_generated = False
                 if export_excel_comp:
                     with st.spinner(get_text('generating_comparison_excel')):
-                        excel_success_comp = export_comparison_report(df_comparison, comparison_config, path_dict['comparison_output_file'], comparison_mode)
-                    if excel_success_comp:
+                        excel_comp_success = export_comparison_report(df_filtered_comparison, comparison_report_config, path_dict['comparison_output_file'])
+                    if excel_comp_success:
                         st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
-                        report_generated_comp = True
+                        comp_report_generated = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_excel'))
 
                 if export_pdf_comp:
                     with st.spinner(get_text('generating_comparison_pdf')):
-                        pdf_success_comp = export_comparison_pdf_report(df_comparison, comparison_config, path_dict['comparison_pdf_report'], comparison_mode, path_dict['logo_path'])
-                    if pdf_success_comp:
+                        pdf_comp_success = export_comparison_pdf_report(df_filtered_comparison, comparison_report_config, path_dict['comparison_pdf_report'], path_dict['logo_path'])
+                    if pdf_comp_success:
                         st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
-                        report_generated_comp = True
+                        comp_report_generated = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
-
-                if report_generated_comp:
+                
+                if comp_report_generated:
                     if export_excel_comp and os.path.exists(path_dict['comparison_output_file']):
                         with open(path_dict['comparison_output_file'], "rb") as f:
                             st.download_button(get_text("download_comparison_excel"), data=f, file_name=os.path.basename(path_dict['comparison_output_file']), use_container_width=True, key='download_excel_comp_btn')
