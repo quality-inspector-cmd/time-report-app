@@ -95,14 +95,8 @@ TEXTS = {
         'lang_select': "Chọn ngôn ngữ:",
         'language_vi': "Tiếng Việt",
         'language_en': "English",
-        'system_explanation_title': "Giới thiệu về hệ thống báo cáo thời gian",
-        'system_explanation_text': """
-        <span style='color:blue;'>
-        Đây là một ứng dụng Python Streamlit được thiết kế để phân tích và tạo báo cáo về dữ liệu thời gian làm việc.
-        Nó giúp người dùng dễ dàng tạo các báo cáo chi tiết theo năm, tháng, tuần và so sánh hiệu suất giữa các dự án hoặc qua các khoảng thời gian khác nhau.
-        Ứng dụng này đọc dữ liệu từ file Excel template, áp dụng các bộ lọc cấu hình và xuất ra các báo cáo dạng Excel và PDF.
-        </span>
-        """,
+        # 'system_explanation_title': "Giới thiệu về hệ thống báo cáo thời gian", # Đã xoá
+        # 'system_explanation_text': """ ... """, # Đã xoá
         'template_not_found': "❌ Không tìm thấy file template: {}. Vui lòng đảm bảo file nằm cùng thư mục với ứng dụng.",
         'failed_to_load_raw_data': "⚠️ Không thể tải dữ liệu thô. Vui lòng kiểm tra sheet 'Raw Data' trong file template và định dạng dữ liệu.",
         'loading_data': "🔄 Đang tải dữ liệu và cấu hình...",
@@ -168,14 +162,8 @@ TEXTS = {
         'lang_select': "Select language:",
         'language_vi': "Tiếng Việt",
         'language_en': "English",
-        'system_explanation_title': "About the Time Reporting System",
-        'system_explanation_text': """
-        <span style='color:blue;'>
-        This is a Streamlit Python application designed to analyze and generate reports on work time data.
-        It helps users easily create detailed reports by year, month, week, and compare performance between projects or over different time periods.
-        The application reads data from an Excel template file, applies configured filters, and exports reports in both Excel and PDF formats.
-        </span>
-        """,
+        # 'system_explanation_title': "About the Time Reporting System", # Đã xoá
+        # 'system_explanation_text': """ ... """, # Đã xoá
         'template_not_found': "❌ Template file not found: {}. Please ensure the file is in the same directory as the application.",
         'failed_to_load_raw_data': "⚠️ Failed to load raw data. Please check the 'Raw Data' sheet in the template file and data format.",
         'loading_data': "🔄 Loading data and configurations...",
@@ -256,11 +244,6 @@ with col_lang:
         format_func=lambda x: get_text('language_' + x),
         key='language_selector_main'
     )
-
-# Phần giải thích hệ thống được đặt riêng ra ngoài để vẫn có thể dịch
-st.subheader(get_text('system_explanation_title'))
-st.markdown(get_text('system_explanation_text'), unsafe_allow_html=True)
-
 
 # Check if template file exists
 if not os.path.exists(path_dict['template_file']):
