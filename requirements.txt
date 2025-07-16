@@ -9,5 +9,4 @@ fpdf
 reportlab
 plotly
 kaleido
-df_raw,
-config_data,
+df_raw
