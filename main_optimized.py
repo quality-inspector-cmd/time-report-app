@@ -28,7 +28,8 @@ path_dict = setup_paths()
 def load_invited_emails():
     try:
         df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        emails = df.iloc[:, 0].astype(str).strip().str.lower().tolist()
+        # Sửa lỗi: Thêm .str trước .strip()
+        emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
         return emails
     except FileNotFoundError:
         st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
