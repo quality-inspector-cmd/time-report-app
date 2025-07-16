@@ -5,13 +5,11 @@ from datetime import datetime
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
-# HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
+# HOẶNG THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
 # ==============================================================================
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
-    # apply_filters, export_report, export_pdf_report, # Các hàm này sẽ được gọi bên trong generate_reports_on_demand
-    # apply_comparison_filters, export_comparison_report, export_comparison_pdf_report, # Các hàm này cũng vậy
-    generate_reports_on_demand # <--- THÊM DÒNG NÀY ĐỂ IMPORT HÀM MỚI
+    generate_reports_on_demand
 )
 # ==============================================================================
 
@@ -24,749 +22,507 @@ path_dict = setup_paths()
 # ==============================================================================
 # KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
 # ==============================================================================
-if 'comparison_mode' not in st.session_state:
-    st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
-
 if 'comparison_selected_years' not in st.session_state:
-    st.session_state.comparison_selected_years = [datetime.now().year] # Hoặc giá trị mặc định phù hợp
-
+    st.session_state.comparison_selected_years = []
 if 'comparison_selected_months' not in st.session_state:
-    st.session_state.comparison_selected_months = [] # Hoặc giá trị mặc định phù hợp
-
+    st.session_state.comparison_selected_months = []
 if 'comparison_selected_projects' not in st.session_state:
-    st.session_state.comparison_selected_projects = [] # Hoặc giá trị mặc định phù hợp
+    st.session_state.comparison_selected_projects = []
+if 'comparison_mode' not in st.session_state:
+    st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Giá trị mặc định
 
-if 'comparison_selected_months_over_time' not in st.session_state:
-    st.session_state.comparison_selected_months_over_time = [] # Khởi tạo là một danh sách rỗng hoặc giá trị mặc định phù hợp
-
-if 'selected_years' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
-    st.session_state.selected_years = [datetime.now().year]
-
-if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
-    st.session_state.selected_months = []
-
-# Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
-if 'selected_language' not in st.session_state:
-    st.session_state.selected_language = "English"
-
-# ---------------------------
-# PHẦN XÁC THỰC TRUY CẬP
-# ---------------------------
-
-@st.cache_data
-def load_invited_emails():
-    try:
-        df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        # Sửa lỗi: Thêm .str trước .strip()
-        emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
-        return emails
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
-        return []
-    except Exception as e:
-        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
-        return []
-
-# Tải danh sách email được mời một lần
-INVITED_EMAILS = load_invited_emails()
-
-# Hàm ghi log truy cập
-def log_user_access(email):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = {"Time": timestamp, "Email": email}
-    if "access_log" not in st.session_state:
-        st.session_state.access_log = []
-    st.session_state.access_log.append(log_entry)
-
-# Logic xác thực người dùng
-if "user_email" not in st.session_state:
-    st.set_page_config(page_title="Triac Time Report", layout="wide")
-    st.title("🔐 Access authentication")
-    email_input = st.text_input("📧 Enter the invited email to access:")
-
-    if email_input:
-        email = email_input.strip().lower()
-        if email in INVITED_EMAILS:
-            st.session_state.user_email = email
-            log_user_access(email)
-            st.success("✅ Valid email! Entering application...")
-            st.rerun()
-        else:
-            st.error("❌ Email is not on the invitation list.")
-    st.stop() # Dừng thực thi nếu chưa xác thực
-
-# ---------------------------
-# PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
-# ---------------------------
-# Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
-if 'lang' not in st.session_state:
-    st.session_state.lang = 'en' # Mặc định là tiếng Anh
-
-# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
-st.set_page_config(page_title="Triac Time Report", layout="wide")
-
-st.markdown("""
-    <style>
-        .report-title {font-size: 30px; color: #003366; font-weight: bold;}
-        .report-subtitle {font-size: 14px; color: gray;}
-        footer {visibility: hidden;}
-    </style>
-""", unsafe_allow_html=True)
-
-# =====================================
-# Khởi tạo ngôn ngữ và từ điển văn bản
-# =====================================
-# Từ điển cho các chuỗi văn bản
-TEXTS = {
-    'vi': {
-        'app_title': "📊 Công cụ tạo báo cáo thời gian",
-        'lang_select': "Chọn ngôn ngữ:",
-        'language_vi': "Tiếng Việt",
-        'language_en': "English",
-        'template_not_found': "❌ Không tìm thấy file template: {}. Vui lòng đảm bảo file nằm cùng thư mục với ứng dụng.",
-        'failed_to_load_raw_data': "⚠️ Không thể tải dữ liệu thô. Vui lòng kiểm tra sheet 'Raw Data' trong file template và định dạng dữ liệu.",
-        'loading_data': "🔄 Đang tải dữ liệu và cấu hình...",
-        'tab_standard_report': "Báo cáo tiêu chuẩn",
-        'tab_comparison_report': "Báo cáo so sánh",
-        'tab_data_preview': "Xem trước dữ liệu",
-        'standard_report_header': "Cấu hình báo cáo thời gian tiêu chuẩn",
-        'select_analysis_mode': "Chọn chế độ phân tích:",
-        'select_year': "Chọn năm:",
-        'select_months': "Chọn tháng(các tháng):",
-        'standard_project_selection_header': "Lựa chọn dự án cho báo cáo tiêu chuẩn",
-        'standard_project_selection_text': "Chọn dự án để bao gồm (mặc định chỉ bao gồm các dự án 'yes' từ cấu hình template):",
-        'generate_standard_report_btn': "🚀 Tạo báo cáo tiêu chuẩn",
-        'no_year_selected_error': "Vui lòng chọn một năm hợp lệ để tạo báo cáo.",
-        'no_project_selected_warning_standard': "Vui lòng chọn ít nhất một dự án để tạo báo cáo tiêu chuẩn.",
-        'no_data_after_filter_standard': "⚠️ Không có dữ liệu sau khi lọc cho báo cáo tiêu chuẩn. Vui lòng kiểm tra các lựa chọn của bạn.",
-        'generating_excel_report': "Đang tạo báo cáo Excel...",
-        'excel_report_generated': "✅ Báo cáo Excel đã được tạo: {}",
-        'download_excel_report': "📥 Tải báo cáo Excel",
-        'generating_pdf_report': "Đang tạo báo cáo PDF...",
-        'pdf_report_generated': "✅ Báo cáo PDF đã được tạo: {}",
-        'download_pdf_report': "📥 Tải báo cáo PDF",
-        'failed_to_generate_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel.",
-        'failed_to_generate_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF.",
-        'comparison_report_header': "Cấu hình báo cáo so sánh",
-        'select_comparison_mode': "Chọn chế độ so sánh:",
-        'compare_projects_month': "So Sánh Dự Án Trong Một Tháng",
-        'compare_projects_year': "So Sánh Dự Án Trong Một Năm",
-        'compare_one_project_over_time': "So Sánh Một Dự Án Qua Các Tháng/Năm",
-        'filter_data_for_comparison': "Lọc dữ liệu để so sánh",
-        'select_years': "Chọn năm(các năm):", # Dùng chung cho các mode
-        'select_months_comp': "Chọn tháng(các tháng):", # Dùng chung cho các mode
-        'select_projects_comp': "Chọn dự án(các dự án):", # Dùng chung cho các mode
-        'generate_comparison_report_btn': "🚀 Tạo báo cáo so sánh",
-        'no_data_after_filter_comparison': "⚠️ {}",
-        'data_filtered_success': "✅ Dữ liệu đã được lọc thành công cho so sánh.",
-        'comparison_data_preview': "Xem trước dữ liệu so sánh",
-        'generating_comparison_excel': "Đang tạo báo cáo Excel so sánh...",
-        'comparison_excel_generated': "✅ Báo cáo Excel so sánh đã được tạo: {}",
-        'download_comparison_excel': "📥 Tải báo cáo Excel so sánh",
-        'generating_comparison_pdf': "Đang tạo báo cáo PDF so sánh...",
-        'comparison_pdf_generated': "✅ Báo cáo PDF so sánh đã được tạo: {}",
-        'download_comparison_pdf': "📥 Tải báo cáo PDF so sánh",
-        'failed_to_generate_comparison_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel so sánh.",
-        'failed_to_generate_comparison_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF so sánh.",
-        'raw_data_preview_header': "Dữ liệu đầu vào thô (100 hàng đầu)",
-        'no_raw_data': "Không có dữ liệu thô được tải.",
-        'no_year_in_data': "Không có năm nào trong dữ liệu để chọn.",
-        'user_guide': "Hướng dẫn sử dụng",
-        'export_options': "Tùy chọn xuất báo cáo",
-        'export_excel_option': "Xuất ra Excel (.xlsx)",
-        'export_pdf_option': "Xuất ra PDF (.pdf)",
-        'report_button': "Tạo báo cáo",
-        'no_data': "Không có dữ liệu sau khi lọc",
-        'report_done': "Đã tạo báo cáo",
-        'download_excel': "Tải Excel",
-        'download_pdf': "Tải PDF",
-        'warning_select_export_format': "Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).",
-        'error_generating_report': "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
-        # Thêm các tin nhắn mới cho mode "So Sánh Một Dự Án Qua Các Tháng/Năm"
-        'select_single_project_warning': "Vui lòng chọn CHỈ MỘT dự án cho chế độ này.",
-        'select_years_for_over_time_months': "Chọn năm (hoặc các năm) bạn muốn so sánh:",
-        'select_months_for_single_year': "Chọn tháng(các tháng) trong năm đã chọn:",
-        'comparison_over_years_note': "Lưu ý: Bạn đã chọn nhiều năm. Báo cáo sẽ so sánh dữ liệu của dự án qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.",
-        'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
-        'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
-        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể."
+# ==============================================================================\
+# HÀM HỖ TRỢ NGÔN NGỮ
+# ==============================================================================\
+LANGUAGES = {
+    "en": {
+        "title": "Time Report Automation Tool",
+        "intro_message": "Welcome to the Time Report Automation Tool! Please navigate through the tabs to generate your reports.",
+        "tabs": ["Standard Report", "Comparison Report", "Data Preview", "Instructions"],
+        "upload_file_header": "Upload Time Report Template (Time_report.xlsm)",
+        "upload_file_help": "Please upload your .xlsm file containing 'Raw Data', 'Config_Year_Mode', and 'Config_Project_Filter' sheets.",
+        "loading_data": "Loading data and configurations...",
+        "data_loaded_success": "Data and configurations loaded successfully!",
+        "file_not_found_error": "Error: Template file not found.",
+        "error_loading_data": "Error loading data or configurations.",
+        "select_analysis_mode": "Select Analysis Mode:",
+        "modes": ["Year", "Month", "Week"],
+        "select_year": "Select Year:",
+        "all_years": "All Years",
+        "select_months": "Select Months:",
+        "all_months": "All Months",
+        "select_projects": "Select Projects:",
+        "all_projects": "All Projects",
+        "generate_standard_report_btn": "Generate Standard Report",
+        "no_year_selected_error": "Please select a year.",
+        "no_project_selected_warning_standard": "Please select at least one project for the standard report.",
+        "export_options": "Export Options",
+        "export_excel_option": "Export to Excel (.xlsx)",
+        "export_pdf_option": "Export to PDF (.pdf)",
+        "warning_select_export_format": "Please select at least one export format (Excel or PDF).",
+        "generating_excel_report": "Generating Excel report...",
+        "generating_pdf_report": "Generating PDF report...",
+        "report_done": "Report generated successfully!",
+        "error_generating_report": "Error occurred while generating report. Please try again.",
+        "download_excel": "Download Excel Report",
+        "download_pdf": "Download PDF Report",
+        "download_comparison_excel": "Download Comparison Excel Report",
+        "download_comparison_pdf": "Download Comparison PDF Report",
+        "comparison_report_mode": "Select Comparison Mode:",
+        "comparison_modes": {
+            "So Sánh Dự Án Trong Một Tháng": "Compare Projects Within A Month",
+            "So Sánh Dự Án Trong Một Năm": "Compare Projects Within A Year",
+            "So Sánh Một Dự Án Qua Các Tháng/Năm": "Compare One Project Across Months/Years"
+        },
+        "select_comparison_years": "Select Years for Comparison:",
+        "select_comparison_months": "Select Months for Comparison:",
+        "select_comparison_projects": "Select Projects for Comparison:",
+        "generate_comparison_report_btn": "Generate Comparison Report",
+        "no_year_selected_comparison": "Please select a year for comparison.",
+        "no_month_selected_comparison": "Please select a month for comparison.",
+        "no_project_selected_comparison": "Please select at least one project for comparison.",
+        "multiple_years_warning": "Please select only ONE year when comparing projects within a month or for one project across months.",
+        "multiple_months_warning": "Please select only ONE month when comparing projects within a month.",
+        "one_project_required": "For 'Compare One Project Across Months/Years', please select exactly ONE project.",
+        "preview_data_header": "Raw Data Preview (First 100 Rows)",
+        "no_data_loaded": "No raw data loaded. Please upload your template file.",
+        "instructions_header": "Instructions",
+        "instructions_intro": "This tool helps automate time report generation.",
+        "instructions_standard_report": "### 1. Standard Report",
+        "instructions_standard_report_desc": "Generate a detailed report based on selected year, months, and projects.",
+        "instructions_comparison_report": "### 2. Comparison Report",
+        "instructions_comparison_report_desc": "Generate a comparative analysis based on different modes:",
+        "compare_projects_in_month_desc": "Compare multiple projects within a single selected month of a specific year.",
+        "compare_projects_in_year_desc": "Compare multiple projects within a single selected year (all months included).",
+        "compare_one_project_across_desc": "Compare a single project across multiple months within one year, OR across multiple years.",
+        "instructions_data_preview": "### 3. Data Preview",
+        "instructions_data_preview_desc": "This tab allows you to preview the first 100 rows of the loaded raw data, helping you verify the data format and content.",
+        "instructions_template_config": "### 4. Template File Configuration (External to Application)",
+        "instructions_template_config_desc": "The tool reads data and configurations from an Excel template file (typically `Time_report.xlsm`). Ensure that:",
+        "template_sheet_data": "The 'Raw Data' sheet contains your raw time data with necessary columns like 'Year', 'MonthName', 'Project name', etc.",
+        "template_sheet_config": "The 'Config_Year_Mode' and 'Config_Project_Filter' sheets can be used to set default configurations, but the selections on the interface will override them.",
+        "common_errors_header": "### Common Errors:",
+        "template_not_found": "Template file not found: Ensure `Time_report.xlsm` is in the same directory as this application.",
+        "data_load_failure": "Raw data load failure: Check data format and column names in the 'Raw Data' sheet.",
+        "language_select": "Select Language:"
     },
-    'en': {
-        'app_title': "📊 Time Report Generator",
-        'lang_select': "Select language:",
-        'language_vi': "Tiếng Việt",
-        'language_en': "English",
-        'template_not_found': "❌ Template file not found: {}. Please ensure the file is in the same directory as the application.",
-        'failed_to_load_raw_data': "⚠️ Failed to load raw data. Please check the 'Raw Data' sheet in the template file and data format.",
-        'loading_data': "🔄 Loading data and configurations...",
-        'tab_standard_report': "Standard Report",
-        'tab_comparison_report': "Comparison Report",
-        'tab_data_preview': "Data Preview",
-        'standard_report_header': "Standard Time Report Configuration",
-        'select_analysis_mode': "Select analysis mode:",
-        'select_year': "Select year:",
-        'select_months': "Select month(s):",
-        'standard_project_selection_header': "Project Selection for Standard Report",
-        'standard_project_selection_text': "Select projects to include (only 'yes' projects from template config will be included by default):",
-        'generate_standard_report_btn': "🚀 Generate Standard Report",
-        'no_year_selected_error': "Please select a valid year to generate the report.",
-        'no_project_selected_warning_standard': "Please select at least one project to generate the standard report.",
-        'no_data_after_filter_standard': "⚠️ No data after filtering for the standard report. Please check your selections.",
-        'generating_excel_report': "Generating Excel report...",
-        'excel_report_generated': "✅ Excel Report generated: {}",
-        'download_excel_report': "📥 Download Excel Report",
-        'generating_pdf_report': "Generating PDF report...",
-        'pdf_report_generated': "✅ PDF Report generated: {}",
-        'download_pdf_report': "📥 Download PDF Report",
-        'failed_to_generate_excel': "❌ Failed to generate Excel report.",
-        'failed_to_generate_pdf': "❌ Failed to generate PDF report.",
-        'comparison_report_header': "Comparison Report Configuration",
-        'select_comparison_mode': "Select comparison mode:",
-        'compare_projects_month': "Compare Projects in a Month",
-        'compare_projects_year': "Compare Projects in a Year",
-        'compare_one_project_over_time': "Compare One Project Over Time (Months/Years)",
-        'filter_data_for_comparison': "Filter Data for Comparison",
-        'select_years': "Select Year(s):",
-        'select_months_comp': "Select Month(s):",
-        'select_projects_comp': "Select Project(s):",
-        'generate_comparison_report_btn': "🚀 Generate Comparison Report",
-        'no_data_after_filter_comparison': "⚠️ {}",
-        'data_filtered_success': "✅ Data filtered successfully for comparison.",
-        'comparison_data_preview': "Comparison Data Preview",
-        'generating_comparison_excel': "Generating Comparison Excel Report...",
-        'comparison_excel_generated': "✅ Comparison Excel Report generated: {}",
-        'download_comparison_excel': "📥 Download Comparison Excel",
-        'generating_comparison_pdf': "Generating Comparison PDF Report...",
-        'comparison_pdf_generated': "✅ PDF Report generated: {}",
-        'download_comparison_pdf': "📥 Download Comparison PDF",
-        'failed_to_generate_comparison_excel': "❌ Failed to generate Comparison Excel report.",
-        'failed_to_generate_comparison_pdf': "❌ Failed to generate Comparison PDF report.",
-        'raw_data_preview_header': "Raw Input Data (First 100 rows)",
-        'no_raw_data': "No raw data loaded.",
-        'no_year_in_data': "No years in data to select.",
-        'user_guide': "User Guide",
-        'export_options': "Export Options",
-        'export_excel_option': "Export as Excel (.xlsx)",
-        'export_pdf_option': "Export as PDF (.pdf)",
-        'report_button': "Generate report",
-        'no_data': "No data after filtering",
-        'report_done': "Report created successfully",
-        'download_excel': "Download Excel",
-        'download_pdf': "Download PDF",
-        'warning_select_export_format': "Please select at least one report export format (Excel or PDF).",
-        'error_generating_report': "An error occurred while generating the report. Please try again.",
-        # Add new messages for "Compare One Project Over Time" mode
-        'select_single_project_warning': "Please select ONLY ONE project for this mode.",
-        'select_years_for_over_time_months': "Select the year(s) for comparison:",
-        'select_months_for_single_year': "Select month(s) within the chosen year:",
-        'comparison_over_years_note': "Note: You have selected multiple years. The report will compare the project's data across the selected years. Month selection will be ignored.",
-        'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
-        'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
-        'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year."
+    "vi": {
+        "title": "Công Cụ Tự Động Hóa Báo Cáo Giờ Làm Việc",
+        "intro_message": "Chào mừng bạn đến với Công Cụ Tự Động Hóa Báo Cáo Giờ Làm Việc! Vui lòng điều hướng qua các tab để tạo báo cáo của bạn.",
+        "tabs": ["Báo cáo Tiêu chuẩn", "Báo cáo So sánh", "Xem trước Dữ liệu", "Hướng dẫn"],
+        "upload_file_header": "Tải lên File Template Báo cáo Giờ làm việc (Time_report.xlsm)",
+        "upload_file_help": "Vui lòng tải lên file .xlsm của bạn có chứa các sheet 'Raw Data', 'Config_Year_Mode' và 'Config_Project_Filter'.",
+        "loading_data": "Đang tải dữ liệu và cấu hình...",
+        "data_loaded_success": "Dữ liệu và cấu hình đã tải thành công!",
+        "file_not_found_error": "Lỗi: Không tìm thấy file template.",
+        "error_loading_data": "Lỗi khi tải dữ liệu hoặc cấu hình.",
+        "select_analysis_mode": "Chọn Chế độ phân tích:",
+        "modes": ["Năm", "Tháng", "Tuần"],
+        "select_year": "Chọn Năm:",
+        "all_years": "Tất cả các Năm",
+        "select_months": "Chọn Tháng:",
+        "all_months": "Tất cả các Tháng",
+        "select_projects": "Chọn Dự án:",
+        "all_projects": "Tất cả các Dự án",
+        "generate_standard_report_btn": "Tạo Báo cáo Tiêu chuẩn",
+        "no_year_selected_error": "Vui lòng chọn một năm.",
+        "no_project_selected_warning_standard": "Vui lòng chọn ít nhất một dự án cho báo cáo tiêu chuẩn.",
+        "export_options": "Tùy chọn Xuất",
+        "export_excel_option": "Xuất ra Excel (.xlsx)",
+        "export_pdf_option": "Xuất ra PDF (.pdf)",
+        "warning_select_export_format": "Vui lòng chọn ít nhất một định dạng xuất (Excel hoặc PDF).",
+        "generating_excel_report": "Đang tạo báo cáo Excel...",
+        "generating_pdf_report": "Đang tạo báo cáo PDF...",
+        "report_done": "Báo cáo đã tạo thành công!",
+        "error_generating_report": "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
+        "download_excel": "Tải xuống Báo cáo Excel",
+        "download_pdf": "Tải xuống Báo cáo PDF",
+        "download_comparison_excel": "Tải xuống Báo cáo So sánh Excel",
+        "download_comparison_pdf": "Tải xuống Báo cáo So sánh PDF",
+        "comparison_report_mode": "Chọn Chế độ So sánh:",
+        "comparison_modes": {
+            "So Sánh Dự Án Trong Một Tháng": "So Sánh Dự Án Trong Một Tháng",
+            "So Sánh Dự Án Trong Một Năm": "So Sánh Dự Án Trong Một Năm",
+            "So Sánh Một Dự Án Qua Các Tháng/Năm": "So Sánh Một Dự Án Qua Các Tháng/Năm"
+        },
+        "select_comparison_years": "Chọn Năm để So sánh:",
+        "select_comparison_months": "Chọn Tháng để So sánh:",
+        "select_comparison_projects": "Chọn Dự án để So sánh:",
+        "generate_comparison_report_btn": "Tạo Báo cáo So sánh",
+        "no_year_selected_comparison": "Vui lòng chọn một năm để so sánh.",
+        "no_month_selected_comparison": "Vui lòng chọn một tháng để so sánh.",
+        "no_project_selected_comparison": "Vui lòng chọn ít nhất một dự án để so sánh.",
+        "multiple_years_warning": "Vui lòng chọn CHỈ MỘT năm khi so sánh các dự án trong một tháng hoặc cho một dự án qua các tháng.",
+        "multiple_months_warning": "Vui lòng chọn CHỈ MỘT tháng khi so sánh các dự án trong một tháng.",
+        "one_project_required": "Đối với 'So Sánh Một Dự Án Qua Các Tháng/Năm', vui lòng chọn CHỈ MỘT dự án.",
+        "preview_data_header": "Xem trước Dữ liệu Thô (100 hàng đầu tiên)",
+        "no_data_loaded": "Chưa có dữ liệu thô được tải. Vui lòng tải lên file template của bạn.",
+        "instructions_header": "Hướng dẫn",
+        "instructions_intro": "Công cụ này giúp tự động hóa việc tạo báo cáo giờ làm việc.",
+        "instructions_standard_report": "### 1. Báo cáo Tiêu chuẩn",
+        "instructions_standard_report_desc": "Tạo báo cáo chi tiết dựa trên năm, tháng và dự án đã chọn.",
+        "instructions_comparison_report": "### 2. Báo cáo So sánh",
+        "instructions_comparison_report_desc": "Tạo phân tích so sánh dựa trên các chế độ khác nhau:",
+        "compare_projects_in_month_desc": "So sánh nhiều dự án trong một tháng được chọn của một năm cụ thể.",
+        "compare_projects_in_year_desc": "So sánh nhiều dự án trong một năm được chọn (bao gồm tất cả các tháng).",
+        "compare_one_project_across_desc": "So sánh một dự án duy nhất qua nhiều tháng trong cùng một năm, HOẶC so sánh qua nhiều năm.",
+        "instructions_data_preview": "### 3. Xem trước Dữ liệu",
+        "instructions_data_preview_desc": "Tab này cho phép bạn xem 100 hàng đầu tiên của dữ liệu thô đã tải, giúp bạn kiểm tra định dạng và nội dung dữ liệu.",
+        "instructions_template_config": "### 4. Cấu hình File Template (Bên ngoài ứng dụng)",
+        "instructions_template_config_desc": "Công cụ đọc dữ liệu và cấu hình từ một file Excel template (thường là `Time_report.xlsm`). Đảm bảo rằng:",
+        "template_sheet_data": "Sheet 'Raw Data' chứa dữ liệu thời gian thô của bạn với các cột cần thiết như 'Year', 'MonthName', 'Project name', v.v.",
+        "template_sheet_config": "Sheet 'Config_Year_Mode' và 'Config_Project_Filter' có thể được sử dụng để đặt cấu hình mặc định, nhưng các lựa chọn trên giao diện sẽ ghi đè lên chúng.",
+        "common_errors_header": "### Lỗi thường gặp:",
+        "template_not_found": "Không tìm thấy file template: Đảm bảo `Time_report.xlsm` nằm cùng thư mục với ứng dụng này.",
+        "data_load_failure": "Không tải được dữ liệu thô: Kiểm tra định dạng dữ liệu và tên cột trong sheet 'Raw Data'.",
+        "language_select": "Chọn Ngôn ngữ:"
     }
 }
 
-# Lấy từ điển văn bản dựa trên lựa chọn ngôn ngữ hiện tại
+# Khởi tạo hoặc lấy ngôn ngữ từ session state
+if 'language' not in st.session_state:
+    st.session_state.language = "vi" # Mặc định là tiếng Việt
+
 def get_text(key):
-    return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
+    return LANGUAGES[st.session_state.language].get(key, f"<{key} not found>")
 
-# Header của ứng dụng
-col_logo_title, col_lang = st.columns([0.8, 0.2])
-with col_logo_title:
-    st.image("triac_logo.png", width=110) # Logo cố định
-    st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True) # Tiêu đề cố định
-    st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True) # Phụ đề cố định
+# ==============================================================================\
+# TIÊU ĐỀ ỨNG DỤNG
+# ==============================================================================\
+st.set_page_config(layout="wide")
+st.title(get_text('title'))
+st.write(get_text('intro_message'))
 
-with col_lang:
-    st.session_state.lang = st.radio(
-        get_text('lang_select'),
-        options=['vi', 'en'],
-        format_func=lambda x: get_text('language_' + x),
-        key='language_selector_main'
-    )
+# Thanh sidebar để chọn ngôn ngữ
+st.sidebar.header(get_text('language_select'))
+selected_language = st.sidebar.radio("", ["Tiếng Việt", "English"], 
+                                     index=0 if st.session_state.language == "vi" else 1)
 
+if selected_language == "Tiếng Việt":
+    st.session_state.language = "vi"
+else:
+    st.session_state.language = "en"
 
-# Check if template file exists
-if not os.path.exists(path_dict['template_file']):
-    st.error(get_text('template_not_found').format(path_dict['template_file']))
-    st.stop()
-
-# Load raw data and configurations once
-@st.cache_data(ttl=1800)
+# ==============================================================================\
+# TẢI DỮ LIỆU ĐẦU VÀO
+# ==============================================================================\
+@st.cache_data(ttl=3600) # Cache dữ liệu trong 1 giờ
 def cached_load():
-    df_raw = load_raw_data(path_dict['template_file'])
-    config_data = read_configs(path_dict['template_file'])
+    template_file = path_dict['template_file']
+    if not os.path.exists(template_file):
+        st.error(get_text('file_not_found_error'))
+        return None, None
+    
+    df_raw = load_raw_data(template_file)
+    config_data = read_configs(template_file)
     return df_raw, config_data
 
-with st.spinner(get_text('loading_data')):
-    df_raw, config_data = cached_load()
+df_raw, config_data = cached_load()
 
-if df_raw.empty:
-    st.error(get_text('failed_to_load_raw_data'))
-    st.stop()
+if df_raw is None or config_data is None:
+    st.warning(get_text('error_loading_data'))
+else:
+    st.sidebar.success(get_text('data_loaded_success'))
 
-# Get unique years, months, and projects from raw data for selectbox options
-all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist())
-month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-all_months = [m for m in month_order if m in df_raw['MonthName'].dropna().unique()]
-all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
+# ==============================================================================\
+# CÁC TAB CHÍNH CỦA ỨNG DỤNG
+# ==============================================================================\
+tab_names = [get_text('tabs')[0], get_text('tabs')[1], get_text('tabs')[2], get_text('tabs')[3]]
+tab_standard_report_main, tab_comparison_report_main, tab_data_preview, tab_instructions = st.tabs(tab_names)
 
-
-# Main interface tabs
-tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main = st.tabs([
-    get_text('tab_standard_report'),
-    get_text('tab_comparison_report'),
-    get_text('tab_data_preview'),
-    get_text('user_guide')
-])
-
-# =========================================================================
-# STANDARD REPORT TAB
-# =========================================================================
+# ==============================================================================\
+# TAB 1: BÁO CÁO TIÊU CHUẨN
+# ==============================================================================\
 with tab_standard_report_main:
-    st.header(get_text('standard_report_header'))
+    st.header(get_text('tabs')[0])
 
-    col1_std, col2_std, col3_std = st.columns(3)
-    with col1_std:
-        # State management for standard analysis mode
-        if 'standard_analysis_mode' not in st.session_state:
-            st.session_state.standard_analysis_mode = config_data['mode'] if config_data['mode'] in ['year', 'month', 'week'] else 'year'
+    if df_raw is not None and config_data is not None:
+        all_years = sorted(df_raw['Year'].unique().tolist(), reverse=True)
+        all_months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December']
+        all_projects = sorted(df_raw['Project name'].unique().tolist())
 
-        mode_options = ['year', 'month', 'week']
-        try:
-            mode_index = mode_options.index(st.session_state.standard_analysis_mode)
-        except ValueError:
-            mode_index = 0
-            st.session_state.standard_analysis_mode = mode_options[0]
+        analysis_mode = st.radio(get_text('select_analysis_mode'), get_text('modes'))
 
-        mode = st.selectbox(
-            get_text('select_analysis_mode'),
-            options=mode_options,
-            index=mode_index,
-            key='standard_mode_tab'
-        )
-        st.session_state.standard_analysis_mode = mode # Update state
+        # Lựa chọn Năm
+        selected_year_option = st.selectbox(get_text('select_year'), [get_text('all_years')] + all_years, index=0)
+        selected_year = selected_year_option if selected_year_option != get_text('all_years') else None
 
-    with col2_std:
-        # State management for standard selected year
-        if 'standard_selected_year' not in st.session_state:
-            st.session_state.standard_selected_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
-            
-        default_std_year_index = 0
-        if st.session_state.standard_selected_year in all_years:
-            default_std_year_index = all_years.index(st.session_state.standard_selected_year)
-        elif all_years:
-            st.session_state.standard_selected_year = all_years[0] # Fallback
-            default_std_year_index = 0
-        elif st.session_state.standard_selected_year is None: # No years available at all
-            default_std_year_index = None
+        # Lựa chọn Tháng (chỉ hiển thị nếu chế độ là "Tháng")
+        selected_months_standard = []
+        if analysis_mode == get_text('modes')[1]: # Tháng
+            selected_months_options = st.multiselect(get_text('select_months'), all_months, default=all_months)
+            selected_months_standard = selected_months_options if selected_months_options else []
+        elif analysis_mode == get_text('modes')[0]: # Năm
+            selected_months_standard = all_months # Mặc định chọn tất cả các tháng cho chế độ "Năm"
+        # Chế độ "Tuần" sẽ không lọc theo tháng cụ thể, sẽ xử lý logic tuần bên trong generate_reports_on_demand
 
-
-        selected_year = st.selectbox(
-            get_text('select_year'),
-            options=all_years,
-            index=default_std_year_index,
-            key='standard_year_tab'
-        )
-        st.session_state.standard_selected_year = selected_year # Update state
-
-        if selected_year is None:
-            st.warning(get_text('no_year_in_data'))
-
-    with col3_std:
-        # State management for standard selected months
-        if 'standard_selected_months' not in st.session_state:
-            st.session_state.standard_selected_months = config_data['months'] if config_data['months'] else all_months
-            
-        # Ensure default months are valid in current all_months
-        valid_default_months = [m for m in st.session_state.standard_selected_months if m in all_months]
-        if not valid_default_months and all_months: # Fallback if no valid default or if default is empty but options exist
-            valid_default_months = all_months # Select all months as default if nothing is selected
-
-        selected_months = st.multiselect(
-            get_text('select_months'),
-            options=all_months,
-            default=valid_default_months,
-            key='standard_months_tab'
-        )
-        st.session_state.standard_selected_months = selected_months # Update state
-
-
-    st.subheader(get_text('standard_project_selection_header'))
-
-    # Determine initial included projects based on config for default
-    initial_included_projects_config = config_data['project_filter_df'][
-        config_data['project_filter_df']['Include'].astype(str).str.lower() == 'yes'
-    ]['Project Name'].tolist()
-
-    # State management for standard project selection
-    if 'standard_selected_projects' not in st.session_state:
-        default_standard_projects = [p for p in initial_included_projects_config if p in all_projects]
-        if not default_standard_projects and all_projects:
-            default_standard_projects = all_projects # Default to all if config is empty
-        st.session_state.standard_selected_projects = default_standard_projects
-        
-    # Ensure default value for multiselect is valid
-    current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
-    if not current_std_projects_default and all_projects: # Fallback if selected projects are no longer valid or empty
-        current_std_projects_default = all_projects
-
-    standard_project_selection = st.multiselect(
-        get_text('standard_project_selection_text'),
-        options=all_projects,
-        default=current_std_projects_default,
-        key='standard_project_selection_tab'
-    )
-    st.session_state.standard_selected_projects = standard_project_selection # Update state
-
-
-    st.markdown("---")
-    st.subheader(get_text("export_options"))
-    export_excel_std = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
-    export_pdf_std = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_std')
-
-    if st.button(get_text('generate_standard_report_btn'), key='generate_standard_report_btn_tab'):
-        if not export_excel_std and not export_pdf_std:
-            st.warning(get_text("warning_select_export_format"))
-        elif selected_year is None:
-            st.error(get_text('no_year_selected_error'))
-        elif not standard_project_selection:
+        # Lựa chọn Dự án
+        selected_projects_standard = st.multiselect(get_text('select_projects'), all_projects, default=all_projects)
+        if not selected_projects_standard:
             st.warning(get_text('no_project_selected_warning_standard'))
-        else:
-            # Gọi hàm generate_reports_on_demand cho báo cáo tiêu chuẩn
-            try:
-                with st.spinner(get_text('generating_excel_report')): # Dùng chung spinner cho cả 2 loại báo cáo
-                    standard_report_output_paths = generate_reports_on_demand(
-                        df_raw=df_raw,
-                        config_data=config_data, # Truyền config_data hiện có nếu cần bên trong hàm
-                        selected_mode=mode,
-                        selected_year=selected_year,
-                        selected_months=selected_months,
-                        selected_project_names_standard=standard_project_selection,
-                        comparison_config_years=None, # Không áp dụng cho báo cáo tiêu chuẩn
-                        comparison_config_months=None, # Không áp dụng cho báo cáo tiêu chuẩn
-                        comparison_config_projects=None, # Không áp dụng cho báo cáo tiêu chuẩn
-                        comparison_report_mode=None, # Không áp dụng cho báo cáo tiêu chuẩn
-                        export_excel=export_excel_std,
-                        export_pdf=export_pdf_std,
-                        path_dict=path_dict
-                    )
-
-                if standard_report_output_paths:
-                    st.success(get_text('report_done'))
-                    if export_excel_std and standard_report_output_paths.get('standard_excel_path') and os.path.exists(standard_report_output_paths['standard_excel_path']):
-                        with open(standard_report_output_paths['standard_excel_path'], "rb") as f:
-                            st.download_button(
-                                get_text("download_excel"),
-                                data=f,
-                                file_name=os.path.basename(standard_report_output_paths['standard_excel_path']),
-                                use_container_width=True,
-                                key='download_excel_std_btn'
-                            )
-                    if export_pdf_std and standard_report_output_paths.get('standard_pdf_path') and os.path.exists(standard_report_output_paths['standard_pdf_path']):
-                        with open(standard_report_output_paths['standard_pdf_path'], "rb") as f:
-                            st.download_button(
-                                get_text("download_pdf"),
-                                data=f,
-                                file_name=os.path.basename(standard_report_output_paths['standard_pdf_path']),
-                                use_container_width=True,
-                                key='download_pdf_std_btn'
-                            )
-                else:
-                    st.warning(get_text('no_data_after_filter_standard'))
-
-            except Exception as e:
-                st.error(f"{get_text('error_generating_report')}: {e}")
-                st.exception(e) # Hiển thị chi tiết lỗi để debug
 
 
-# =========================================================================
-# COMPARISON REPORT TAB
-# =========================================================================
-with tab_comparison_report_main:
-    st.header(get_text('comparison_report_header'))
-
-    # Define the mapping from text key to (Vietnamese_internal_string, English_internal_string)
-    # This ensures the correct internal string is passed to backend, regardless of UI language
-    internal_comparison_modes_map = {
-        'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
-        'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
-        'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
-    }
-
-    # Khởi tạo giá trị mặc định nếu chưa có trong session_state
-    if 'selected_comparison_mode_key' not in st.session_state:
-        # Mặc định chọn key đầu tiên trong danh sách
-        st.session_state.selected_comparison_mode_key = list(internal_comparison_modes_map.keys())[0]
-
-    # Tạo list các options để hiển thị trong selectbox
-    # và một map để tìm key từ display text
-    display_options = []
-    display_to_key_map = {}
-    for key in internal_comparison_modes_map.keys():
-        display_text = get_text(key)
-        display_options.append(display_text)
-        display_to_key_map[display_text] = key
-
-    # Lấy giá trị hiển thị mặc định dựa trên key đã lưu
-    default_display_value = get_text(st.session_state.selected_comparison_mode_key)
-    
-    # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
-    # Nếu không tìm thấy, fallback về mục đầu tiên và cập nhật session_state
-    try:
-        current_index = display_options.index(default_display_value)
-    except ValueError:
-        # Giá trị mặc định không tìm thấy trong options hiện tại, fallback về đầu tiên
-        current_index = 0
-        st.session_state.selected_comparison_mode_key = display_to_key_map[display_options[0]]
-        default_display_value = display_options[0] # Cập nhật lại default_display_value cho đúng
-
-    selected_comparison_display = st.selectbox(
-        get_text('select_comparison_mode'),
-        options=display_options,
-        index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
-        key='comparison_mode_select_tab_main'
-    )
-    
-    # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
-    current_selected_key = display_to_key_map[selected_comparison_display]
-    if st.session_state.selected_comparison_mode_key != current_selected_key:
-        st.session_state.selected_comparison_mode_key = current_selected_key
-
-
-    # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
-    # Dựa trên key đã lưu và ngôn ngữ hiện tại
-    vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
-    if st.session_state.lang == 'vi':
-        comparison_mode = vi_val
-    else: # 'en'
-        comparison_mode = en_val
-
-    st.subheader(get_text('filter_data_for_comparison'))
-
-    comp_years = []
-    comp_months = []
-    comp_projects = []
-    validation_error = False # Flag to check input errors
-
-    # State management for comparison projects
-    if 'comparison_selected_projects' not in st.session_state:
-        st.session_state.comparison_selected_projects = [] # Default to empty
-
-    comp_projects = st.multiselect(
-        get_text('select_projects_comp'),
-        options=all_projects,
-        default=[p for p in st.session_state.comparison_selected_projects if p in all_projects], # Ensure default is valid
-        key='comp_projects_select_tab_common'
-    )
-    st.session_state.comparison_selected_projects = comp_projects # Update state
-
-
-    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
-        if len(comp_projects) != 1:
-            st.warning(get_text('select_single_project_warning'))
-            validation_error = True
-
-        # State management for selected years in "Over Time" mode
-        if 'comparison_selected_years_over_time' not in st.session_state:
-            st.session_state.comparison_selected_years_over_time = []
-
-        selected_years_over_time = st.multiselect(
-            get_text('select_years_for_over_time_months'),
-            options=all_years,
-            default=[y for y in st.session_state.comparison_selected_years_over_time if y in all_years], # Ensure default is valid
-            key='comp_years_select_tab_over_time'
-        )
-        st.session_state.comparison_selected_years_over_time = selected_years_over_time # Update state
-        comp_years = selected_years_over_time # Assign to comp_years for config
-
-        # State management for selected months in "Over Time" mode (if single year selected)
-        if 'comparison_selected_months_over_time' not in st.session_state:
-            st.session_state.comparison_selected_months_over_time = []
-
-
-        if len(selected_years_over_time) == 1:
-            st.info(get_text('comparison_over_months_note').format(selected_years_over_time[0]))
-            comp_months = st.multiselect(
-                get_text('select_months_for_single_year'),
-                options=all_months,
-                default=[m for m in st.session_state.comparison_selected_months_over_time if m in all_months], # Ensure default is valid
-                key='comp_months_select_tab_over_time'
-            )
-            st.session_state.comparison_selected_months_over_time = comp_months # Update state
-
-            if not comp_months:
-                st.warning(get_text('no_month_selected_for_single_year'))
-                validation_error = True
-
-        elif len(selected_years_over_time) > 1:
-            st.info(get_text('comparison_over_years_note'))
-            comp_months = [] # Months are ignored for multi-year comparison
-            st.session_state.comparison_selected_months_over_time = [] # Clear months state
-        else:
-            st.warning(get_text('no_comparison_criteria_selected'))
-            validation_error = True
-            comp_months = [] # Ensure empty
-            st.session_state.comparison_selected_months_over_time = [] # Clear months state
-
-    elif comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month", "So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-        col_comp1, col_comp2 = st.columns(2)
-        with col_comp1:
-            # State management for general comparison years
-            if 'comparison_selected_years_general' not in st.session_state:
-                st.session_state.comparison_selected_years_general = []
-
-            comp_years = st.multiselect(
-                get_text('select_years'),
-                options=all_years,
-                default=[y for y in st.session_state.comparison_selected_years_general if y in all_years], # Ensure default is valid
-                key='comp_years_select_tab_general'
-            )
-            st.session_state.comparison_selected_years_general = comp_years # Update state
-
-        with col_comp2:
-            # State management for general comparison months
-            if 'comparison_selected_months_general' not in st.session_state:
-                st.session_state.comparison_selected_months_general = []
-
-            if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-                comp_months = st.multiselect(
-                    get_text('select_months_comp'),
-                    options=all_months,
-                    default=[m for m in st.session_state.comparison_selected_months_general if m in all_months], # Ensure default is valid
-                    key='comp_months_select_tab_general'
-                )
-                st.session_state.comparison_selected_months_general = comp_months # Update state
+        if st.button(get_text('generate_standard_report_btn'), key='generate_std_report_btn'):
+            if not selected_year and selected_year_option != get_text('all_years'):
+                st.warning(get_text('no_year_selected_error'))
+            elif not selected_projects_standard:
+                st.warning(get_text('no_project_selected_warning_standard'))
             else:
-                # Clear months selection if mode changes
-                comp_months = []
-                st.session_state.comparison_selected_months_general = []
+                export_excel, export_pdf = False, False
+                with st.expander(get_text('export_options')):
+                    export_excel = st.checkbox(get_text('export_excel_option'), value=True, key='export_excel_std')
+                    export_pdf = st.checkbox(get_text('export_pdf_option'), value=True, key='export_pdf_std')
 
-        # Validation for "Compare Projects in a Month"
-        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-            if len(comp_years) != 1:
-                st.warning(get_text('no_year_selected_error'))
-                validation_error = True
-            if len(comp_months) != 1:
-                st.warning("Vui lòng chọn CHỈ MỘT tháng cho chế độ 'So Sánh Dự Án Trong Một Tháng'.")
-                validation_error = True
-            if not comp_projects:
-                st.warning(get_text('no_project_selected_warning_standard'))
-                validation_error = True
-        # Validation for "Compare Projects in a Year"
-        elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            if len(comp_years) != 1:
-                st.warning(get_text('no_year_selected_error'))
-                validation_error = True
-            if not comp_projects:
-                st.warning(get_text('no_project_selected_warning_standard'))
-                validation_error = True
-
-
-    st.markdown("---")
-    st.subheader(get_text("export_options"))
-    export_excel_comp = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_comp')
-    export_pdf_comp = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_comp')
-
-    if st.button(get_text('generate_comparison_report_btn'), key='generate_comparison_report_btn_tab'):
-        if not export_excel_comp and not export_pdf_comp:
-            st.warning(get_text("warning_select_export_format"))
-        elif validation_error: # Check if any validation error occurred above
-            st.error(get_text('error_generating_report')) # General error message for user input
-        else:
-            # Gọi hàm generate_reports_on_demand cho báo cáo so sánh
-            try:
-                with st.spinner(get_text('generating_comparison_excel')): # Dùng chung spinner
-                    comparison_report_output_paths = generate_reports_on_demand(
-                        df_raw=df_raw,
-                        config_data=config_data,
-                        selected_mode=None, # Không áp dụng cho báo cáo so sánh
-                        selected_year=None, # Không áp dụng cho báo cáo so sánh
-                        selected_months=None, # Không áp dụng cho báo cáo so sánh
-                        selected_project_names_standard=None, # Không áp dụng cho báo cáo so sánh
-                        comparison_config_years=comp_years,
-                        comparison_config_months=comp_months,
-                        comparison_config_projects=comp_projects,
-                        comparison_report_mode=comparison_mode,
-                        export_excel=export_excel_comp,
-                        export_pdf=export_pdf_comp,
-                        path_dict=path_dict
-                    )
-
-                if comparison_report_output_paths:
-                    st.success(get_text('report_done'))
-                    if export_excel_comp and comparison_report_output_paths.get('comparison_excel_path') and os.path.exists(comparison_report_output_paths['comparison_excel_path']):
-                        with open(comparison_report_output_paths['comparison_excel_path'], "rb") as f:
-                            st.download_button(
-                                get_text("download_comparison_excel"),
-                                data=f,
-                                file_name=os.path.basename(comparison_report_output_paths['comparison_excel_path']),
-                                use_container_width=True,
-                                key='download_comparison_excel_btn'
-                            )
-                    if export_pdf_comp and comparison_report_output_paths.get('comparison_pdf_path') and os.path.exists(comparison_report_output_paths['comparison_pdf_path']):
-                        with open(comparison_report_output_paths['comparison_pdf_path'], "rb") as f:
-                            st.download_button(
-                                get_text("download_comparison_pdf"),
-                                data=f,
-                                file_name=os.path.basename(comparison_report_output_paths['comparison_pdf_path']),
-                                use_container_width=True,
-                                key='download_comparison_pdf_btn'
-                            )
+                if not export_excel and not export_pdf:
+                    st.warning(get_text('warning_select_export_format'))
                 else:
-                    st.warning(get_text('no_data_after_filter_comparison').format("Không có dữ liệu sau khi lọc cho báo cáo so sánh."))
+                    with st.spinner(get_text('generating_excel_report') if export_excel else get_text('generating_pdf_report')):
+                        try:
+                            # Gọi hàm generate_reports_on_demand
+                            success, message, excel_file_path, pdf_file_path = generate_reports_on_demand(
+                                df_raw=df_raw,
+                                config_data=config_data, # Truyền config_data vào đây
+                                selected_mode=analysis_mode,
+                                selected_year=selected_year,
+                                selected_months=selected_months_standard,
+                                selected_project_names_standard=selected_projects_standard,
+                                comparison_config_years=[], # Không dùng cho báo cáo tiêu chuẩn
+                                comparison_config_months=[], # Không dùng cho báo cáo tiêu chuẩn
+                                comparison_config_projects=[], # Không dùng cho báo cáo tiêu chuẩn
+                                comparison_report_mode=None, # Không dùng cho báo cáo tiêu chuẩn
+                                path_dict=path_dict # Truyền path_dict vào đây
+                            )
 
-            except Exception as e:
-                st.error(f"{get_text('error_generating_report')}: {e}")
-                st.exception(e) # Hiển thị chi tiết lỗi để debug
+                            if success:
+                                st.success(get_text('report_done'))
+                                if excel_file_path and os.path.exists(excel_file_path):
+                                    with open(excel_file_path, "rb") as file:
+                                        st.download_button(
+                                            label=get_text('download_excel'),
+                                            data=file,
+                                            file_name=os.path.basename(excel_file_path),
+                                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                            key='download_std_excel'
+                                        )
+                                if pdf_file_path and os.path.exists(pdf_file_path):
+                                    with open(pdf_file_path, "rb") as file:
+                                        st.download_button(
+                                            label=get_text('download_pdf'),
+                                            data=file,
+                                            file_name=os.path.basename(pdf_file_path),
+                                            mime="application/pdf",
+                                            key='download_std_pdf'
+                                        )
+                            else:
+                                st.error(f"{get_text('error_generating_report')} {message}")
 
-# =========================================================================
-# DATA PREVIEW TAB
-# =========================================================================
-with tab_data_preview_main:
-    st.header(get_text('raw_data_preview_header'))
-    if not df_raw.empty:
+                        except Exception as e:
+                            st.error(f"{get_text('error_generating_report')} {e}")
+                            print(f"Error generating standard report: {e}")
+    else:
+        st.info(get_text('no_data_loaded'))
+
+
+# ==============================================================================\
+# TAB 2: BÁO CÁO SO SÁNH
+# ==============================================================================\
+with tab_comparison_report_main:
+    st.header(get_text('tabs')[1])
+
+    if df_raw is not None and config_data is not None:
+        all_years = sorted(df_raw['Year'].unique().tolist(), reverse=True)
+        all_months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                      'July', 'August', 'September', 'October', 'November', 'December']
+        all_projects = sorted(df_raw['Project name'].unique().tolist())
+
+        # Chọn chế độ so sánh
+        comparison_mode_key = st.radio(get_text('comparison_report_mode'), 
+                                       list(get_text('comparison_modes').keys()),
+                                       key='comp_mode_radio')
+        st.session_state.comparison_mode = comparison_mode_key # Cập nhật session state
+
+        # Lựa chọn Năm cho so sánh
+        if st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Tháng" or \
+           st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Năm":
+            comparison_selected_years_options = st.selectbox(get_text('select_comparison_years'), 
+                                                             [get_text('all_years')] + all_years,
+                                                             key='comp_year_select')
+            st.session_state.comparison_selected_years = [comparison_selected_years_options] if comparison_selected_years_options != get_text('all_years') else []
+            if st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Tháng" and \
+               len(st.session_state.comparison_selected_years) != 1:
+                st.warning(get_text('multiple_years_warning'))
+        elif st.session_state.comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm":
+             comparison_selected_years_options = st.multiselect(get_text('select_comparison_years'), 
+                                                                all_years, 
+                                                                default=st.session_state.comparison_selected_years,
+                                                                key='comp_years_multi')
+             st.session_state.comparison_selected_years = comparison_selected_years_options
+             if len(st.session_state.comparison_selected_years) == 0 and len(st.session_state.comparison_selected_months) == 0:
+                 st.warning("Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.")
+
+
+        # Lựa chọn Tháng cho so sánh
+        if st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Tháng":
+            comparison_selected_months_options = st.selectbox(get_text('select_comparison_months'), 
+                                                              all_months,
+                                                              key='comp_month_select')
+            st.session_state.comparison_selected_months = [comparison_selected_months_options] if comparison_selected_months_options else []
+            if len(st.session_state.comparison_selected_months) != 1:
+                st.warning(get_text('multiple_months_warning'))
+        elif st.session_state.comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm":
+            # Chỉ cho phép chọn tháng nếu chỉ có 1 năm được chọn
+            if len(st.session_state.comparison_selected_years) == 1:
+                comparison_selected_months_options = st.multiselect(get_text('select_comparison_months'), 
+                                                                    all_months, 
+                                                                    default=st.session_state.comparison_selected_months,
+                                                                    key='comp_months_multi')
+                st.session_state.comparison_selected_months = comparison_selected_months_options
+            elif len(st.session_state.comparison_selected_years) > 1:
+                st.info("Khi so sánh một dự án qua nhiều năm, lựa chọn tháng sẽ bị bỏ qua.")
+                st.session_state.comparison_selected_months = []
+            else:
+                st.session_state.comparison_selected_months = []
+
+
+        # Lựa chọn Dự án cho so sánh
+        if st.session_state.comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm":
+            comparison_selected_projects_options = st.selectbox(get_text('select_comparison_projects'), 
+                                                                all_projects,
+                                                                key='comp_project_select_single')
+            st.session_state.comparison_selected_projects = [comparison_selected_projects_options] if comparison_selected_projects_options else []
+            if len(st.session_state.comparison_selected_projects) != 1:
+                st.warning(get_text('one_project_required'))
+        else:
+            comparison_selected_projects_options = st.multiselect(get_text('select_comparison_projects'), 
+                                                                  all_projects, 
+                                                                  default=st.session_state.comparison_selected_projects,
+                                                                  key='comp_project_select_multi')
+            st.session_state.comparison_selected_projects = comparison_selected_projects_options
+            if not st.session_state.comparison_selected_projects:
+                st.warning(get_text('no_project_selected_comparison'))
+
+
+        if st.button(get_text('generate_comparison_report_btn'), key='generate_comp_report_btn'):
+            # Kiểm tra các điều kiện dựa trên chế độ so sánh
+            can_generate = True
+            if st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Tháng":
+                if not st.session_state.comparison_selected_years or len(st.session_state.comparison_selected_years) != 1:
+                    st.warning(get_text('multiple_years_warning'))
+                    can_generate = False
+                if not st.session_state.comparison_selected_months or len(st.session_state.comparison_selected_months) != 1:
+                    st.warning(get_text('multiple_months_warning'))
+                    can_generate = False
+                if not st.session_state.comparison_selected_projects:
+                    st.warning(get_text('no_project_selected_comparison'))
+                    can_generate = False
+            elif st.session_state.comparison_mode == "So Sánh Dự Án Trong Một Năm":
+                if not st.session_state.comparison_selected_years or len(st.session_state.comparison_selected_years) != 1:
+                    st.warning(get_text('multiple_years_warning')) # Ở đây là cần 1 năm, không phải nhiều năm
+                    can_generate = False
+                if not st.session_state.comparison_selected_projects:
+                    st.warning(get_text('no_project_selected_comparison'))
+                    can_generate = False
+            elif st.session_state.comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm":
+                if not st.session_state.comparison_selected_projects or len(st.session_state.comparison_selected_projects) != 1:
+                    st.warning(get_text('one_project_required'))
+                    can_generate = False
+                if not st.session_state.comparison_selected_years and not st.session_state.comparison_selected_months:
+                    st.warning("Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.")
+                    can_generate = False
+                if len(st.session_state.comparison_selected_years) > 1 and len(st.session_state.comparison_selected_months) > 0:
+                     st.warning("Bạn không thể so sánh nhiều năm VÀ nhiều tháng cùng lúc. Vui lòng chọn chỉ năm HOẶC chỉ tháng.")
+                     can_generate = False
+
+            if can_generate:
+                export_excel_comp, export_pdf_comp = False, False
+                with st.expander(get_text('export_options')):
+                    export_excel_comp = st.checkbox(get_text('export_excel_option'), value=True, key='export_excel_comp')
+                    export_pdf_comp = st.checkbox(get_text('export_pdf_option'), value=True, key='export_pdf_comp')
+
+                if not export_excel_comp and not export_pdf_comp:
+                    st.warning(get_text('warning_select_export_format'))
+                else:
+                    with st.spinner(get_text('generating_comparison_excel') if export_excel_comp else get_text('generating_comparison_pdf')):
+                        try:
+                            # Gọi hàm generate_reports_on_demand
+                            success, message, excel_file_path, pdf_file_path = generate_reports_on_demand(
+                                df_raw=df_raw,
+                                config_data=config_data, # THÊM DÒNG NÀY
+                                selected_mode=None, # Không dùng cho báo cáo so sánh
+                                selected_year=None, # Không dùng cho báo cáo so sánh
+                                selected_months=[], # Không dùng cho báo cáo so sánh
+                                selected_project_names_standard=[], # Không dùng cho báo cáo so sánh
+                                comparison_config_years=st.session_state.comparison_selected_years,
+                                comparison_config_months=st.session_state.comparison_selected_months,
+                                comparison_config_projects=st.session_state.comparison_selected_projects,
+                                comparison_report_mode=st.session_state.comparison_mode,
+                                path_dict=path_dict # ĐẢM BẢO DÒNG NÀY CÓ MẶT
+                            )
+                            
+                            if success:
+                                st.success(get_text('report_done'))
+                                if excel_file_path and os.path.exists(excel_file_path):
+                                    with open(excel_file_path, "rb") as file:
+                                        st.download_button(
+                                            label=get_text('download_comparison_excel'),
+                                            data=file,
+                                            file_name=os.path.basename(excel_file_path),
+                                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                            key='download_comp_excel'
+                                        )
+                                if pdf_file_path and os.path.exists(pdf_file_path):
+                                    with open(pdf_file_path, "rb") as file:
+                                        st.download_button(
+                                            label=get_text('download_comparison_pdf'),
+                                            data=file,
+                                            file_name=os.path.basename(pdf_file_path),
+                                            mime="application/pdf",
+                                            key='download_comp_pdf'
+                                        )
+                            else:
+                                st.error(f"{get_text('error_generating_report')} {message}")
+
+                        except Exception as e:
+                            st.error(f"{get_text('error_generating_report')} {e}")
+                            print(f"Error generating comparison report: {e}")
+    else:
+        st.info(get_text('no_data_loaded'))
+
+# ==============================================================================\
+# TAB 3: XEM TRƯỚC DỮ LIỆU
+# ==============================================================================\
+with tab_data_preview:
+    st.header(get_text('preview_data_header'))
+    if df_raw is not None:
         st.dataframe(df_raw.head(100))
     else:
-        st.info(get_text('no_raw_data'))
+        st.info(get_text('no_data_loaded'))
 
-# =========================================================================
-# USER GUIDE TAB
-# =========================================================================
-with tab_user_guide_main:
-    st.header(get_text('user_guide'))
-    st.markdown("""
-    **Chào mừng bạn đến với Công cụ tạo báo cáo thời gian Triac!**
+# ==============================================================================\
+# TAB 4: HƯỚNG DẪN
+# ==============================================================================\
+with tab_instructions:
+    st.header(get_text('instructions_header'))
+    st.write(get_text('instructions_intro'))
 
-    Công cụ này giúp bạn tạo ra các báo cáo thời gian chi tiết và so sánh từ dữ liệu thô của mình.
+    st.markdown(get_text('instructions_standard_report'))
+    st.write(get_text('instructions_standard_report_desc'))
 
-    ### 1. Báo cáo tiêu chuẩn
-    * **Chế độ phân tích:** Chọn cách bạn muốn phân tích dữ liệu (theo năm, tháng hoặc tuần).
-    * **Chọn năm/tháng:** Lọc dữ liệu theo năm và tháng cụ thể.
-    * **Lựa chọn dự án:** Chọn các dự án bạn muốn bao gồm trong báo cáo. Theo mặc định, công cụ sẽ chỉ bao gồm các dự án được đánh dấu 'yes' trong sheet 'Config_Project_Filter' của file template. Bạn có thể thay đổi lựa chọn này tại đây.
-    * **Tạo báo cáo:** Nhấn nút 'Tạo báo cáo tiêu chuẩn' để tạo file Excel và/hoặc PDF.
+    st.markdown(get_text('instructions_comparison_report'))
+    st.write(get_text('instructions_comparison_report_desc'))
+    st.markdown(f"- **{get_text('comparison_modes')['So Sánh Dự Án Trong Một Tháng']}:** {get_text('compare_projects_in_month_desc')}")
+    st.markdown(f"- **{get_text('comparison_modes')['So Sánh Dự Án Trong Một Năm']}:** {get_text('compare_projects_in_year_desc')}")
+    st.markdown(f"- **{get_text('comparison_modes')['So Sánh Một Dự Án Qua Các Tháng/Năm']}:** {get_text('compare_one_project_across_desc')}")
+    
+    st.markdown(get_text('instructions_data_preview'))
+    st.write(get_text('instructions_data_preview_desc'))
 
-    ### 2. Báo cáo so sánh
-    * **Chế độ so sánh:**
-        * **So Sánh Dự Án Trong Một Tháng:** So sánh hiệu suất của nhiều dự án trong một tháng cụ thể. Chọn một năm và một tháng, cùng với các dự án muốn so sánh.
-        * **So Sánh Dự Án Trong Một Năm:** So sánh hiệu suất của nhiều dự án trong một năm cụ thể. Chọn một năm và các dự án muốn so sánh. Lựa chọn tháng sẽ bị bỏ qua.
-        * **So Sánh Một Dự Án Qua Các Tháng/Năm:** So sánh hiệu suất của MỘT dự án duy nhất qua nhiều tháng trong cùng một năm, HOẶC so sánh qua nhiều năm.
-            * Nếu bạn chọn **một năm và nhiều tháng**: Báo cáo sẽ so sánh dự án đó qua các tháng đã chọn trong năm đó.
-            * Nếu bạn chọn **nhiều năm**: Báo cáo sẽ so sánh dự án đó qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.
-    * **Tạo báo cáo:** Nhấn nút 'Tạo báo cáo so sánh' để tạo file Excel và/hoặc PDF.
+    st.markdown(get_text('instructions_template_config'))
+    st.write(get_text('instructions_template_config_desc'))
+    st.markdown(f"- {get_text('template_sheet_data')}")
+    st.markdown(f"- {get_text('template_sheet_config')}")
 
-    ### 3. Xem trước dữ liệu
-    Tab này cho phép bạn xem 100 hàng đầu tiên của dữ liệu thô đã tải, giúp bạn kiểm tra định dạng và nội dung dữ liệu.
-
-    ### 4. Cấu hình file template (Bên ngoài ứng dụng)
-    Công cụ đọc dữ liệu và cấu hình từ một file Excel template (thường là `Timesheet_Template.xlsx`). Đảm bảo rằng:
-    * Sheet 'Raw Data' chứa dữ liệu thời gian thô của bạn với các cột cần thiết như 'Year', 'MonthName', 'Project name', v.v.
-    * Sheet 'Config_Year_Mode' và 'Config_Project_Filter' có thể được sử dụng để đặt cấu hình mặc định, nhưng các lựa chọn trên giao diện sẽ ghi đè lên chúng.
-
-    ### Lỗi thường gặp:
-    * **File template không tìm thấy:** Đảm bảo `Timesheet_Template.xlsx` nằm cùng thư mục với ứng dụng này.
-    * **Không tải được dữ liệu thô:** Kiểm tra định dạng dữ liệu trong sheet 'Raw Data' của template. Đảm bảo các cột như 'Year', 'MonthName', 'Project name' tồn tại và có định dạng hợp lệ.
-
-    ---
-    **Chúc bạn sử dụng hiệu quả!**
-    """, unsafe_allow_html=True)
+    st.markdown(get_text('common_errors_header'))
+    st.markdown(f"- **{get_text('template_not_found')}")
+    st.markdown(f"- **{get_text('data_load_failure')}")
