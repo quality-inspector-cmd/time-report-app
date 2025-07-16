@@ -24,12 +24,7 @@ csv_file_path = os.path.join(script_dir, "invited_emails.csv")
 @st.cache_data
 def load_invited_emails():
     try:
-        # Thử đọc file mà KHÔNG giả định có header.
-        # Điều này sẽ khiến cột đầu tiên có tên mặc định là 0.
         df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        
-        # Lấy dữ liệu từ cột đầu tiên (chỉ số 0), loại bỏ khoảng trắng và chuyển về chữ thường
-        # Đảm bảo cột được chuyển đổi thành chuỗi trước khi áp dụng .str
         emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
         return emails
     except FileNotFoundError:
@@ -39,10 +34,8 @@ def load_invited_emails():
         st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
         return []
 
-# Tải danh sách email được mời một lần
 INVITED_EMAILS = load_invited_emails()
 
-# Hàm ghi log truy cập (nếu cần)
 def log_user_access(email):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = {"Time": timestamp, "Email": email}
@@ -50,7 +43,6 @@ def log_user_access(email):
         st.session_state.access_log = []
     st.session_state.access_log.append(log_entry)
 
-# Logic xác thực người dùng
 if "user_email" not in st.session_state:
     st.set_page_config(page_title="Triac Time Report", layout="wide")
     st.title("🔐 Access authentication")
@@ -60,23 +52,22 @@ if "user_email" not in st.session_state:
         email = email_input.strip().lower()
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
-            log_user_access(email) # Kích hoạt lại hàm log nếu bạn muốn dùng
+            log_user_access(email)
             st.success("✅ Valid email! Entering application...")
-            st.rerun() # Tối ưu hóa việc reload
+            st.rerun()
         else:
             st.error("❌ Email is not on the invitation list.")
-    st.stop() # Dừng thực thi nếu chưa xác thực
+    st.stop()
 
 # ---------------------------
 # PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
 # ---------------------------
 
-# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
 st.set_page_config(
     page_title="Triac Time Report",
     page_icon="⏰",
     layout="wide",
-    initial_sidebar_state="expanded" # Giữ lại expanded để thanh sidebar mở mặc định
+    initial_sidebar_state="expanded"
 )
 
 st.markdown("""
@@ -87,10 +78,8 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hiển thị logo và tiêu đề
 col1, col2 = st.columns([0.12, 0.88])
 with col1:
-    # Đảm bảo file logo tồn tại trong thư mục gốc
     logo_path = "triac_logo.png"
     if os.path.exists(logo_path):
         st.image(logo_path, width=110)
@@ -100,11 +89,10 @@ with col2:
     st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True)
     st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True)
 
-# Thiết lập đa ngôn ngữ
 translations = {
     "English": {
-        "report_tab": "Standard Report", # Changed from "Report"
-        "compare_report_tab": "Comparison Report", # New tab for comparison
+        "report_tab": "Standard Report",
+        "compare_report_tab": "Comparison Report",
         "data_preview": "Data Preview",
         "user_guide": "User Guide",
 
@@ -120,6 +108,8 @@ translations = {
         "export_options": "Export Options",
         "export_excel_option": "Export as Excel (.xlsx)",
         "export_pdf_option": "Export as PDF (.pdf)",
+        "no_project_data_for_timeframe": "Some previously selected projects do not have data in the chosen time period and have been automatically deselected: {removed_projects}",
+
 
         # Comparison specific translations
         "comparison_mode": "Select Comparison Mode",
@@ -138,8 +128,8 @@ translations = {
         "select_criteria": "Please select enough criteria for comparison."
     },
     "Tiếng Việt": {
-        "report_tab": "Báo Cáo Tiêu Chuẩn", # Changed from "Report"
-        "compare_report_tab": "Báo Cáo So Sánh", # New tab for comparison
+        "report_tab": "Báo Cáo Tiêu Chuẩn",
+        "compare_report_tab": "Báo Cáo So Sánh",
         "data_preview": "Xem Dữ Liệu",
         "user_guide": "Hướng Dẫn Sử Dụng",
 
@@ -155,6 +145,7 @@ translations = {
         "export_options": "Tùy chọn xuất báo cáo",
         "export_excel_option": "Xuất ra Excel (.xlsx)",
         "export_pdf_option": "Xuất ra PDF (.pdf)",
+        "no_project_data_for_timeframe": "Một số dự án đã chọn trước đó không có dữ liệu trong khoảng thời gian đã chọn và đã được tự động bỏ chọn: {removed_projects}",
 
         # Comparison specific translations
         "comparison_mode": "Chọn Chế Độ So Sánh",
@@ -177,7 +168,6 @@ translations = {
 lang = st.sidebar.selectbox("Language / Ngôn ngữ", ["English", "Tiếng Việt"])
 T = translations[lang]
 
-# Gọi hàm setup_paths từ file logic báo cáo
 path_dict = setup_paths()
 
 @st.cache_data(ttl=1800)
@@ -190,15 +180,12 @@ def cached_read_configs():
 
 with st.spinner("Đang tải dữ liệu..."):
     df_raw = cached_load_data()
-    # Read configs for default values, but allow user override
     default_config_data = cached_read_configs()
 
-# Populate default options for selects
 all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist(), reverse=True)
 all_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
+all_projects = sorted(df_raw['Project name'].dropna().unique().tolist()) # Danh sách tất cả dự án gốc
 
-# Tạo các tab
 tab1, tab_comparison, tab2, tab3 = st.tabs([
     T["report_tab"],
     T["compare_report_tab"],
@@ -210,35 +197,68 @@ with tab1: # Báo cáo tiêu chuẩn
     st.header(T["report_tab"])
     col1, col2, col3 = st.columns(3)
     with col1:
-        # Sử dụng default value từ config_data nếu có, hoặc current year
         default_years = [default_config_data['year']] if default_config_data['year'] in all_years else []
         selected_years_standard = st.multiselect(
             T["year"],
             options=all_years,
-            default=default_years
+            default=default_years,
+            key="standard_report_years" # Thêm key để Streamlit quản lý trạng thái tốt hơn
         )
     with col2:
         selected_months_standard = st.multiselect(
             T["month"],
             options=all_months,
-            default=default_config_data['months']
+            default=default_config_data['months'],
+            key="standard_report_months" # Thêm key
         )
-    with col3:
-        # Tạo project_filter_df tạm thời từ lựa chọn của người dùng trong UI
-        default_included_projects = default_config_data['project_filter_df'][
-            default_config_data['project_filter_df']['Include'].str.lower() == 'yes'
-        ]['Project Name'].tolist()
+    
+    # --- LOGIC MỚI: Lọc dự án khả dụng dựa trên năm và tháng đã chọn ---
+    available_projects_for_timeframe = []
+    if selected_years_standard:
+        df_temp = df_raw[df_raw['Year'].isin(selected_years_standard)]
+        if selected_months_standard:
+            df_temp = df_temp[df_temp['MonthName'].isin(selected_months_standard)]
         
+        available_projects_for_timeframe = sorted(df_temp['Project name'].dropna().unique().tolist())
+    else:
+        # Nếu chưa chọn năm nào, tất cả dự án đều có thể có
+        available_projects_for_timeframe = all_projects
+
+    # Lấy các dự án mặc định từ config (nếu có) và lọc chúng qua danh sách khả dụng
+    default_included_projects_from_config = default_config_data['project_filter_df'][
+        default_config_data['project_filter_df']['Include'].str.lower() == 'yes'
+    ]['Project Name'].tolist()
+    
+    # Lấy lựa chọn dự án hiện tại của người dùng (nếu có trong session_state)
+    # Đây là nơi chúng ta sẽ lưu trữ và lấy lại lựa chọn của người dùng
+    if 'selected_projects_standard' not in st.session_state:
+        st.session_state.selected_projects_standard = default_included_projects_from_config
+    
+    # Kiểm tra các dự án đã chọn trước đó (nếu có) có còn trong danh sách khả dụng không
+    current_selected_projects = st.session_state.selected_projects_standard
+    
+    projects_to_keep = [proj for proj in current_selected_projects if proj in available_projects_for_timeframe]
+    projects_removed = [proj for proj in current_selected_projects if proj not in available_projects_for_timeframe]
+
+    if projects_removed:
+        st.warning(T["no_project_data_for_timeframe"].format(removed_projects=", ".join(projects_removed)))
+        st.session_state.selected_projects_standard = projects_to_keep # Cập nhật session_state
+
+    with col3:
+        # Sử dụng st.session_state.selected_projects_standard làm default
         selected_projects_standard = st.multiselect(
             T["project"],
-            options=all_projects,
-            default=default_included_projects
+            options=available_projects_for_timeframe, # CHỈ HIỂN THỊ CÁC DỰ ÁN CÓ DỮ LIỆU
+            default=st.session_state.selected_projects_standard, # SỬ DỤNG TRẠNG THÁI HIỆN TẠI
+            key="standard_report_projects" # Thêm key
         )
+        # Cập nhật lại session state khi người dùng thay đổi lựa chọn
+        st.session_state.selected_projects_standard = selected_projects_standard
 
     st.markdown("---") # Đường phân cách
     st.subheader(T["export_options"]) # Tiêu đề cho tùy chọn xuất
     export_excel_standard = st.checkbox(T["export_excel_option"], value=True, key="excel_standard_chk")
-    export_pdf_standard = st.checkbox(T["export_pdf_option"], value=True, key="pdf_standard_chk") # Mặc định xuất cả PDF
+    export_pdf_standard = st.checkbox(T["export_pdf_option"], value=True, key="pdf_standard_chk")
 
     if st.button(T["report_button"], use_container_width=True, key="generate_standard_report_btn"):
         if not selected_years_standard:
@@ -249,20 +269,21 @@ with tab1: # Báo cáo tiêu chuẩn
             st.warning("Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).")
         else:
             with st.spinner("Đang tạo báo cáo..."):
-                # Tạo project_filter_df dựa trên lựa chọn hiện tại của người dùng
                 user_project_filter_df = pd.DataFrame({
                     'Project Name': selected_projects_standard,
                     'Include': ['yes'] * len(selected_projects_standard)
                 })
 
+                # Kiểm tra user_project_filter_df.empty LÀ KHÔNG CẦN THIẾT NỮA
+                # vì đã kiểm tra selected_projects_standard ở trên
+                
                 config_standard = {
-                    'mode': 'year' if not selected_months_standard else 'month', # Hoặc mode khác nếu cần
+                    'mode': 'year' if not selected_months_standard else 'month',
                     'years': selected_years_standard,
                     'months': selected_months_standard,
                     'project_filter_df': user_project_filter_df
                 }
                 
-                # Áp dụng bộ lọc
                 df_filtered_standard = apply_filters(df_raw, config_standard)
 
                 if df_filtered_standard.empty:
@@ -306,8 +327,34 @@ with tab_comparison: # Báo cáo so sánh
         comp_years = st.multiselect(T["comp_years"], options=all_years, default=[datetime.now().year] if datetime.now().year in all_years else [], key="comp_years_select")
     with col2_comp:
         comp_months = st.multiselect(T["comp_months"], options=all_months, default=[], key="comp_months_select")
+    
+    # --- LOGIC TƯƠNG TỰ CHO TAB SO SÁNH (chỉ ví dụ, bạn có thể chỉnh sửa thêm) ---
+    available_projects_for_comp_timeframe = []
+    if comp_years:
+        df_temp_comp = df_raw[df_raw['Year'].isin(comp_years)]
+        if comp_months:
+            df_temp_comp = df_temp_comp[df_temp_comp['MonthName'].isin(comp_months)]
+        
+        available_projects_for_comp_timeframe = sorted(df_temp_comp['Project name'].dropna().unique().tolist())
+    else:
+        available_projects_for_comp_timeframe = all_projects
+
+    if 'selected_projects_comparison' not in st.session_state:
+        st.session_state.selected_projects_comparison = [] # Khởi tạo rỗng
+    
+    current_selected_projects_comp = st.session_state.selected_projects_comparison
+    projects_to_keep_comp = [proj for proj in current_selected_projects_comp if proj in available_projects_for_comp_timeframe]
+    projects_removed_comp = [proj for proj in current_selected_projects_comp if proj not in available_projects_for_comp_timeframe]
+
+    if projects_removed_comp:
+        st.warning(T["no_project_data_for_timeframe"].format(removed_projects=", ".join(projects_removed_comp)))
+        st.session_state.selected_projects_comparison = projects_to_keep_comp
+
     with col3_comp:
-        comp_projects = st.multiselect(T["comp_projects"], options=all_projects, default=[], key="comp_projects_select")
+        comp_projects = st.multiselect(T["comp_projects"], options=available_projects_for_comp_timeframe, default=st.session_state.selected_projects_comparison, key="comp_projects_select")
+        st.session_state.selected_projects_comparison = comp_projects # Cập nhật session state
+    # --- HẾT LOGIC TƯƠNG TỰ CHO TAB SO SÁNH ---
+
 
     comparison_config = {
         'years': comp_years,
@@ -365,7 +412,7 @@ with tab3: # Hướng dẫn sử dụng
         st.markdown("""
         #### Standard Report:
         - Select desired "Mode" (Year, Month, or Week).
-        - Choose specific "Year(s)", "Month(s)", and "Project(s)" to filter the data.
+        - Choose specific "Year(s)", "Month(s)", and "Project(s)" to filter the data. Note: The list of available projects will update based on selected years and months.
         - Select desired export formats (Excel, PDF, or both).
         - Click "Generate Report" and then download the generated files.
 
@@ -374,7 +421,7 @@ with tab3: # Hướng dẫn sử dụng
             - **Compare Projects in a Month:** Requires one year, one month, and multiple projects.
             - **Compare Projects in a Year:** Requires one year and multiple projects.
             - **Compare One Project Over Time (Months/Years):** Requires one project and multiple months/years.
-        - Select desired Years, Months, and Projects based on the chosen comparison mode.
+        - Select desired Years, Months, and Projects based on the chosen comparison mode. The list of available projects will update based on selected years and months.
         - Select desired export formats (Excel, PDF, or both).
         - Click "Generate Comparison Report" and then download the generated files.
         """)
@@ -382,7 +429,7 @@ with tab3: # Hướng dẫn sử dụng
         st.markdown("""
         #### Báo Cáo Tiêu Chuẩn:
         - Chọn "Chế độ" (Năm, Tháng, hoặc Tuần) mong muốn.
-        - Chọn "Năm", "Tháng", và "Dự án" cụ thể để lọc dữ liệu.
+        - Chọn "Năm", "Tháng", và "Dự án" cụ thể để lọc dữ liệu. Lưu ý: Danh sách dự án khả dụng sẽ được cập nhật dựa trên năm và tháng đã chọn.
         - Chọn định dạng xuất báo cáo (Excel, PDF hoặc cả hai).
         - Nhấp vào "Tạo báo cáo" và sau đó tải các file đã tạo.
 
@@ -391,7 +438,7 @@ with tab3: # Hướng dẫn sử dụng
             - **So Sánh Dự Án Trong Một Tháng:** Yêu cầu một năm, một tháng và nhiều dự án.
             - **So Sánh Dự Án Trong Một Năm:** Yêu cầu một năm và nhiều dự án (tháng là tất cả các tháng được chọn).
             - **So Sánh Một Dự Án Qua Các Tháng/Năm:** Yêu cầu một dự án và nhiều tháng/năm.
-        - Chọn Năm, Tháng và Dự án dựa trên chế độ so sánh đã chọn.
+        - Chọn Năm, Tháng và Dự án dựa trên chế độ so sánh đã chọn. Danh sách dự án khả dụng sẽ được cập nhật dựa trên năm và tháng đã chọn.
         - Chọn định dạng xuất báo cáo (Excel, PDF hoặc cả hai).
         - Nhấp vào "Tạo Báo Cáo So Sánh" và sau đó tải các file đã tạo.
         """)
