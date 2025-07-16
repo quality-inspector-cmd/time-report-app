@@ -416,33 +416,51 @@ with tab_comparison_report_main:
         'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
     }
 
-    # Create the options list for the selectbox and the mapping for internal values
-    selectbox_options = []
-    comparison_mode_value_map = {} # Maps display text to the internal value to be used by backend
+    # Khởi tạo giá trị mặc định nếu chưa có trong session_state
+    if 'selected_comparison_mode_key' not in st.session_state:
+        # Mặc định chọn key đầu tiên trong danh sách
+        st.session_state.selected_comparison_mode_key = list(internal_comparison_modes_map.keys())[0]
 
-    for key, (vi_val, en_val) in internal_comparison_modes_map.items():
-        display_text = get_text(key) # This gets the UI-language-specific display text
-        
-        # Determine the internal value to pass to a04ecaf1_1dae_4c90_8081_086cd7c7b725.py
-        # It should be the string that a04ecaf1_1dae_4c90_8081_086cd7c7b725.py expects.
-        # Since backend now accepts both VI and EN internal strings for a given mode,
-        # we pass the one matching the current UI language.
-        if st.session_state.lang == 'vi':
-            internal_value_for_backend = vi_val
-        else: # st.session_state.lang == 'en'
-            internal_value_for_backend = en_val
-            
-        selectbox_options.append(display_text)
-        comparison_mode_value_map[display_text] = internal_value_for_backend
+    # Tạo list các options để hiển thị trong selectbox
+    # và một map để tìm key từ display text
+    display_options = []
+    display_to_key_map = {}
+    for key in internal_comparison_modes_map.keys():
+        display_text = get_text(key)
+        display_options.append(display_text)
+        display_to_key_map[display_text] = key
+
+    # Lấy giá trị hiển thị mặc định dựa trên key đã lưu
+    default_display_value = get_text(st.session_state.selected_comparison_mode_key)
+    
+    # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
+    if default_display_value not in display_options:
+        default_display_value = display_options[0] # Fallback về mục đầu tiên
+        # Cập nhật session_state để phản ánh fallback
+        st.session_state.selected_comparison_mode_key = display_to_key_map[default_display_value]
+
 
     selected_comparison_display = st.selectbox(
         get_text('select_comparison_mode'),
-        options=selectbox_options, # Use the dynamically generated options
+        options=display_options,
+        index=display_options.index(default_display_value), # Đặt index dựa trên giá trị mặc định
         key='comparison_mode_select_tab_main'
     )
     
-    # Get the actual internal comparison_mode string to pass to backend functions
-    comparison_mode = comparison_mode_value_map[selected_comparison_display]
+    # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
+    # Đảm bảo chỉ cập nhật nếu có sự thay đổi thực sự để tránh loop không cần thiết
+    current_selected_key = display_to_key_map[selected_comparison_display]
+    if st.session_state.selected_comparison_mode_key != current_selected_key:
+        st.session_state.selected_comparison_mode_key = current_selected_key
+
+
+    # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
+    # Dựa trên key đã lưu và ngôn ngữ hiện tại
+    vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
+    if st.session_state.lang == 'vi':
+        comparison_mode = vi_val
+    else: # 'en'
+        comparison_mode = en_val
 
     st.subheader(get_text('filter_data_for_comparison'))
 
