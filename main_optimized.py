@@ -2,10 +2,24 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
-# Giữ nguyên các import khác
+
+# ==============================================================================
+# SỬA LỖI: THÊM LẠI DÒNG IMPORT TỪ FILE LOGIC BÁO CÁO CỦA BẠN
+# ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰM CÙNG THƯ MỤC
+# HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
+# ==============================================================================
+from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
+    setup_paths, load_raw_data, read_configs,
+    apply_filters, export_report, export_pdf_report
+)
+# ==============================================================================
 
 script_dir = os.path.dirname(__file__)
 csv_file_path = os.path.join(script_dir, "invited_emails.csv")
+
+# ---------------------------
+# PHẦN XÁC THỰC TRUY CẬP
+# ---------------------------
 
 @st.cache_data
 def load_invited_emails():
@@ -14,14 +28,15 @@ def load_invited_emails():
         # Điều này sẽ khiến cột đầu tiên có tên mặc định là 0.
         df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
         
-        # In ra để kiểm tra các cột được phát hiện
+        # In ra để kiểm tra các cột được phát hiện (hiển thị trong console)
+        print(f"DEBUG: File path being read: {csv_file_path}")
         print(f"DEBUG: Columns detected by pandas (after header=None): {df.columns.tolist()}")
         print(f"DEBUG: First 5 rows of DataFrame (after header=None):\n{df.head()}")
 
         # Lấy dữ liệu từ cột đầu tiên (chỉ số 0), loại bỏ khoảng trắng và chuyển về chữ thường
         emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
         
-        print(f"DEBUG: Loaded invited emails list: {emails}")
+        print(f"DEBUG: Loaded invited emails list: {emails}") # In ra danh sách email đã xử lý
         return emails
     except FileNotFoundError:
         print(f"ERROR: invited_emails.csv not found at {csv_file_path}")
@@ -32,10 +47,18 @@ def load_invited_emails():
         st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
         return []
 
+# Tải danh sách email được mời một lần
 INVITED_EMAILS = load_invited_emails()
 
-# ... (Giữ nguyên phần code xác thực người dùng và các phần khác) ...
+# Hàm ghi log truy cập
+def log_user_access(email):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {"Time": timestamp, "Email": email}
+    if "access_log" not in st.session_state:
+        st.session_state.access_log = []
+    st.session_state.access_log.append(log_entry)
 
+# Logic xác thực người dùng
 if "user_email" not in st.session_state:
     st.set_page_config(page_title="Triac Time Report", layout="wide")
     st.title("🔐 Access authentication")
@@ -43,19 +66,21 @@ if "user_email" not in st.session_state:
 
     if email_input:
         email = email_input.strip().lower()
-        print(f"DEBUG: User input email (processed): '{email}'")
+        print(f"DEBUG: User input email (processed): '{email}'") # In ra email người dùng nhập
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
-            # log_user_access(email) # Bỏ comment nếu muốn sử dụng
+            log_user_access(email) # Kích hoạt lại hàm log nếu bạn muốn dùng
             st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
-            st.rerun()
+            st.rerun() # Đã sửa từ experimental_rerun()
         else:
             st.error("❌ Email không có trong danh sách mời.")
-    st.stop()
+    st.stop() # Dừng thực thi nếu chưa xác thực
 
 # ---------------------------
+# PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
 # ---------------------------
 
+# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
 st.set_page_config(page_title="Triac Time Report", layout="wide")
 
 st.markdown("""
@@ -73,6 +98,7 @@ with col2:
     st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True)
     st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True)
 
+# Thiết lập đa ngôn ngữ
 translations = {
     "English": {
         "mode": "Select mode",
@@ -105,15 +131,18 @@ translations = {
 lang = st.sidebar.selectbox("Language / Ngôn ngữ", ["English", "Tiếng Việt"])
 T = translations[lang]
 
+# Gọi hàm setup_paths từ file logic báo cáo
 path_dict = setup_paths()
 
 @st.cache_data(ttl=1800)
 def cached_load():
+    # Gọi load_raw_data và read_configs từ file logic báo cáo
     return load_raw_data(path_dict), read_configs(path_dict)
 
-with st.spinner("Loading data..."):
+with st.spinner("Đang tải dữ liệu..."):
     df_raw, config_data = cached_load()
 
+# Tạo các tab
 tab1, tab2, tab3 = st.tabs(["Report", T["data_preview"], T["user_guide"]])
 
 with tab1:
@@ -126,7 +155,7 @@ with tab1:
     selected_projects = st.multiselect(T["project"], sorted(project_df['Project Name'].unique()), default=included)
 
     if st.button(T["report_button"], use_container_width=True):
-        with st.spinner("Generating report..."):
+        with st.spinner("Đang tạo báo cáo..."):
             config = {
                 'mode': mode,
                 'years': years,
