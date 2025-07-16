@@ -20,6 +20,31 @@ csv_file_path = os.path.join(script_dir, "invited_emails.csv")
 # Gọi hàm setup_paths ngay từ đầu để path_dict có sẵn
 path_dict = setup_paths()
 
+# ==============================================================================
+# KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
+# Thêm đoạn code này vào ĐÂY
+# ==============================================================================
+if 'comparison_mode' not in st.session_state:
+    st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
+
+if 'comparison_selected_years' not in st.session_state:
+    st.session_state.comparison_selected_years = [datetime.now().year] # Hoặc giá trị mặc định phù hợp
+
+if 'comparison_selected_months' not in st.session_state:
+    st.session_state.comparison_selected_months = [] # Hoặc giá trị mặc định phù hợp
+
+if 'comparison_selected_projects' not in st.session_state:
+    st.session_state.comparison_selected_projects = [] # Hoặc giá trị mặc định phù hợp
+
+if 'comparison_selected_months_over_time' not in st.session_state:
+    st.session_state.comparison_selected_months_over_time = [] # Khởi tạo là một danh sách rỗng hoặc giá trị mặc định phù hợp
+
+if 'selected_years' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
+    st.session_state.selected_years = [datetime.now().year]
+
+if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
+    st.session_state.selected_months = []
+
 # ---------------------------
 # PHẦN XÁC THỰC TRUY CẬP
 # ---------------------------
