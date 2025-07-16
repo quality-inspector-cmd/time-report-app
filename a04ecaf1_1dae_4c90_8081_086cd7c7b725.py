@@ -427,7 +427,7 @@ def export_comparison_report(df_comparison, comparison_config, path_dict, compar
         wb = writer.book
         ws = writer.sheets['Comparison Report']
 
-        ws.merge_cells('A1:D1')
+        # Dòng 420: Đảm bảo f-string được đóng đúng cách
         ws['A1'].value = f"BÁO CÁO SO SÁNH: {comparison_mode}"
         ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
 
