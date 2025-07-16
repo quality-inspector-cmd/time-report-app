@@ -46,10 +46,10 @@ def read_configs(path_dict):
         }
     except FileNotFoundError:
         print(f"Error: Template file not found at {path_dict['template_file']}")
-        return {'mode': 'year', 'year': datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
     except Exception as e:
         print(f"Error reading config: {e}")
-        return {'mode': 'year', 'year': datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
 
 
 def load_raw_data(path_dict):
@@ -190,23 +190,19 @@ def export_pdf_report(df, config, path_dict):
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        try:
-            pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True)
-        except RuntimeError:
-            print("Warning: DejaVuSansCondensed.ttf not found. PDF might not display Vietnamese characters correctly.")
-            pdf.add_font('Arial', '', 'arial.ttf', uni=True)
-
+        # Loại bỏ các dòng liên quan đến font DejaVuSans hoặc Arial để sử dụng font mặc định/tiêu chuẩn
+        pdf.set_font('helvetica', 'B', 16) # Sử dụng font tiêu chuẩn Helvetica
+        
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
-        pdf.set_font("DejaVuSans", 'B', 16)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("DejaVuSans", '', 12)
+        pdf.set_font("helvetica", '', 12) # Thay DejaVuSans bằng Helvetica
         pdf.ln(5)
         pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("DejaVuSans", '', 11)
+        pdf.set_font("helvetica", '', 11) # Thay DejaVuSans bằng Helvetica
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -215,7 +211,7 @@ def export_pdf_report(df, config, path_dict):
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_font("DejaVuSans", 'B', 11)
+                pdf.set_font("helvetica", 'B', 11) # Thay DejaVuSans bằng Helvetica
                 pdf.set_y(35)
                 if page_project_name:
                     pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -436,23 +432,19 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        try:
-            pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True) 
-        except RuntimeError:
-            print("Warning: DejaVuSansCondensed.ttf not found. PDF might not display Vietnamese characters correctly.")
-            pdf.add_font('Arial', '', 'arial.ttf', uni=True)
+        # Loại bỏ các dòng liên quan đến font DejaVuSans hoặc Arial để sử dụng font mặc định/tiêu chuẩn
+        pdf.set_font('helvetica', 'B', 16) # Sử dụng font tiêu chuẩn Helvetica
 
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
-        pdf.set_font("DejaVuSans", 'B', 16)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("DejaVuSans", '', 12)
+        pdf.set_font("helvetica", '', 12) # Thay DejaVuSans bằng Helvetica
         pdf.ln(5)
         pdf.cell(0, 10, f"Generated on: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("DejaVuSans", '', 11)
+        pdf.set_font("helvetica", '', 11) # Thay DejaVuSans bằng Helvetica
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -461,7 +453,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_font("DejaVuSans", 'B', 11)
+                pdf.set_font("helvetica", 'B', 11) # Thay DejaVuSans bằng Helvetica
                 pdf.set_y(35)
                 if page_project_name:
                     pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -477,8 +469,9 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         df_plot = df.copy() 
         ax.set_ylim(bottom=0)
 
-        plt.rcParams['font.family'] = 'DejaVu Sans'
-        plt.rcParams['font.sans-serif'] = ['DejaVu Sans']
+        # Đảm bảo không có các thiết lập font cho Matplotlib ảnh hưởng đến tiếng Việt
+        # plt.rcParams['font.family'] = 'DejaVu Sans' # Đã bị loại bỏ
+        # plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] # Đã bị loại bỏ
 
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
@@ -550,10 +543,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             charts_for_pdf.append((created_chart_path, chart_title, None))
 
         config_info = {
-            "Chế độ so sánh": comparison_mode,
-            "Năm": ', '.join(map(str, comparison_config['years'])),
-            "Tháng": ', '.join(comparison_config['months']),
-            "Dự án": ', '.join(comparison_config['selected_projects'])
+            "Che do so sanh": comparison_mode, # Đã bỏ dấu tiếng Việt
+            "Nam": ', '.join(map(str, comparison_config['years'])), # Đã bỏ dấu tiếng Việt
+            "Thang": ', '.join(comparison_config['months']), # Đã bỏ dấu tiếng Việt
+            "Du an": ', '.join(comparison_config['selected_projects']) # Đã bỏ dấu tiếng Việt
         }
         
         create_pdf_from_charts(charts_for_pdf, pdf_file, "TRIAC TIME REPORT - COMPARISON", config_info)
