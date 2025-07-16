@@ -52,7 +52,7 @@ matplotlib.rcParams['ps.fonttype'] = 42 # Type 42 (TrueType)
 def setup_paths():
     script_dir = os.path.dirname(__file__)
     return {
-        "template_file": os.path.join(script_dir, "Time Report Template.xlsm"),
+        "template_file": os.path.join(script_dir, "Time_report.xlsm"),
         "output_file": os.path.join(script_dir, "Triac_Time_Report.xlsx"),
         "pdf_report": os.path.join(script_dir, "Triac_Time_Report.pdf"),
         "comparison_output_file": os.path.join(script_dir, "Triac_Comparison_Report.xlsx"),
