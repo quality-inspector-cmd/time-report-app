@@ -6,9 +6,18 @@ from openpyxl.chart import BarChart, Reference
 from openpyxl.utils.dataframe import dataframe_to_rows
 from fpdf import FPDF
 from matplotlib import pyplot as plt
+import matplotlib.font_manager as fm # Import the font_manager
 import tempfile
 import re
 import shutil
+
+# --- Cấu hình font cho Matplotlib (thêm vào đầu file) ---
+# Đặt font mặc định cho matplotlib để tránh lỗi font Arial/DejaVuSans
+# Sử dụng font 'sans-serif' và liệt kê các font có khả năng có sẵn trên môi trường Linux
+plt.rcParams['font.family'] = 'sans-serif'
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Liberation Sans', 'Helvetica', 'Arial']
+# Đặt font cho ký tự unicode nếu cần, thường DejaVu Sans hỗ trợ tốt
+plt.rcParams['axes.unicode_minus'] = False # Đảm bảo dấu trừ hiển thị đúng
 
 # Hàm hỗ trợ làm sạch tên file
 def sanitize_filename(name):
@@ -183,8 +192,17 @@ def export_pdf_report(df, config, path_dict):
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_font('helvetica', 'B', 16) 
-        
+        # Sử dụng font mặc định của FPDF để tránh lỗi font
+        # Nếu bạn cần hỗ trợ tiếng Việt, bạn cần tải xuống một font unicode (ví dụ: DejaVuSansCondensed.ttf)
+        # và upload nó cùng với ứng dụng của bạn, sau đó uncomment và sửa đường dẫn
+        # try:
+        #     pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True)
+        #     pdf.set_font('DejaVuSans', '', 16)
+        # except RuntimeError:
+        #     print("Warning: DejaVuSansCondensed.ttf not found. PDF might not display Vietnamese characters correctly.")
+        #     # Fallback to Helvetica if custom font is not found
+        pdf.set_font('helvetica', 'B', 16) # Sử dụng font mặc định của FPDF để tránh lỗi
+
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
@@ -203,6 +221,7 @@ def export_pdf_report(df, config, path_dict):
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
+                # Dùng Helvetica cho tiêu đề biểu đồ trong PDF
                 pdf.set_font("helvetica", 'B', 11) 
                 pdf.set_y(35)
                 if page_project_name:
@@ -296,21 +315,29 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         print(f"DEBUG - apply_comparison_filters: df_filtered is empty after filtering. Returning empty DataFrame.")
         return pd.DataFrame(), f"Không có dữ liệu cho chế độ so sánh: {comparison_mode} với các lựa chọn hiện tại."
 
+    df_comparison = pd.DataFrame()
+    title = ""
+    error_message = ""
+
     if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
         if len(years) != 1 or len(months) != 1 or len(selected_projects) < 2:
-            print(f"DEBUG - apply_comparison_filters: Condition failed for 'Compare Projects in a Month'. Years: {len(years)}, Months: {len(months)}, Projects: {len(selected_projects)}")
-            return pd.DataFrame(), "Cần chọn MỘT năm, MỘT tháng và ít nhất HAI dự án cho chế độ này."
+            error_message = "Cần chọn MỘT năm, MỘT tháng và ít nhất HAI dự án cho chế độ này."
+            print(f"DEBUG - apply_comparison_filters: Condition failed for 'Compare Projects in a Month'. {error_message}")
+            return pd.DataFrame(), error_message
         
         df_comparison = df_filtered.groupby('Project name')['Hours'].sum().reset_index()
         df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
         print(f"DEBUG - apply_comparison_filters (Month Comparison): df_comparison head:\n{df_comparison.head()}")
+        print(f"DEBUG - apply_comparison_filters (Month Comparison): df_comparison dtypes:\n{df_comparison.dtypes}") # THÊM DÒNG NÀY
+        print(f"DEBUG - apply_comparison_filters (Month Comparison): 'Total Hours' unique values: {df_comparison['Total Hours'].unique()}") # THÊM DÒNG NÀY
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         if len(years) != 1 or len(selected_projects) < 2:
-            print(f"DEBUG - apply_comparison_filters: Condition failed for 'Compare Projects in a Year'. Years: {len(years)}, Projects: {len(selected_projects)}")
-            return pd.DataFrame(), "Cần chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
+            error_message = "Cần chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
+            print(f"DEBUG - apply_comparison_filters: Condition failed for 'Compare Projects in a Year'. {error_message}")
+            return pd.DataFrame(), error_message
         
         df_comparison = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
         
@@ -318,67 +345,79 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         existing_months = [m for m in month_order if m in df_comparison.columns]
         df_comparison = df_comparison[existing_months]
 
-        df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
+        df_comparison = df_comparison.reset_index().rename(columns={'Project name': 'Project Name'}) # Đảm bảo tên cột là 'Project Name'
         
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         print(f"DEBUG - apply_comparison_filters (Year Comparison): df_comparison head:\n{df_comparison.head()}")
+        print(f"DEBUG - apply_comparison_filters (Year Comparison): df_comparison dtypes:\n{df_comparison.dtypes}") # THÊM DÒNG NÀY
+        for col in df_comparison.columns:
+            if col not in ['Project Name']:
+                print(f"DEBUG - apply_comparison_filters (Year Comparison): '{col}' unique values: {df_comparison[col].unique()}") # THÊM DÒNG NÀY CHO TỪNG CỘT THÁNG
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
         print(f"DEBUG - apply_comparison_filters: Inside 'Compare One Project Over Time' mode.")
         if len(selected_projects) != 1:
-            print(f"DEBUG - apply_comparison_filters: More than one project selected. Returning error.")
-            return pd.DataFrame(), "Chế độ 'So Sánh Một Dự Án Qua Các Tháng/Năm' yêu cầu chọn CHỈ MỘT dự án."
+            error_message = "Chế độ 'So Sánh Một Dự Án Qua Các Tháng/Năm' yêu cầu chọn CHỈ MỘT dự án."
+            print(f"DEBUG - apply_comparison_filters: More than one project selected. {error_message}")
+            return pd.DataFrame(), error_message
         
         if not years and not months:
-            print(f"DEBUG - apply_comparison_filters: No years or months selected. Returning error.")
-            return pd.DataFrame(), "Cần chọn ít nhất một năm HOẶC một tháng để so sánh."
-
-        df_comparison = pd.DataFrame()
-        title = ""
+            error_message = "Cần chọn ít nhất một năm HOẶC một tháng để so sánh."
+            print(f"DEBUG - apply_comparison_filters: No years or months selected. {error_message}")
+            return pd.DataFrame(), error_message
 
         # Trường hợp 1: 1 dự án, 1 năm, nhiều tháng (chỉ filter tháng trong năm đó)
-        if len(years) == 1 and len(months) >= 2: 
+        if len(years) == 1 and len(months) >= 1: # Điều chỉnh: >= 1 tháng, vì có thể chỉ có 1 tháng nhưng vẫn muốn so sánh nếu user chọn
             print(f"DEBUG - apply_comparison_filters: Processing 1 project, 1 year ({years[0]}), multiple months ({months}).")
-            df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
+            df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().reset_index()
+            # Đảm bảo tất cả các tháng được chọn đều có trong DataFrame, điền 0 nếu không có
             month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-            existing_months = [m for m in month_order if m in df_comparison.columns]
-            df_comparison = df_comparison[existing_months] 
-            df_comparison = df_comparison.reset_index() # Giữ Year là cột
+            
+            # Tạo DataFrame đầy đủ các tháng mong muốn
+            full_month_df = pd.DataFrame({'MonthName': [m for m in month_order if m in months]})
+            df_comparison = pd.merge(full_month_df, df_comparison, on='MonthName', how='left').fillna(0)
+            df_comparison['Year'] = years[0] # Đảm bảo cột Year vẫn tồn tại sau merge/fill
+            
+            # Sắp xếp các tháng theo thứ tự tự nhiên
+            df_comparison['MonthName'] = pd.Categorical(df_comparison['MonthName'], categories=month_order, ordered=True)
+            df_comparison = df_comparison.sort_values(by='MonthName')
+            
+            # Đổi tên cột 'Hours' thành 'Total Hours' để nhất quán cho biểu đồ
+            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+            
+            title = f"Giờ của dự án {selected_projects[0]} trong năm {years[0]} theo tháng"
             
         # Trường hợp 2: 1 dự án, nhiều năm, không chọn tháng cụ thể (tổng hợp theo năm)
-        elif len(years) >= 2 and not months: 
+        elif len(years) >= 1 and not months: # Điều chỉnh: >= 1 năm, có thể so sánh 1 năm tổng hợp
             print(f"DEBUG - apply_comparison_filters: Processing 1 project, multiple years ({years}), no specific months.")
             df_comparison = df_filtered.groupby(['Year'])['Hours'].sum().reset_index()
             df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+            title = f"Giờ của dự án {selected_projects[0]} qua các năm"
             
         # Trường hợp 3: 1 dự án, nhiều tháng, không chọn năm cụ thể (tổng hợp theo tháng trên tất cả các năm có dữ liệu)
-        elif len(months) >= 2 and not years: 
+        elif len(months) >= 1 and not years: # Điều chỉnh: >= 1 tháng
             print(f"DEBUG - apply_comparison_filters: Processing 1 project, multiple months ({months}), no specific years.")
             df_comparison = df_filtered.groupby(['MonthName'])['Hours'].sum().reset_index()
             df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-            month_order_df = pd.DataFrame({'MonthName': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']})
-            df_comparison = pd.merge(month_order_df, df_comparison, on='MonthName', how='left').fillna(0)
+            month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            full_month_df = pd.DataFrame({'MonthName': [m for m in month_order if m in months]})
+            df_comparison = pd.merge(full_month_df, df_comparison, on='MonthName', how='left').fillna(0)
+            df_comparison['MonthName'] = pd.Categorical(df_comparison['MonthName'], categories=month_order, ordered=True)
+            df_comparison = df_comparison.sort_values(by='MonthName')
+            title = f"Giờ của dự án {selected_projects[0]} theo tháng (Tổng hợp các năm)"
             
-        # Trường hợp 4: 1 dự án, nhiều năm, và có chọn tháng cụ thể (VD: tháng 1 của 2023, tháng 1 của 2024, ...)
-        elif len(years) >= 2 and len(months) >= 1: 
-            print(f"DEBUG - apply_comparison_filters: Processing 1 project, multiple years ({years}), specific months ({months}).")
-            df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().reset_index()
-            month_to_num = {name: i for i, name in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], 1)}
-            df_comparison['MonthNum'] = df_comparison['MonthName'].map(month_to_num)
-            df_comparison['YearMonth'] = df_comparison['Year'].astype(str) + '-' + df_comparison['MonthNum'].astype(str).str.zfill(2)
-            df_comparison = df_comparison.sort_values(by=['Year', 'MonthNum'])
-            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-            df_comparison = df_comparison[['YearMonth', 'Total Hours']] 
-        
         else: # Các trường hợp không đủ dữ liệu hoặc không được hỗ trợ rõ ràng
-            print(f"DEBUG - apply_comparison_filters: No valid comparison combination for 'Compare One Project Over Time'.")
-            return pd.DataFrame(), "Cần chọn ít nhất HAI tháng HOẶC HAI năm để so sánh một dự án qua thời gian."
+            error_message = "Cần chọn ít nhất HAI tháng HOẶC HAI năm để so sánh một dự án qua thời gian."
+            print(f"DEBUG - apply_comparison_filters: No valid comparison combination for 'Compare One Project Over Time'. {error_message}")
+            return pd.DataFrame(), error_message
         
         print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): Final df_comparison head:\n{df_comparison.head()}")
         print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): Final df_comparison columns: {df_comparison.columns.tolist()}")
+        print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): df_comparison dtypes:\n{df_comparison.dtypes}") # THÊM DÒNG NÀY
+        for col in df_comparison.columns: # THÊM DÒNG NÀY ĐỂ KIỂM TRA TẤT CẢ CÁC CỘT
+            print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): '{col}' unique values: {df_comparison[col].unique()}")
 
-        title = f"So sánh giờ của dự án {selected_projects[0]} qua thời gian"
         return df_comparison, title
     
     print(f"DEBUG - apply_comparison_filters END: No matching comparison mode.")
@@ -408,58 +447,78 @@ def export_comparison_report(df_comparison, comparison_config, path_dict, compar
         ws.cell(row=info_row, column=2, value=', '.join(comparison_config['selected_projects']))
 
         if not df_comparison.empty:
-            chart = BarChart()
+            chart = BarChart() # BarChart vẫn dùng được cho nhiều chế độ
             chart.y_axis.title = "Giờ"
             
-            data_start_row = info_row + 2
+            # Cập nhật data_start_row để tính toán động
+            data_start_row = ws.max_row + 2 # Bắt đầu sau phần thông tin config và 1 dòng trống
+            
+            # Viết header của df_comparison vào Excel trước
+            for col_idx, col_name in enumerate(df_comparison.columns):
+                ws.cell(row=data_start_row, column=col_idx + 1, value=col_name)
+            
+            # Viết dữ liệu của df_comparison vào Excel
+            for r_idx, r in enumerate(dataframe_to_rows(df_comparison, index=False, header=False)):
+                for c_idx, cell_val in enumerate(r):
+                    ws.cell(row=data_start_row + 1 + r_idx, column=c_idx + 1, value=cell_val)
+            
+            # Cập nhật max_row sau khi ghi dữ liệu
+            current_max_row = data_start_row + len(df_comparison)
             
             if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
                 chart.title = "So sánh giờ theo Dự án"
                 chart.x_axis.title = "Dự án"
                 
-                data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison) -1)
-                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
+                # Cập nhật Reference dựa trên data_start_row và current_max_row
+                data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row + 1, max_row=current_max_row)
+                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row + 1, max_row=current_max_row)
                 
                 chart.add_data(data_ref, titles_from_data=False) 
                 chart.set_categories(cats_ref)
             
             elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-                chart.title = "So sánh giờ theo Dự án và Tháng"
-                chart.x_axis.title = "Dự án"
+                chart.title = "So sánh giờ giữa các dự án và Tháng"
+                chart.x_axis.title = "Dự án" # Trong biểu đồ cột/line này, trục x là dự án
                 
                 value_cols = [col for col in df_comparison.columns if col not in ['Project Name']]
                 
+                # Cần thêm từng series cho mỗi tháng
                 for idx, col_name in enumerate(value_cols):
-                    series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison)-1)
-                    chart.add_data(series, titles_from_data=True)
-
-                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
+                    # min_row là hàng chứa dữ liệu đầu tiên (không phải header)
+                    series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row + 1, max_row=current_max_row)
+                    chart.add_data(series, titles_from_data=True, from_rows=False) # from_rows=False if data is in columns
+                
+                # categories là tên các dự án
+                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, min_row=data_start_row + 1, max_row=current_max_row)
                 chart.set_categories(cats_ref)
-
+                
+                # Đặt loại biểu đồ là BarChart (stacked) hoặc ColumnChart (grouped)
+                chart.type = "col" # Mặc định là column chart (bar dọc)
+                chart.shape = 4 # Có thể thử các shape khác nhau
+            
             elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-                chart.title = "So sánh giờ của một dự án qua các tháng/năm"
-                chart.x_axis.title = "Thời gian (Năm)"
+                chart.title = "So sánh giờ của một dự án qua thời gian"
+                chart.x_axis.title = "Thời gian" # x_axis title sẽ được đặt cụ thể hơn trong chart_create function
 
-                value_cols = [col for col in df_comparison.columns if col not in ['Year', 'MonthName', 'YearMonth']] 
-                
-                for idx, col_name in enumerate(value_cols):
-                    series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison)-1)
-                    chart.add_data(series, titles_from_data=True)
-                
-                if 'Year' in df_comparison.columns:
-                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Year') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
+                # Dữ liệu cho biểu đồ sẽ là Total Hours, category là Year/MonthName/YearMonth
+                data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row + 1, max_row=current_max_row)
+                chart.add_data(data_ref, titles_from_data=False)
+
+                if 'Year' in df_comparison.columns and len(df_comparison['Year'].unique()) > 1:
+                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Year') + 1, min_row=data_start_row + 1, max_row=current_max_row)
+                    chart.x_axis.title = "Năm"
                 elif 'MonthName' in df_comparison.columns:
-                     cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('MonthName') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
-                elif 'YearMonth' in df_comparison.columns:
-                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('YearMonth') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
-                else: 
-                     cats_ref = Reference(ws, min_col=1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
-
+                     cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('MonthName') + 1, min_row=data_start_row + 1, max_row=current_max_row)
+                     chart.x_axis.title = "Tháng"
+                else: # Fallback to the first column if no specific time column
+                    cats_ref = Reference(ws, min_col=1, min_row=data_start_row + 1, max_row=current_max_row)
+                    chart.x_axis.title = df_comparison.columns[0] # Tên cột đầu tiên
+                
                 chart.set_categories(cats_ref)
+                chart.type = "col" # Vẫn có thể là col chart hoặc line chart tùy theo data
 
-
-            ws.add_chart(chart, f"A{info_row + len(df_comparison) + 5}")
-
+            ws.add_chart(chart, f"A{current_max_row + 5}") # Đặt biểu đồ sau dữ liệu và config
+            
         wb.save(output_file)
         return True
 
@@ -471,6 +530,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
+        # Sử dụng font mặc định của FPDF để tránh lỗi font
         pdf.set_font('helvetica', 'B', 16) 
 
         pdf.add_page()
@@ -510,6 +570,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         print(f"  Initial df_plot head:\n{df_plot.head()}")
         print(f"  Initial df_plot columns: {df_plot.columns.tolist()}")
         print(f"  df_plot shape: {df_plot.shape}")
+        print(f"  df_plot dtypes:\n{df_plot.dtypes}") # Thêm dòng này để kiểm tra dtype
 
         if df_plot.empty:
             print(f"DEBUG: df_plot is empty for mode '{mode}'. Skipping chart creation.")
@@ -524,20 +585,36 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             ax.set_xticks(df_plot['Project name'])
             ax.tick_params(axis='x', rotation=45, ha='right')
             ax.tick_params(axis='y', labelsize=8) 
+        
         elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             print(f"DEBUG: Plotting Line Chart for 'Compare Projects in a Year'.")
-            if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
-                df_plot = df_plot[df_plot['Project Name'] != 'Total']
-            
-            month_columns = [col for col in df_plot.columns if col not in ['Project Name']]
-            df_plot[month_columns] = df_plot[month_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
+            if 'Project Name' not in df_plot.columns: # KIỂM TRA ĐÂY
+                print(f"ERROR: 'Project Name' column not found in df_plot for 'Compare Projects in a Year' mode. Columns: {df_plot.columns.tolist()}")
+                plt.close(fig)
+                return None
 
-            df_plot.set_index('Project Name', inplace=True)
+            # df_plot.set_index('Project Name', inplace=True) # KHÔNG set index ở đây nữa
             
-            df_plot.T.plot(kind='line', ax=ax, colormap='viridis', marker='o') 
+            # Đảm bảo các cột tháng là số
+            month_columns = [col for col in df_plot.columns if col not in ['Project Name']]
+            for col in month_columns:
+                df_plot[col] = pd.to_numeric(df_plot[col], errors='coerce').fillna(0) # Chuyển đổi an toàn hơn
+
+            # Chuyển đổi định dạng để vẽ biểu đồ đường
+            # Chuyển đổi df_plot từ wide format sang long format để plot hiệu quả hơn
+            df_melted = df_plot.melt(id_vars=['Project Name'], var_name='Month', value_name='Hours')
             
-            ax.set_xticks(range(len(df_plot.columns))) 
-            ax.set_xticklabels(df_plot.columns, rotation=45, ha='right')
+            month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+            df_melted['Month'] = pd.Categorical(df_melted['Month'], categories=month_order, ordered=True)
+            df_melted = df_melted.sort_values(by='Month')
+
+            # Vẽ biểu đồ đường
+            for project in df_melted['Project Name'].unique():
+                df_project = df_melted[df_melted['Project Name'] == project]
+                ax.plot(df_project['Month'], df_project['Hours'], marker='o', label=project)
+            
+            ax.set_xticks(df_melted['Month'].unique())
+            ax.set_xticklabels(df_melted['Month'].unique(), rotation=45, ha='right')
             
             ax.legend(title="Dự án", bbox_to_anchor=(1.05, 1), loc='upper left') 
             ax.tick_params(axis='y', labelsize=8)
@@ -545,56 +622,36 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             print(f"DEBUG: Inside 'Compare One Project Over Time' plotting logic.")
-            if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
-                df_plot = df_plot[df_plot['Year'] != 'Total']
-            
-            # Trường hợp 1: 1 dự án, 1 năm, nhiều tháng (df_plot có cột 'Year' và các cột tháng)
-            # Sau unstack từ apply_comparison_filters: df_plot có dạng: Year | Month1 | Month2 | ...
-            is_single_year_multi_month = 'Year' in df_plot.columns and len(df_plot['Year'].unique()) == 1 and any(col in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] for col in df_plot.columns)
+            # Đảm bảo cột 'Total Hours' là số
+            df_plot['Total Hours'] = pd.to_numeric(df_plot['Total Hours'], errors='coerce').fillna(0)
 
-            if is_single_year_multi_month:
+            # Trường hợp 1: 1 dự án, 1 năm, nhiều tháng (df_plot có cột 'Year', 'MonthName', 'Total Hours')
+            # Cột Year có thể là số (float hoặc int) hoặc object (sau khi reset_index)
+            # Dòng code trong apply_comparison_filters đảm bảo df_comparison đã có Year và MonthName và Total Hours
+            if 'Year' in df_plot.columns and 'MonthName' in df_plot.columns and len(df_plot['Year'].unique()) == 1 and len(df_plot['MonthName'].unique()) > 1:
                 print(f"DEBUG: Plotting Case 1: 1 project, 1 year, multiple months.")
-                # Bỏ cột 'Year' và chuyển vị để các tháng thành index
-                df_plot = df_plot.drop(columns='Year', errors='ignore').T
-                df_plot.columns = ['Total Hours'] # Đặt tên cột là 'Total Hours' cho rõ ràng
                 
                 # Sắp xếp các tháng theo thứ tự tự nhiên
                 month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-                df_plot['MonthName_ordered'] = pd.Categorical(df_plot.index, categories=month_order_list, ordered=True)
+                df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
                 df_plot = df_plot.sort_values(by='MonthName_ordered')
-                df_plot.drop(columns='MonthName_ordered', inplace=True)
-
-                print(f"DEBUG: df_plot after transpose and sort:\n{df_plot.head()}")
-                print(f"DEBUG: df_plot index (x-axis labels): {df_plot.index.tolist()}")
-
-                ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon')
-                x_label = f"Tháng ({df.iloc[0]['Year']})" if not df.empty and 'Year' in df.columns else "Tháng"
-                ax.set_xticks(df_plot.index)
+                
+                ax.plot(df_plot['MonthName'], df_plot['Total Hours'], marker='o', color='salmon')
+                x_label = f"Tháng ({df_plot['Year'].iloc[0]})"
+                ax.set_xticks(df_plot['MonthName'])
             
             # Trường hợp 2: 1 dự án, nhiều năm (df_plot có cột 'Year' và 'Total Hours')
-            elif 'Year' in df_plot.columns and 'Total Hours' in df_plot.columns and not any(col in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] for col in df_plot.columns):
+            elif 'Year' in df_plot.columns and 'Total Hours' in df_plot.columns and len(df_plot['Year'].unique()) > 1:
                 print(f"DEBUG: Plotting Case 2: 1 project, multiple years.")
+                df_plot['Year'] = pd.to_numeric(df_plot['Year'], errors='coerce') # Đảm bảo năm là số
                 df_plot = df_plot.sort_values(by='Year')
                 ax.plot(df_plot['Year'], df_plot['Total Hours'], marker='o', color='salmon')
                 x_label = "Năm"
                 ax.set_xticks(df_plot['Year'])
 
-            # Trường hợp 3: 1 dự án, nhiều tháng qua nhiều năm (df_plot có cột 'YearMonth' và 'Total Hours')
-            elif 'YearMonth' in df_plot.columns and 'Total Hours' in df_plot.columns:
-                print(f"DEBUG: Plotting Case 3: 1 project, multiple months across multiple years.")
-                df_plot = df_plot.sort_values(by='YearMonth')
-                ax.plot(df_plot['YearMonth'], df_plot['Total Hours'], marker='o', color='salmon')
-                x_label = "Thời gian (Năm-Tháng)"
-                # Điều chỉnh tần suất hiển thị nhãn trục X nếu có quá nhiều điểm
-                if len(df_plot['YearMonth']) > 12: 
-                    step = max(1, len(df_plot['YearMonth']) // 6) 
-                    ax.set_xticks(df_plot['YearMonth'].iloc[::step])
-                else:
-                    ax.set_xticks(df_plot['YearMonth'])
-
-            # Trường hợp 4: 1 dự án, chỉ có tháng được chọn (tổng hợp tháng 1 qua tất cả các năm)
-            elif 'MonthName' in df_plot.columns and 'Total Hours' in df_plot.columns:
-                print(f"DEBUG: Plotting Case 4: 1 project, specific months (aggregated across years).")
+            # Trường hợp 3: 1 dự án, nhiều tháng, không chọn năm cụ thể (tổng hợp theo tháng trên tất cả các năm có dữ liệu)
+            elif 'MonthName' in df_plot.columns and 'Total Hours' in df_plot.columns and len(df_plot['MonthName'].unique()) > 1:
+                print(f"DEBUG: Plotting Case 3: 1 project, multiple months (aggregated across years).")
                 month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                 df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
                 df_plot = df_plot.sort_values(by='MonthName_ordered')
@@ -603,8 +660,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                 ax.set_xticks(df_plot['MonthName'])
             
             else:
-                print(f"Warning: No suitable plotting data structure found for 'Compare One Project Over Time' mode. df_plot columns: {df_plot.columns.tolist()}")
+                print(f"Warning: No suitable plotting data structure found for 'Compare One Project Over Time' mode based on current df_plot. Columns: {df_plot.columns.tolist()}")
                 ax.text(0.5, 0.5, "Không có dữ liệu để vẽ biểu đồ line.", horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
+                plt.close(fig) # Đóng figure nếu không vẽ được gì
+                return None
 
 
             plt.xticks(rotation=45, ha='right')
@@ -614,23 +673,24 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         ax.set_xlabel(x_label) 
         ax.set_ylabel(y_label)
         plt.tight_layout()
-        fig.savefig(img_path, dpi=200)
-        plt.close(fig)
-        print(f"DEBUG: Chart saved to {img_path}")
-        return img_path
+        
+        # Đảm bảo chỉ lưu ảnh nếu có dữ liệu để vẽ
+        if not df_plot.empty:
+            fig.savefig(img_path, dpi=200)
+            print(f"DEBUG: Chart saved to {img_path}")
+            plt.close(fig)
+            return img_path
+        else:
+            plt.close(fig)
+            return None
+
 
     try:
         chart_title = f"Báo cáo so sánh: {comparison_mode}"
         x_label = ""
         y_label = "Tổng số giờ"
 
-        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-            x_label = "Dự án"
-        elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            x_label = "Tháng" 
-        elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            pass # x_label sẽ được set trong create_comparison_chart dựa trên case cụ thể
-        
+        # Pass x_label and y_label to create_comparison_chart, it will adjust internally
         comp_chart_path = os.path.join(tmp_dir, "comparison_chart.png")
         print(f"DEBUG: Attempting to create comparison chart at {comp_chart_path}")
         created_chart_path = create_comparison_chart(df_comparison.copy(), comparison_mode, chart_title, x_label, y_label, comp_chart_path)
