@@ -1,3 +1,4 @@
+# ====== FILE 1: main_optimized.py ======
 import streamlit as st
 import pandas as pd
 import os
@@ -34,29 +35,29 @@ translations = {
         "year": "Select year(s):",
         "month": "Select month(s):",
         "project": "Select project(s):",
-        "report_button": "\ud83d\ude80 Generate report",
-        "no_data": "\u26a0\ufe0f No data after filtering.",
-        "report_done": "\u2705 Report created successfully",
-        "download_excel": "\ud83d\udcc5 Download Excel",
-        "download_pdf": "\ud83d\udcc4 Download PDF",
-        "data_preview": "\ud83d\udcc2 Data preview",
-        "user_guide": "\ud83d\udcd8 User Guide",
+        "report_button": "🚀 Generate report",
+        "no_data": "⚠️ No data after filtering.",
+        "report_done": "✅ Report created successfully",
+        "download_excel": "📥 Download Excel",
+        "download_pdf": "📄 Download PDF",
+        "data_preview": "📂 Data preview",
+        "user_guide": "📘 User Guide",
     },
     "Tiếng Việt": {
         "mode": "Chọn chế độ phân tích:",
         "year": "Chọn năm:",
         "month": "Chọn tháng:",
         "project": "Chọn dự án:",
-        "report_button": "\ud83d\ude80 Tạo báo cáo",
-        "no_data": "\u26a0\ufe0f Không có dữ liệu sau khi lọc.",
-        "report_done": "\u2705 Đã tạo báo cáo",
-        "download_excel": "\ud83d\udcc5 Tải Excel",
-        "download_pdf": "\ud83d\udcc4 Tải PDF",
-        "data_preview": "\ud83d\udcc2 Xem dữ liệu",
-        "user_guide": "\ud83d\udcd8 Hướng dẫn sử dụng",
+        "report_button": "🚀 Tạo báo cáo",
+        "no_data": "⚠️ Không có dữ liệu sau khi lọc.",
+        "report_done": "✅ Đã tạo báo cáo",
+        "download_excel": "📥 Tải Excel",
+        "download_pdf": "📄 Tải PDF",
+        "data_preview": "📂 Xem dữ liệu",
+        "user_guide": "📘 Hướng dẫn sử dụng",
     }
 }
-lang = st.sidebar.selectbox("\ud83c\udf10 Language / Ngôn ngữ", ["English", "Tiếng Việt"])
+lang = st.sidebar.selectbox("🌐 Language / Ngôn ngữ", ["English", "Tiếng Việt"])
 T = translations[lang]
 
 # --- PATHS ---
@@ -71,7 +72,7 @@ def cached_load_raw_data():
 def cached_read_configs():
     return read_configs(path_dict)
 
-with st.spinner("\ud83d\udd04 Loading data..."):
+with st.spinner("🔄 Loading data..."):
     df_raw = cached_load_raw_data()
     config_data = cached_read_configs()
 
@@ -89,7 +90,7 @@ with tab1:
 
     st.markdown("---")
     if st.button(T["report_button"], use_container_width=True):
-        with st.spinner("\ud83d\udcca Generating report..."):
+        with st.spinner("📊 Generating report..."):
             config = {
                 'mode': mode,
                 'years': years,
