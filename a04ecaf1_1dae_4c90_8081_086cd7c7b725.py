@@ -460,7 +460,26 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
 
                 max_row_chart = data_start_row + len(df_chart_data) - 1
 
-                if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:<br>                    chart = BarChart()<br>                    chart.title = "So sánh giờ theo dự án"<br>                    chart.x_axis.title = "Dự án"<br>                    chart.y_axis.title = "Giờ"<br>                    <br>                    data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row, max_row=max_row_chart)<br>                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row, max_row=max_row_chart) <br>                    <br>                    chart.add_data(data_ref, titles_from_data=False) <br>                    chart.set_categories(cats_ref)<br>                <br>                elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:<br>                    chart = LineChart()<br>                    chart.title = "So sánh giờ theo dự án và tháng"<br>                    chart.x_axis.title = "Tháng"<br>                    chart.y_axis.title = "Giờ"<br><br>                    month_cols = [col for col in df_comparison.columns if col not in ['Project Name', 'Total Hours']]<br>                    
+                if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
+                    chart = BarChart()
+                    chart.title = "So sánh giờ theo dự án"
+                    chart.x_axis.title = "Dự án"
+                    chart.y_axis.title = "Giờ"
+                    
+                    data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row, max_row=max_row_chart)
+                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row, max_row=max_row_chart) 
+                    
+                    chart.add_data(data_ref, titles_from_data=False) 
+                    chart.set_categories(cats_ref)
+                
+                elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
+                    chart = LineChart()
+                    chart.title = "So sánh giờ theo dự án và tháng"
+                    chart.x_axis.title = "Tháng"
+                    chart.y_axis.title = "Giờ"
+
+                    month_cols = [col for col in df_comparison.columns if col not in ['Project Name', 'Total Hours']]
+                    
                     # Cần lấy các tháng theo thứ tự đúng cho biểu đồ LineChart
                     month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                     ordered_month_cols = [m for m in month_order if m in month_cols]
@@ -468,8 +487,11 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                     # Lấy phạm vi cho danh mục (các tháng)
                     # Giả định các tháng nằm cạnh nhau trong bảng và bắt đầu từ một cột cụ thể
                     if ordered_month_cols:
-                        min_col_month = ws.cell(row=1, column=1, value='Project Name').column + df_comparison.columns.get_loc(ordered_month_cols[0]) 
-                        max_col_month = ws.cell(row=1, column=1, value='Project Name').column + df_comparison.columns.get_loc(ordered_month_cols[-1]) 
+                        min_col_month_index = df_comparison.columns.get_loc(ordered_month_cols[0])
+                        max_col_month_index = df_comparison.columns.get_loc(ordered_month_cols[-1])
+                        # openpyxl Reference uses 1-based indexing
+                        min_col_month = min_col_month_index + 1 
+                        max_col_month = max_col_month_index + 1
                         cats_ref = Reference(ws, min_col=min_col_month, min_row=1, max_col=max_col_month)
                     else:
                         print("Không tìm thấy cột tháng để tạo biểu đồ.")
@@ -490,7 +512,10 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                     
                     chart.set_categories(cats_ref)
 
-                elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:<br>                    # Lấy tên cột chứa tổng giờ cho biểu đồ<br>                    total_hours_col_name = [col for col in df_comparison.columns if 'Total Hours' in col][0] if [col for col in df_comparison.columns if 'Total Hours' in col] else 'Total Hours'<br>                    
+                elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
+                    # Lấy tên cột chứa tổng giờ cho biểu đồ
+                    total_hours_col_name = [col for col in df_comparison.columns if 'Total Hours' in col][0] if [col for col in df_comparison.columns if 'Total Hours' in col] else 'Total Hours'
+                    
                     if 'MonthName' in df_comparison.columns and len(comparison_config['years']) == 1:
                         # Biểu đồ cột/đường cho Tổng giờ theo Tháng (trong một năm)
                         chart = BarChart() # Sử dụng BarChart cho từng tháng, hoặc LineChart nếu muốn thể hiện xu hướng
@@ -566,7 +591,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         pdf.output(output_path, "F")
         print(f"DEBUG: PDF report generated at {output_path}")
 
-    def create_comparison_chart(df, mode, title, x_label, y_label, img_path):
+    def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
         fig, ax = plt.subplots(figsize=(12, 7))  
         
         df_plot = df.copy()  
@@ -619,18 +644,18 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             plt.tight_layout() # Điều chỉnh layout để tránh nhãn bị cắt
 
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            selected_project = comparison_config['selected_projects'][0]
-            if 'MonthName' in df_plot.columns and len(comparison_config['years']) == 1:
+            selected_project = comparison_config_inner['selected_projects'][0]
+            if 'MonthName' in df_plot.columns and len(comparison_config_inner['years']) == 1:
                 # Biểu đồ cột cho tổng giờ theo tháng của một dự án (trong một năm)
                 # Dữ liệu df_plot đã được sắp xếp theo MonthName trong apply_comparison_filters
                 total_hours_col = [col for col in df_plot.columns if 'Total Hours' in col][0] if [col for col in df_plot.columns if 'Total Hours' in col] else 'Total Hours'
                 
                 df_plot.plot(x='MonthName', y=total_hours_col, kind='bar', ax=ax, color='lightcoral')
-                ax.set_title(f"Tổng giờ dự án {selected_project} năm {comparison_config['years'][0]} theo tháng")
+                ax.set_title(f"Tổng giờ dự án {selected_project} năm {comparison_config_inner['years'][0]} theo tháng")
                 ax.set_xlabel("Tháng")
                 ax.set_ylabel("Tổng giờ")
                 plt.xticks(rotation=45, ha='right')
-            elif 'Year' in df_plot.columns and len(comparison_config['years']) > 1:
+            elif 'Year' in df_plot.columns and len(comparison_config_inner['years']) > 1:
                 # Biểu đồ đường cho tổng giờ theo năm của một dự án (qua nhiều năm)
                 total_hours_col = [col for col in df_plot.columns if 'Total Hours' in col][0] if [col for col in df_plot.columns if 'Total Hours' in col] else 'Total Hours'
 
@@ -707,8 +732,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             x_label = ""
             y_label = ""
 
-        # Gọi hàm tạo biểu đồ chính
-        created_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title_detail, x_label, y_label, img_path)
+        # Gọi hàm tạo biểu đồ chính, truyền comparison_config_inner
+        created_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title_detail, x_label, y_label, img_path, comparison_config)
         
         if created_chart_path:
             charts_for_pdf.append((created_chart_path, chart_title_detail, ', '.join(comparison_config.get('selected_projects', []))))
