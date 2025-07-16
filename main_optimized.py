@@ -4,7 +4,7 @@ import os
 from datetime import datetime
 
 # ==============================================================================
-# ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰM CÙNG THƯ MỤC
+# ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
 # HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
 # ==============================================================================
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
@@ -601,3 +601,93 @@ with tab_comparison_report_main:
 
             comp_months = st.multiselect(
                 get_text('select_months_comp'),
+                options=all_months,
+                default=[m for m in st.session_state.comparison_selected_months_general if m in all_months], # Ensure default is valid
+                key='comp_months_select_tab'
+            )
+            st.session_state.comparison_selected_months_general = comp_months # Update state
+
+
+    st.markdown("---")
+    st.subheader(get_text("export_options"))
+    export_excel_comp = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_comp')
+    export_pdf_comp = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_comp')
+
+    if st.button(get_text('generate_comparison_report_btn'), key='generate_comparison_report_btn_tab'):
+        if not export_excel_comp and not export_pdf_comp:
+            st.warning(get_text("warning_select_export_format"))
+        elif validation_error:
+            # Error messages already displayed by specific conditions
+            pass
+        elif not comp_projects:
+            st.warning(get_text('no_project_selected_warning_standard')) # Reusing standard message
+        elif not comp_years and not comp_months:
+            st.warning(get_text('no_comparison_criteria_selected'))
+        else:
+            comparison_report_config = {
+                'mode': comparison_mode,
+                'years': comp_years,
+                'months': comp_months,
+                'projects': comp_projects
+            }
+            
+            df_comparison, message = apply_comparison_filters(df_raw, comparison_report_config, comparison_mode)
+
+            if df_comparison.empty:
+                st.warning(get_text('no_data_after_filter_comparison').format(message))
+            else:
+                st.success(get_text('data_filtered_success'))
+                st.subheader(get_text('comparison_data_preview'))
+                st.dataframe(df_comparison.head(10)) # Show preview of comparison data
+
+                comp_report_generated = False
+                if export_excel_comp:
+                    with st.spinner(get_text('generating_comparison_excel')):
+                        excel_success_comp = export_comparison_report(df_comparison, comparison_report_config, path_dict['comparison_output_file'])
+                    if excel_success_comp:
+                        st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
+                        comp_report_generated = True
+                    else:
+                        st.error(get_text('failed_to_generate_comparison_excel'))
+
+                if export_pdf_comp:
+                    with st.spinner(get_text('generating_comparison_pdf')):
+                        pdf_success_comp = export_comparison_pdf_report(df_comparison, comparison_report_config, path_dict['comparison_pdf_report'], path_dict['logo_path'])
+                    if pdf_success_comp:
+                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
+                        comp_report_generated = True
+                    else:
+                        st.error(get_text('failed_to_generate_comparison_pdf'))
+                
+                if comp_report_generated:
+                    if export_excel_comp and os.path.exists(path_dict['comparison_output_file']):
+                        with open(path_dict['comparison_output_file'], "rb") as f:
+                            st.download_button(get_text("download_comparison_excel"), data=f, file_name=os.path.basename(path_dict['comparison_output_file']), use_container_width=True, key='download_excel_comp_btn')
+                    if export_pdf_comp and os.path.exists(path_dict['comparison_pdf_report']):
+                        with open(path_dict['comparison_pdf_report'], "rb") as f:
+                            st.download_button(get_text("download_comparison_pdf"), data=f, file_name=os.path.basename(path_dict['comparison_pdf_report']), use_container_width=True, key='download_pdf_comp_btn')
+                else:
+                    st.error(get_text('error_generating_report'))
+
+
+# =========================================================================
+# DATA PREVIEW TAB
+# =========================================================================
+with tab_data_preview_main:
+    st.subheader(get_text('raw_data_preview_header'))
+    if not df_raw.empty:
+        st.dataframe(df_raw.head(100))
+    else:
+        st.info(get_text('no_raw_data'))
+
+# =========================================================================
+# USER GUIDE TAB
+# =========================================================================
+with tab_user_guide_main:
+    st.markdown(f"### {get_text('user_guide')}")
+    st.markdown("""
+    - Select filters: mode, year, month, project
+    - Select report export format (Excel, PDF or both)
+    - Click "Create report"
+    - Download generated report
+    """)
