@@ -48,7 +48,7 @@ if "user_email" not in st.session_state:
             st.session_state.user_email = email
             # log_user_access(email) # Bỏ comment nếu muốn sử dụng
             st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
-            st.experimental_rerun()
+            st.rerun()
         else:
             st.error("❌ Email không có trong danh sách mời.")
     st.stop()
