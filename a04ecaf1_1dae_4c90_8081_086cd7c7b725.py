@@ -238,24 +238,30 @@ def export_pdf_report(df, config, path_dict):
             safe_project = sanitize_filename(project)
             df_proj = df[df['Project name'] == project]
 
-            fig, ax = plt.subplots(figsize=(8, 4))
+            # Bắt đầu đoạn code cho biểu đồ Workcentre
+            fig, ax = plt.subplots(figsize=(10, 5)) # Tăng chiều rộng và chiều cao
             df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue', ax=ax)
-            ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
+            ax.set_title(f"{project} - Hours by Workcentre", fontsize=9) # Giảm nhẹ kích thước tiêu đề
+            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này để giảm kích thước nhãn trục Y
             wc_img_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
             plt.tight_layout()
             fig.savefig(wc_img_path, dpi=150)
             plt.close(fig)
             charts_for_pdf.append((wc_img_path, f"{project} - Hours by Workcentre", project))
+            # Kết thúc đoạn code cho biểu đồ Workcentre
 
+            # Bắt đầu đoạn code cho biểu đồ Task
             if 'Task' in df_proj.columns and not df_proj['Task'].empty:
-                fig, ax = plt.subplots(figsize=(8, 4))
+                fig, ax = plt.subplots(figsize=(10, 6)) # Tăng chiều rộng và chiều cao
                 df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen', ax=ax)
-                ax.set_title(f"{project} - Hours by Task", fontsize=10)
+                ax.set_title(f"{project} - Hours by Task", fontsize=9) # Giảm nhẹ kích thước tiêu đề
+                ax.tick_params(axis='y', labelsize=8) # Thêm dòng này để giảm kích thước nhãn trục Y
                 task_img_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
                 plt.tight_layout()
                 fig.savefig(task_img_path, dpi=150)
                 plt.close(fig)
                 charts_for_pdf.append((task_img_path, f"{project} - Hours by Task", project))
+            # Kết thúc đoạn code cho biểu đồ Task
 
         create_pdf_from_charts(charts_for_pdf, path_dict['pdf_report'], "TRIAC TIME REPORT - STANDARD", config_info)
 
@@ -464,7 +470,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         print(f"DEBUG: PDF report generated at {output_path}")
 
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path):
-        fig, ax = plt.subplots(figsize=(10, 6))
+        fig, ax = plt.subplots(figsize=(12, 7)) # Đã thay đổi kích thước cho biểu đồ so sánh
         
         df_plot = df.copy() 
         ax.set_ylim(bottom=0)
@@ -477,6 +483,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
             ax.set_xticks(df_plot['Project name'])
             ax.tick_params(axis='x', rotation=45, ha='right')
+            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
         elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
                 df_plot = df_plot[df_plot['Project Name'] != 'Total']
@@ -489,6 +496,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             ax.set_xticks(range(len(df_plot.index)))
             ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
             ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
+            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
                 df_plot = df_plot[df_plot['Year'] != 'Total']
@@ -500,6 +508,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                     ax.bar(df_plot.iloc[:, 0], df_plot['Total Hours'], color='salmon') # Cột đầu tiên là Year hoặc MonthName
                     ax.set_xticks(df_plot.iloc[:, 0])
                     ax.tick_params(axis='x', rotation=45, ha='right')
+                    ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
                 else:
                     # Fallback hoặc xử lý lỗi nếu không có cột dữ liệu mong muốn
                     print("Warning: No 'Total Hours' column found for 'Compare One Project Over Time' mode.")
@@ -516,6 +525,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                 ax.set_xticks(range(len(df_plot.index)))
                 ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
                 ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
+                ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
+
 
         ax.set_title(title)
         ax.set_xlabel(x_label)
