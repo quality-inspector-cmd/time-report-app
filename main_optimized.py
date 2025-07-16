@@ -69,10 +69,10 @@ if "user_email" not in st.session_state:
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
             log_user_access(email) # Kích hoạt lại hàm log nếu bạn muốn dùng
-            st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
+            st.success("✅ Valid email! Entering application...")
             st.rerun() # Đã sửa từ experimental_rerun()
         else:
-            st.error("❌ Email không có trong danh sách mời.")
+            st.error("❌ Email is not on the invitation list.")
     st.stop() # Dừng thực thi nếu chưa xác thực
 
 # ---------------------------
@@ -166,9 +166,9 @@ with tab1:
 
     if st.button(T["report_button"], use_container_width=True):
         if not export_excel and not export_pdf:
-            st.warning("Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).")
+            st.warning("Please select at least one report export format (Excel or PDF).")
         else:
-            with st.spinner("Đang tạo báo cáo..."):
+            with st.spinner("Generating report..."):
                 config = {
                     'mode': mode,
                     'years': years,
