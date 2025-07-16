@@ -44,6 +44,9 @@ if 'selected_years' not in st.session_state: # Ví dụ cho bộ lọc báo cáo
 
 if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
     st.session_state.selected_months = []
+    # Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
+if 'selected_language' not in st.session_state:
+    st.session_state.selected_language = "English"
 
 # ---------------------------
 # PHẦN XÁC THỰC TRUY CẬP
