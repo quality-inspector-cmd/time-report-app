@@ -35,29 +35,29 @@ translations = {
         "year": "Select year(s):",
         "month": "Select month(s):",
         "project": "Select project(s):",
-        "report_button": "🚀 Generate report",
-        "no_data": "⚠️ No data after filtering.",
-        "report_done": "✅ Report created successfully",
-        "download_excel": "📥 Download Excel",
-        "download_pdf": "📄 Download PDF",
-        "data_preview": "📂 Data preview",
-        "user_guide": "📘 User Guide",
+        "report_button": "Generate report",
+        "no_data": "No data after filtering.",
+        "report_done": "Report created successfully",
+        "download_excel": "Download Excel",
+        "download_pdf": "Download PDF",
+        "data_preview": "Data preview",
+        "user_guide": "User Guide",
     },
     "Tiếng Việt": {
         "mode": "Chọn chế độ phân tích:",
         "year": "Chọn năm:",
         "month": "Chọn tháng:",
         "project": "Chọn dự án:",
-        "report_button": "🚀 Tạo báo cáo",
-        "no_data": "⚠️ Không có dữ liệu sau khi lọc.",
-        "report_done": "✅ Đã tạo báo cáo",
-        "download_excel": "📥 Tải Excel",
-        "download_pdf": "📄 Tải PDF",
-        "data_preview": "📂 Xem dữ liệu",
-        "user_guide": "📘 Hướng dẫn sử dụng",
+        "report_button": "Tạo báo cáo",
+        "no_data": "Không có dữ liệu sau khi lọc.",
+        "report_done": "Đã tạo báo cáo",
+        "download_excel": "Tải Excel",
+        "download_pdf": "Tải PDF",
+        "data_preview": "Xem dữ liệu",
+        "user_guide": "Hướng dẫn sử dụng",
     }
 }
-lang = st.sidebar.selectbox("🌐 Language / Ngôn ngữ", ["English", "Tiếng Việt"])
+lang = st.sidebar.selectbox("Language / Ngôn ngữ", ["English", "Tiếng Việt"])
 T = translations[lang]
 
 # --- PATHS ---
@@ -72,7 +72,7 @@ def cached_load_raw_data():
 def cached_read_configs():
     return read_configs(path_dict)
 
-with st.spinner("🔄 Loading data..."):
+with st.spinner("Loading data..."):
     df_raw = cached_load_raw_data()
     config_data = cached_read_configs()
 
@@ -90,7 +90,7 @@ with tab1:
 
     st.markdown("---")
     if st.button(T["report_button"], use_container_width=True):
-        with st.spinner("📊 Generating report..."):
+        with st.spinner("Generating report..."):
             config = {
                 'mode': mode,
                 'years': years,
@@ -120,7 +120,7 @@ with tab2:
 with tab3:
     st.markdown(f"### {T['user_guide']}")
     st.markdown("""
-    - 🗂 Select filters: Mode, year, month, project
-    - 🚀 Click **Generate report**
-    - 📥 Download the Excel or PDF report from the buttons
+    - Select filters: Mode, year, month, project
+    - Click **Generate report**
+    - Download the Excel or PDF report from the buttons
     """)
