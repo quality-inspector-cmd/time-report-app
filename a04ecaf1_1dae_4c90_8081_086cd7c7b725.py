@@ -469,22 +469,22 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         pdf.output(output_path, "F")
         print(f"DEBUG: PDF report generated at {output_path}")
 
+# ... (các dòng code trước đó) ...
+
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path):
-        fig, ax = plt.subplots(figsize=(12, 7)) # Đã thay đổi kích thước cho biểu đồ so sánh
+        fig, ax = plt.subplots(figsize=(12, 7)) 
         
         df_plot = df.copy() 
         ax.set_ylim(bottom=0)
 
-        # Đảm bảo không có các thiết lập font cho Matplotlib ảnh hưởng đến tiếng Việt
-        # plt.rcParams['font.family'] = 'DejaVu Sans' # Đã bị loại bỏ
-        # plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] # Đã bị loại bỏ
-
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
+            # Giữ nguyên bar chart cho chế độ này nếu bạn vẫn muốn so sánh cột giữa các dự án
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
             ax.set_xticks(df_plot['Project name'])
             ax.tick_params(axis='x', rotation=45, ha='right')
-            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
+            ax.tick_params(axis='y', labelsize=8)
         elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
+            # Giữ nguyên bar chart cho chế độ này (bar chồng hoặc nhóm)
             if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
                 df_plot = df_plot[df_plot['Project Name'] != 'Total']
             
@@ -492,44 +492,59 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             df_plot[month_columns] = df_plot[month_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
 
             df_plot.set_index('Project Name', inplace=True)
-            df_plot.plot(kind='bar', ax=ax, figsize=(10,6), colormap='viridis')
+            # Dòng này tạo biểu đồ cột. Bạn có thể giữ nguyên nếu muốn so sánh dự án theo tháng bằng cột.
+            df_plot.plot(kind='bar', ax=ax, figsize=(10,6), colormap='viridis') 
             ax.set_xticks(range(len(df_plot.index)))
             ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
             ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
-            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
+            ax.tick_params(axis='y', labelsize=8)
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
+            # BẮT ĐẦU CHỈNH SỬA CHO LINE CHART
             if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
                 df_plot = df_plot[df_plot['Year'] != 'Total']
             
-            # Kiểm tra xem có cột tháng hay không (nếu là pivot theo tháng)
             data_cols = [col for col in df_plot.columns if col not in ['Year', 'MonthName', 'Total']]
-            if not data_cols: # Nếu không có cột dữ liệu nào ngoài Year/MonthName/Total (tức là đã tổng hợp đơn giản)
-                if 'Total Hours' in df_plot.columns: # Nếu là DataFrame đã tổng hợp
-                    ax.bar(df_plot.iloc[:, 0], df_plot['Total Hours'], color='salmon') # Cột đầu tiên là Year hoặc MonthName
-                    ax.set_xticks(df_plot.iloc[:, 0])
-                    ax.tick_params(axis='x', rotation=45, ha='right')
-                    ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
+            
+            # Sắp xếp lại dữ liệu để trục X có thứ tự đúng (quan trọng cho line chart)
+            # Tạo một cột kết hợp 'Year-Month' nếu cả năm và tháng đều có
+            if 'Year' in df_plot.columns and 'MonthName' in df_plot.columns:
+                month_to_num = {name: i for i, name in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], 1)}
+                df_plot['MonthNum'] = df_plot['MonthName'].map(month_to_num)
+                df_plot['YearMonth'] = df_plot['Year'].astype(str) + '-' + df_plot['MonthNum'].astype(str).str.zfill(2)
+                df_plot = df_plot.sort_values(by=['Year', 'MonthNum'])
+                df_plot.set_index('YearMonth', inplace=True)
+                x_label = "Thời gian (Năm-Tháng)" # Cập nhật nhãn trục X
+            elif 'Year' in df_plot.columns:
+                df_plot = df_plot.sort_values(by='Year')
+                df_plot.set_index('Year', inplace=True)
+                x_label = "Năm" # Cập nhật nhãn trục X
+            elif 'MonthName' in df_plot.columns:
+                month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
+                df_plot = df_plot.sort_values(by='MonthName_ordered')
+                df_plot.set_index('MonthName', inplace=True)
+                x_label = "Tháng" # Cập nhật nhãn trục X
+
+
+            if not data_cols: # Nếu chỉ có một cột tổng giờ (tức là không phải pivot table nhiều tháng)
+                if 'Total Hours' in df_plot.columns:
+                    ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon') # Chuyển sang line chart
                 else:
-                    # Fallback hoặc xử lý lỗi nếu không có cột dữ liệu mong muốn
                     print("Warning: No 'Total Hours' column found for 'Compare One Project Over Time' mode.")
-                    return None # Không tạo biểu đồ
+                    return None
             else: # Nếu có nhiều cột tháng (pivot table)
+                # Chuyển đổi các cột dữ liệu sang dạng số và điền NaN bằng 0
                 df_plot[data_cols] = df_plot[data_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
-
-                if 'Year' in df_plot.columns:
-                    df_plot.set_index('Year', inplace=True)
-                elif 'MonthName' in df_plot.columns:
-                    df_plot.set_index('MonthName', inplace=True)
-                
-                df_plot.plot(kind='bar', ax=ax, figsize=(10,6), colormap='plasma')
-                ax.set_xticks(range(len(df_plot.index)))
-                ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
+                df_plot.plot(kind='line', ax=ax, figsize=(10,6), colormap='plasma', marker='o') # Chuyển sang line chart
                 ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
-                ax.tick_params(axis='y', labelsize=8) # Thêm dòng này nếu trục Y bị chồng chữ
 
+            # Điều chỉnh nhãn trục X để tránh chồng lấn cho line chart
+            plt.xticks(rotation=45, ha='right')
+            ax.tick_params(axis='y', labelsize=8)
+            # KẾT THÚC CHỈNH SỬA CHO LINE CHART
 
         ax.set_title(title)
-        ax.set_xlabel(x_label)
+        ax.set_xlabel(x_label) # Đảm bảo sử dụng x_label đã cập nhật
         ax.set_ylabel(y_label)
         plt.tight_layout()
         fig.savefig(img_path, dpi=200)
