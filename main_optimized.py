@@ -601,10 +601,10 @@ with tab_comparison_report_main:
                 st.session_state.comparison_selected_months_general = []
 
             comp_months = st.multiselect(
-                get_text('select_months_comp'),
+                get_text('select_months_for_single_year'),
                 options=all_months,
-                default=[m for m in st.session_state.comparison_selected_months_general if m in all_months], # Ensure default is valid
-                key='comp_months_select_tab'
+                default=[m for m in st.session_state.comparison_selected_months_over_time if m in all_months], # Ensure default is valid
+                key='comp_months_select_tab_over_time'
             )
             st.session_state.comparison_selected_months_general = comp_months # Update state
 
