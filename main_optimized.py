@@ -5,7 +5,7 @@ import base64
 import plotly.graph_objects as go
 
 # Import functions from the separate file
-from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
+from a04ecaf1_1dae_4c90_8081_0866cd7c7b725 import (
     load_and_preprocess_data,
     get_unique_values,
     get_min_max_years,
@@ -26,62 +26,62 @@ from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
 # --- Streamlit UI Setup ---
 st.set_page_config(layout="wide", page_title="Báo cáo giờ làm việc dự án")
 
-# Custom CSS for styling
-st.markdown("""
-<style>
-    .reportview-container .main .block-container {
-        padding-top: 2rem;
-        padding-right: 2rem;
-        padding-left: 2rem;
-        padding-bottom: 2rem;
-    }
-    .css-1d391kg e16zpvmm1 { /* This targets the main content area */
-        padding-top: 1rem;
-        padding-right: 1rem;
-        padding-left: 1rem;
-        padding-bottom: 1rem;
-    }
-    .stButton>button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-    }
-    .stButton>button:hover {
-        background-color: #45a049;
-    }
-    .stDownloadButton>button {
-        background-color: #008CBA;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        font-size: 16px;
-    }
-    .stDownloadButton>button:hover {
-        background-color: #007bb5;
-    }
-    h1, h2, h3 {
-        color: #2E86C1; /* A nice blue for headers */
-    }
-    .stTextInput>div>div>input {
-        border-radius: 5px;
-        border: 1px solid #ccc;
-        padding: 8px;
-    }
-    .stMultiSelect div[data-baseweb="select"] {
-        border-radius: 5px;
-        border: 1px solid #ccc;
-    }
-    .stCheckbox > label {
-        font-size: 1rem;
-    }
-</style>
-""", unsafe_allow_html=True)
+# XÓA TẤT CẢ CSS TÙY CHỈNH Ở ĐÂY để giữ nguyên giao diện mặc định của Streamlit
+# st.markdown("""
+# <style>
+#     .reportview-container .main .block-container {
+#         padding-top: 2rem;
+#         padding-right: 2rem;
+#         padding-left: 2rem;
+#         padding-bottom: 2rem;
+#     }
+#     .css-1d391kg e16zpvmm1 { /* This targets the main content area */
+#         padding-top: 1rem;
+#         padding-right: 1rem;
+#         padding-left: 1rem;
+#         padding-bottom: 1rem;
+#     }
+#     .stButton>button {
+#         background-color: #4CAF50;
+#         color: white;
+#         padding: 10px 20px;
+#         border: none;
+#         border-radius: 5px;
+#         cursor: pointer;
+#         font-size: 16px;
+#     }
+#     .stButton>button:hover {
+#         background-color: #45a049;
+#     }
+#     .stDownloadButton>button {
+#         background-color: #008CBA;
+#         color: white;
+#         padding: 10px 20px;
+#         border: none;
+#         border-radius: 5px;
+#         cursor: pointer;
+#         font-size: 16px;
+#     }
+#     .stDownloadButton>button:hover {
+#         background-color: #007bb5;
+#     }
+#     h1, h2, h3 {
+#         color: #2E86C1; /* A nice blue for headers */
+#     }
+#     .stTextInput>div>div>input {
+#         border-radius: 5px;
+#         border: 1px solid #ccc;
+#         padding: 8px;
+#     }
+#     .stMultiSelect div[data-baseweb="select"] {
+#         border-radius: 5px;
+#         border: 1px solid #ccc;
+#     }
+#     .stCheckbox > label {
+#         font-size: 1rem;
+#     }
+# </style>
+# """, unsafe_allow_html=True)
 
 st.title("📊 Ứng dụng báo cáo giờ làm việc dự án")
 
