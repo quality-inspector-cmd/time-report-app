@@ -138,44 +138,54 @@ def export_pdf_report(df, config, path_dict):
     from matplotlib import pyplot as plt
     from fpdf import FPDF
     import tempfile
-    import img2pdf
+    import os
+    import re
+
+    def sanitize_filename(name):
+        return re.sub(r'[\\/*?:"<>|]', "_", name)
 
     tmp_dir = tempfile.mkdtemp()
     pdf_images = []
 
     logo_path = "triac_logo.png"
     mode = config['mode']
-    today_str = datetime.today().strftime("%Y-%m-%d")
+    today_str = datetime.datetime.today().strftime("%Y-%m-%d")
 
     projects = df['Project name'].unique()
     for project in projects:
+        safe_project = sanitize_filename(project)
         df_proj = df[df['Project name'] == project]
 
-        # Workcentre Chart
-        wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue')
-        plt.title(f"{project} - Hours by Workcentre")
-        wc_img_path = os.path.join(tmp_dir, f"{project}_wc.png")
+        # --- Workcentre Chart ---
+        fig, ax = plt.subplots(figsize=(8, 4))
+        df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue', ax=ax)
+        ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
+        wc_img_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
         plt.tight_layout()
-        plt.savefig(wc_img_path)
-        plt.close()
+        fig.savefig(wc_img_path, dpi=150)
+        plt.close(fig)
         pdf_images.append(wc_img_path)
 
-        # Task Chart
+        # --- Task Chart ---
         if 'Task' in df_proj.columns:
-            task_summary = df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen')
-            plt.title(f"{project} - Hours by Task")
-            task_img_path = os.path.join(tmp_dir, f"{project}_task.png")
+            fig, ax = plt.subplots(figsize=(8, 4))
+            df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen', ax=ax)
+            ax.set_title(f"{project} - Hours by Task", fontsize=10)
+            task_img_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
             plt.tight_layout()
-            plt.savefig(task_img_path)
-            plt.close()
+            fig.savefig(task_img_path, dpi=150)
+            plt.close(fig)
             pdf_images.append(task_img_path)
 
-    # Build PDF
-    pdf_path = path_dict['pdf_report']
+    # --- Build PDF ---
     pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
     for img_path in pdf_images:
         pdf.add_page()
-        pdf.image(img_path, x=10, y=20, w=190)
-
-    pdf.output(pdf_path, "F")
+        if os.path.exists(logo_path):
+            pdf.image(logo_path, x=10, y=8, w=25)
+        pdf.set_font("Arial", size=10)
+        pdf.set_y(35)
+        pdf.image(img_path, x=10, y=40, w=190)
+    pdf.output(path_dict['pdf_report'], "F")
 
