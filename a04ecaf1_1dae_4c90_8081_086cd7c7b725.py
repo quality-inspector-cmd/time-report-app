@@ -152,11 +152,35 @@ def export_pdf_report(df, config, path_dict):
     today_str = datetime.datetime.today().strftime("%Y-%m-%d")
 
     projects = df['Project name'].unique()
+
+    # --- Create PDF instance ---
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+
+    # --- COVER PAGE ---
+    pdf.add_page()
+    if os.path.exists(logo_path):
+        pdf.image(logo_path, x=10, y=10, w=30)
+    pdf.set_font("Arial", 'B', 16)
+    pdf.ln(40)
+    pdf.cell(0, 10, "TRIAC TIME REPORT", ln=True, align='C')
+    pdf.set_font("Arial", '', 12)
+    pdf.ln(5)
+    pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
+    pdf.ln(10)
+    pdf.set_font("Arial", '', 11)
+    pdf.cell(0, 10, f"Mode: {mode.capitalize()}", ln=True, align='C')
+    years_str = ', '.join(map(str, config.get('years', []))) or str(config.get('year'))
+    pdf.cell(0, 10, f"Years: {years_str}", ln=True, align='C')
+    months_str = ', '.join(config.get('months', [])) or "All"
+    pdf.cell(0, 10, f"Months: {months_str}", ln=True, align='C')
+
+    # --- Generate Charts per Project ---
     for project in projects:
         safe_project = sanitize_filename(project)
         df_proj = df[df['Project name'] == project]
 
-        # --- Workcentre Chart ---
+        # Workcentre Chart
         fig, ax = plt.subplots(figsize=(8, 4))
         df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue', ax=ax)
         ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
@@ -164,9 +188,9 @@ def export_pdf_report(df, config, path_dict):
         plt.tight_layout()
         fig.savefig(wc_img_path, dpi=150)
         plt.close(fig)
-        pdf_images.append(wc_img_path)
 
-        # --- Task Chart ---
+        # Task Chart
+        task_img_path = None
         if 'Task' in df_proj.columns:
             fig, ax = plt.subplots(figsize=(8, 4))
             df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen', ax=ax)
@@ -175,17 +199,18 @@ def export_pdf_report(df, config, path_dict):
             plt.tight_layout()
             fig.savefig(task_img_path, dpi=150)
             plt.close(fig)
-            pdf_images.append(task_img_path)
 
-    # --- Build PDF ---
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    for img_path in pdf_images:
-        pdf.add_page()
-        if os.path.exists(logo_path):
-            pdf.image(logo_path, x=10, y=8, w=25)
-        pdf.set_font("Arial", size=10)
-        pdf.set_y(35)
-        pdf.image(img_path, x=10, y=40, w=190)
+        # --- Add images to PDF ---
+        for img_path in [wc_img_path, task_img_path]:
+            if img_path and os.path.exists(img_path):
+                pdf.add_page()
+                if os.path.exists(logo_path):
+                    pdf.image(logo_path, x=10, y=8, w=25)
+                pdf.set_font("Arial", 'B', 11)
+                pdf.set_y(35)
+                pdf.cell(0, 10, f"Project: {project}", ln=True, align='C')
+                pdf.image(img_path, x=10, y=45, w=190)
+
+    # --- Save PDF ---
     pdf.output(path_dict['pdf_report'], "F")
 
