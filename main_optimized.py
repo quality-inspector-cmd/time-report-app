@@ -14,6 +14,9 @@ st.set_page_config(page_title="Time Report Generator", layout="wide")
 if 'lang' not in st.session_state:
     st.session_state.lang = 'vi' # Mặc định là tiếng Việt
 
+# Get path_dict here, so it's defined before being used
+path_dict = setup_paths()
+
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
     'vi': {
@@ -171,9 +174,6 @@ with col_lang:
 st.subheader(get_text('system_explanation_title'))
 st.markdown(get_text('system_explanation_text'), unsafe_allow_html=True)
 
-
-# Setup paths (e.g., template, output files)
-path_dict = setup_paths()
 
 # Check if template file exists
 if not os.path.exists(path_dict['template_file']):
