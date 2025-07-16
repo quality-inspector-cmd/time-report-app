@@ -22,7 +22,6 @@ path_dict = setup_paths()
 
 # ==============================================================================
 # KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
-# Thêm đoạn code này vào ĐÂY
 # ==============================================================================
 if 'comparison_mode' not in st.session_state:
     st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
@@ -44,7 +43,8 @@ if 'selected_years' not in st.session_state: # Ví dụ cho bộ lọc báo cáo
 
 if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
     st.session_state.selected_months = []
-    # Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
+
+# Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
 if 'selected_language' not in st.session_state:
     st.session_state.selected_language = "English"
 
@@ -355,10 +355,10 @@ with tab_standard_report_main:
         if st.session_state.standard_selected_year in all_years:
             default_std_year_index = all_years.index(st.session_state.standard_selected_year)
         elif all_years:
-             st.session_state.standard_selected_year = all_years[0] # Fallback
-             default_std_year_index = 0
+            st.session_state.standard_selected_year = all_years[0] # Fallback
+            default_std_year_index = 0
         elif st.session_state.standard_selected_year is None: # No years available at all
-             default_std_year_index = None
+            default_std_year_index = None
 
 
         selected_year = st.selectbox(
@@ -618,8 +618,8 @@ with tab_comparison_report_main:
             comp_years = st.multiselect(
                 get_text('select_years'),
                 options=all_years,
-                default=[y for y in st.session_state.comparison_selected_years_general if y in all_years], # Ensure default is valid
-                key='comp_years_select_tab'
+                default=[y for y in st.session_state.comparison_selected_years_general if y in all_years],
+                key='comp_years_select_tab_general'
             )
             st.session_state.comparison_selected_years_general = comp_years # Update state
 
@@ -628,14 +628,30 @@ with tab_comparison_report_main:
             if 'comparison_selected_months_general' not in st.session_state:
                 st.session_state.comparison_selected_months_general = []
 
-            comp_months = st.multiselect(
-                get_text('select_months_for_single_year'),
-                options=all_months,
-                default=[m for m in st.session_state.comparison_selected_months_over_time if m in all_months], # Ensure default is valid
-                key='comp_months_select_tab_over_time'
-            )
-            st.session_state.comparison_selected_months_general = comp_months # Update state
+            if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
+                comp_months = st.multiselect(
+                    get_text('select_months_comp'),
+                    options=all_months,
+                    default=[m for m in st.session_state.comparison_selected_months_general if m in all_months],
+                    key='comp_months_select_tab_general'
+                )
+                st.session_state.comparison_selected_months_general = comp_months # Update state
+            else:
+                comp_months = [] # Months are not relevant for yearly comparison
+                st.session_state.comparison_selected_months_general = [] # Clear months state
 
+        if not comp_years:
+            st.warning(get_text('no_comparison_criteria_selected'))
+            validation_error = True
+        
+        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"] and not comp_months:
+            st.warning(get_text('no_comparison_criteria_selected'))
+            validation_error = True
+
+        if not comp_projects:
+            st.warning(get_text('no_project_selected_warning_standard')) # Reusing standard report message
+            validation_error = True
+            
 
     st.markdown("---")
     st.subheader(get_text("export_options"))
@@ -648,63 +664,54 @@ with tab_comparison_report_main:
         elif validation_error:
             # Error messages already displayed by specific conditions
             pass
-        elif not comp_projects:
-            st.warning(get_text('no_project_selected_warning_standard')) # Reusing standard message
-        elif not comp_years and not comp_months:
-            st.warning(get_text('no_comparison_criteria_selected'))
         else:
-            comparison_report_config = {
-                'mode': comparison_mode,
-                'years': comp_years,
-                'months': comp_months,
-                'projects': comp_projects
+            # DEBUG print statements (giữ lại để chẩn đoán vấn đề dự án)
+            print(f"DEBUG: Comparison Mode selected before filter: {comparison_mode}")
+            print(f"DEBUG: Selected Projects before filter: {comp_projects}")
+            print(f"DEBUG: Selected Years before filter: {comp_years}")
+            print(f"DEBUG: Selected Months before filter: {comp_months}")
+
+
+            comparison_config = {
+                'selected_years': comp_years,
+                'selected_months': comp_months,
+                'selected_projects': comp_projects,
+                # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
+                # nó đã được xử lý trong logic trên
             }
-            # main_optimized.py
-# ... (phần code trước đó) ...
+            
+            # Print the final config before calling the function
+            print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
 
-# Thêm các dòng DEBUG này ngay trước khi gọi hàm apply_comparison_filters
-        print(f"DEBUG: Comparison Mode selected: {comparison_mode}")
-        print(f"DEBUG: Projects selected in session_state: {st.session_state.comparison_selected_projects}")
+            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
 
-# Tạo comparison_config
-       comparison_config = {
-       'selected_years': st.session_state.comparison_selected_years,
-       'selected_months': st.session_state.comparison_selected_months,
-       'selected_projects': st.session_state.comparison_selected_projects,
-       'selected_months_over_time': st.session_state.comparison_selected_months_over_time
-           }
-        print(f"DEBUG: comparison_config being passed: {comparison_config}")
-
-# ... (phần code sau đó) ...
-            df_comparison, message = apply_comparison_filters(df_raw, comparison_report_config, comparison_mode)
-
-            if df_comparison.empty:
-                st.warning(get_text('no_data_after_filter_comparison').format(message))
+            if df_filtered_comparison.empty:
+                st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
                 st.success(get_text('data_filtered_success'))
                 st.subheader(get_text('comparison_data_preview'))
-                st.dataframe(df_comparison.head(10)) # Show preview of comparison data
+                st.dataframe(df_filtered_comparison)
 
-                comp_report_generated = False
+                report_generated_comp = False
                 if export_excel_comp:
                     with st.spinner(get_text('generating_comparison_excel')):
-                        excel_success_comp = export_comparison_report(df_comparison, comparison_report_config, path_dict['comparison_output_file'])
+                        excel_success_comp = export_comparison_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_output_file'])
                     if excel_success_comp:
                         st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
-                        comp_report_generated = True
+                        report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_excel'))
 
                 if export_pdf_comp:
                     with st.spinner(get_text('generating_comparison_pdf')):
-                        pdf_success_comp = export_comparison_pdf_report(df_comparison, comparison_report_config, path_dict['comparison_pdf_report'], path_dict['logo_path'])
+                        pdf_success_comp = export_comparison_pdf_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_pdf_report'], path_dict['logo_path'])
                     if pdf_success_comp:
                         st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
-                        comp_report_generated = True
+                        report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
                 
-                if comp_report_generated:
+                if report_generated_comp:
                     if export_excel_comp and os.path.exists(path_dict['comparison_output_file']):
                         with open(path_dict['comparison_output_file'], "rb") as f:
                             st.download_button(get_text("download_comparison_excel"), data=f, file_name=os.path.basename(path_dict['comparison_output_file']), use_container_width=True, key='download_excel_comp_btn')
