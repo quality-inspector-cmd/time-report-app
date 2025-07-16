@@ -7,6 +7,41 @@ from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     apply_filters, export_report, export_pdf_report
 )
 
+# ---------------------------
+# ---------------------------
+@st.cache_data
+def load_invited_emails():
+    df = pd.read_csv("invited_emails.csv")
+    return df["email"].str.lower().tolist()
+
+INVITED_EMAILS = load_invited_emails()
+
+def log_user_access(email):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {"Time": timestamp, "Email": email}
+    if "access_log" not in st.session_state:
+        st.session_state.access_log = []
+    st.session_state.access_log.append(log_entry)
+
+if "user_email" not in st.session_state:
+    st.set_page_config(page_title="Triac Time Report", layout="wide")
+    st.title("🔐 Xác thực truy cập")
+    email_input = st.text_input("📧 Nhập email được mời để truy cập:")
+
+    if email_input:
+        email = email_input.strip().lower()
+        if email in INVITED_EMAILS:
+            st.session_state.user_email = email
+            log_user_access(email)
+            st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
+            st.experimental_rerun()
+        else:
+            st.error("❌ Email không nằm trong danh sách được mời.")
+    st.stop()
+
+# ---------------------------
+# ---------------------------
+
 st.set_page_config(page_title="Triac Time Report", layout="wide")
 
 st.markdown("""
