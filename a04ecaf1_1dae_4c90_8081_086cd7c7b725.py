@@ -134,22 +134,48 @@ def export_report(df, config, path_dict):
 
     wb.save(path_dict['output_file'])
 
-def export_pdf_report(path_dict):
-    pdf = FPDF(orientation='P', unit='mm', format='A4')
-    pdf.add_page()
+def export_pdf_report(df, config, path_dict):
+    from matplotlib import pyplot as plt
+    from fpdf import FPDF
+    import tempfile
+    import img2pdf
 
-    pdf.set_font("Arial", 'B', 14)
-    pdf.set_text_color(0, 51, 102)
-    pdf.cell(200, 10, "📊 Time Report Summary", ln=True, align='C')
+    tmp_dir = tempfile.mkdtemp()
+    pdf_images = []
 
-    pdf.set_font("Arial", size=11)
-    pdf.set_text_color(0)
+    logo_path = "triac_logo.png"
+    mode = config['mode']
+    today_str = datetime.today().strftime("%Y-%m-%d")
 
-    if os.path.exists(path_dict['output_file']):
-        df_summary = pd.read_excel(path_dict['output_file'], sheet_name='Summary')
-        top = df_summary.sort_values('Hours', ascending=False).head(20)
-        pdf.ln(8)
-        for idx, row in top.iterrows():
-            pdf.cell(0, 8, f"{row['Project name']}: {row['Hours']:.2f} hours", ln=True)
+    projects = df['Project name'].unique()
+    for project in projects:
+        df_proj = df[df['Project name'] == project]
 
-    pdf.output(path_dict['pdf_report'])
+        # Workcentre Chart
+        wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue')
+        plt.title(f"{project} - Hours by Workcentre")
+        wc_img_path = os.path.join(tmp_dir, f"{project}_wc.png")
+        plt.tight_layout()
+        plt.savefig(wc_img_path)
+        plt.close()
+        pdf_images.append(wc_img_path)
+
+        # Task Chart
+        if 'Task' in df_proj.columns:
+            task_summary = df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen')
+            plt.title(f"{project} - Hours by Task")
+            task_img_path = os.path.join(tmp_dir, f"{project}_task.png")
+            plt.tight_layout()
+            plt.savefig(task_img_path)
+            plt.close()
+            pdf_images.append(task_img_path)
+
+    # Build PDF
+    pdf_path = path_dict['pdf_report']
+    pdf = FPDF()
+    for img_path in pdf_images:
+        pdf.add_page()
+        pdf.image(img_path, x=10, y=20, w=190)
+
+    pdf.output(pdf_path, "F")
+
