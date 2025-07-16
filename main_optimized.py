@@ -10,7 +10,7 @@ from datetime import datetime
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
     apply_filters, export_report, export_pdf_report,
-    apply_comparison_filters, export_comparison_report, export_comparison_pdf_report # Thêm các hàm so sánh
+    apply_comparison_filters, export_comparison_report, export_comparison_pdf_report
 )
 # ==============================================================================
 
@@ -70,7 +70,6 @@ if "user_email" not in st.session_state:
 # ---------------------------
 
 # Cấu hình trang (chỉ chạy một lần sau khi xác thực)
-# Đặt cấu hình trang ở đây để nó áp dụng sau khi xác thực thành công
 st.set_page_config(page_title="Triac Time Report", layout="wide")
 
 st.markdown("""
@@ -82,7 +81,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================
-# Khởi tạo ngôn ngữ và từ điển văn bản MỚI (đã tích hợp đầy đủ các phần)
+# Khởi tạo ngôn ngữ và từ điển văn bản
 # =====================================
 
 # Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
@@ -152,15 +151,15 @@ TEXTS = {
         'raw_data_preview_header': "Dữ liệu đầu vào thô (100 hàng đầu)",
         'no_raw_data': "Không có dữ liệu thô được tải.",
         'no_year_in_data': "Không có năm nào trong dữ liệu để chọn.",
-        'user_guide': "Hướng dẫn sử dụng", # Thêm lại
-        'export_options': "Tùy chọn xuất báo cáo", # Thêm lại
-        'export_excel_option': "Xuất ra Excel (.xlsx)", # Thêm lại
-        'export_pdf_option': "Xuất ra PDF (.pdf)", # Thêm lại
-        'report_button': "Tạo báo cáo", # Thêm lại
-        'no_data': "Không có dữ liệu sau khi lọc", # Thêm lại
-        'report_done': "Đã tạo báo cáo", # Thêm lại
-        'download_excel': "Tải Excel", # Thêm lại
-        'download_pdf': "Tải PDF", # Thêm lại
+        'user_guide': "Hướng dẫn sử dụng",
+        'export_options': "Tùy chọn xuất báo cáo",
+        'export_excel_option': "Xuất ra Excel (.xlsx)",
+        'export_pdf_option': "Xuất ra PDF (.pdf)",
+        'report_button': "Tạo báo cáo",
+        'no_data': "Không có dữ liệu sau khi lọc",
+        'report_done': "Đã tạo báo cáo",
+        'download_excel': "Tải Excel",
+        'download_pdf': "Tải PDF",
         'warning_select_export_format': "Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).",
         'error_generating_report': "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
     },
@@ -218,22 +217,22 @@ TEXTS = {
         'comparison_excel_generated': "✅ Comparison Excel Report generated: {}",
         'download_comparison_excel': "📥 Download Comparison Excel",
         'generating_comparison_pdf': "Generating Comparison PDF Report...",
-        'comparison_pdf_generated': "✅ Comparison PDF Report generated: {}",
+        'comparison_pdf_generated': "✅ PDF Report generated: {}",
         'download_comparison_pdf': "📥 Download Comparison PDF",
         'failed_to_generate_comparison_excel': "❌ Failed to generate Comparison Excel report.",
         'failed_to_generate_comparison_pdf': "❌ Failed to generate Comparison PDF report.",
         'raw_data_preview_header': "Raw Input Data (First 100 rows)",
         'no_raw_data': "No raw data loaded.",
         'no_year_in_data': "No years in data to select.",
-        'user_guide': "User Guide", # Thêm lại
-        'export_options': "Export Options", # Thêm lại
-        'export_excel_option': "Export as Excel (.xlsx)", # Thêm lại
-        'export_pdf_option': "Export as PDF (.pdf)", # Thêm lại
-        'report_button': "Generate report", # Thêm lại
-        'no_data': "No data after filtering", # Thêm lại
-        'report_done': "Report created successfully", # Thêm lại
-        'download_excel': "Download Excel", # Thêm lại
-        'download_pdf': "Download PDF", # Thêm lại
+        'user_guide': "User Guide",
+        'export_options': "Export Options",
+        'export_excel_option': "Export as Excel (.xlsx)",
+        'export_pdf_option': "Export as PDF (.pdf)",
+        'report_button': "Generate report",
+        'no_data': "No data after filtering",
+        'report_done': "Report created successfully",
+        'download_excel': "Download Excel",
+        'download_pdf': "Download PDF",
         'warning_select_export_format': "Please select at least one report export format (Excel or PDF).",
         'error_generating_report': "An error occurred while generating the report. Please try again.",
     }
@@ -243,26 +242,22 @@ TEXTS = {
 def get_text(key):
     return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
 
-# Header của ứng dụng
-col_logo, col_lang = st.columns([0.8, 0.2])
-with col_logo:
-    # Hiển thị logo Triac nếu tồn tại
-    logo_path = path_dict['logo_path'] # Lấy từ setup_paths
-    if os.path.exists(logo_path):
-        st.image(logo_path, width=150)
-    else:
-        st.warning(f"Không tìm thấy logo tại: {logo_path}. Vui lòng đảm bảo file logo ở đúng vị trí.")
+# Header của ứng dụng (Đã thay đổi theo yêu cầu của bạn)
+col_logo_title, col_lang = st.columns([0.8, 0.2])
+with col_logo_title:
+    st.image("triac_logo.png", width=110) # Logo cố định
+    st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True) # Tiêu đề cố định
+    st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True) # Phụ đề cố định
 
 with col_lang:
     st.session_state.lang = st.radio(
         get_text('lang_select'),
         options=['vi', 'en'],
         format_func=lambda x: get_text('language_' + x),
-        key='language_selector_main' # Đổi key để tránh xung đột với sidebar nếu có
+        key='language_selector_main'
     )
 
-st.title(get_text('app_title')) # Title chính của ứng dụng
-# Diễn giải hệ thống
+# Phần giải thích hệ thống được đặt riêng ra ngoài để vẫn có thể dịch
 st.subheader(get_text('system_explanation_title'))
 st.markdown(get_text('system_explanation_text'), unsafe_allow_html=True)
 
@@ -273,7 +268,7 @@ if not os.path.exists(path_dict['template_file']):
     st.stop()
 
 # Load raw data and configurations once
-@st.cache_data(ttl=1800) # Giữ TTL cho việc tối ưu hiệu suất
+@st.cache_data(ttl=1800)
 def cached_load():
     df_raw = load_raw_data(path_dict['template_file'])
     config_data = read_configs(path_dict['template_file'])
@@ -293,15 +288,16 @@ all_months = [m for m in month_order if m in df_raw['MonthName'].dropna().unique
 all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
 
 
-# Main interface tabs (đổi tên biến để rõ ràng hơn, tránh nhầm lẫn với biến T)
-tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main = st.tabs([
+# Main interface tabs
+tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main = st.tabs([
     get_text('tab_standard_report'),
     get_text('tab_comparison_report'),
-    get_text('tab_data_preview')
+    get_text('tab_data_preview'),
+    get_text('user_guide') # Thêm tab User Guide vào đây
 ])
 
 # =========================================================================
-# STANDARD REPORT TAB (Giao diện cũ đã sửa đổi và thêm tính năng mới)
+# STANDARD REPORT TAB
 # =========================================================================
 with tab_standard_report_main:
     st.header(get_text('standard_report_header'))
@@ -350,10 +346,10 @@ with tab_standard_report_main:
         key='standard_project_selection_tab'
     )
 
-    st.markdown("---") # Đường phân cách
-    st.subheader(get_text("export_options")) # Tiêu đề cho tùy chọn xuất
-    export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std') # Mặc định chọn Excel
-    export_pdf = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_std') # Mặc định không chọn PDF
+    st.markdown("---")
+    st.subheader(get_text("export_options"))
+    export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
+    export_pdf = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_std')
 
     if st.button(get_text('generate_standard_report_btn'), key='generate_standard_report_btn_tab'):
         if not export_excel and not export_pdf:
@@ -400,7 +396,6 @@ with tab_standard_report_main:
                         st.error(get_text('failed_to_generate_pdf'))
 
                 if report_generated:
-                    # Hiển thị nút download sau khi báo cáo đã được tạo
                     if export_excel and os.path.exists(path_dict['output_file']):
                         with open(path_dict['output_file'], "rb") as f:
                             st.download_button(get_text("download_excel"), data=f, file_name=os.path.basename(path_dict['output_file']), use_container_width=True, key='download_excel_std_btn')
@@ -412,7 +407,7 @@ with tab_standard_report_main:
 
 
 # =========================================================================
-# COMPARISON REPORT TAB (Giao diện cũ đã sửa đổi và thêm tính năng mới)
+# COMPARISON REPORT TAB
 # =========================================================================
 with tab_comparison_report_main:
     st.header(get_text('comparison_report_header'))
@@ -428,7 +423,6 @@ with tab_comparison_report_main:
         options=list(comparison_mode_options.keys()),
         key='comparison_mode_select_tab_main'
     )
-    # Lấy giá trị thực của chế độ so sánh (tiếng Việt) để truyền vào hàm backend
     comparison_mode = comparison_mode_options[selected_comparison_display]
 
     st.subheader(get_text('filter_data_for_comparison'))
@@ -441,7 +435,7 @@ with tab_comparison_report_main:
 
     comp_projects = st.multiselect(get_text('select_projects_comp'), options=all_projects, default=[], key='comp_projects_select_tab')
 
-    st.markdown("---") # Đường phân cách
+    st.markdown("---")
     st.subheader(get_text("export_options"))
     export_excel_comp = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_comp')
     export_pdf_comp = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_comp')
@@ -506,9 +500,8 @@ with tab_data_preview_main:
         st.info(get_text('no_raw_data'))
 
 # =========================================================================
-# USER GUIDE TAB (Thêm lại tab hướng dẫn sử dụng)
+# USER GUIDE TAB
 # =========================================================================
-tab_user_guide_main = st.tabs([get_text('user_guide')])[0] # Tạo một tab riêng cho User Guide
 with tab_user_guide_main:
     st.markdown(f"### {get_text('user_guide')}")
     st.markdown("""
