@@ -6,3 +6,4 @@ seaborn
 python-docx
 pillow
 fpdf
+reportlab
