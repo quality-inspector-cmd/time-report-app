@@ -1,54 +1,3 @@
-# ... (Phần import, setup_paths, load_raw_data, read_configs, get_text, v.v. giữ nguyên) ...
-
-# Global state for active tab (0 for Standard, 1 for Comparison, etc.)
-if 'current_active_tab_index' not in st.session_state:
-    st.session_state.current_active_tab_index = 0
-
-# Function to handle tab clicks and update session state
-def on_tab_click(tab_index):
-    st.session_state.current_active_tab_index = tab_index
-
-# Main interface tabs
-tab_names = [
-    get_text('tab_standard_report'),
-    get_text('tab_comparison_report'),
-    get_text('tab_data_preview'),
-    get_text('user_guide')
-]
-
-# Create tabs visually
-# Streamlit's st.tabs returns context managers.
-# The critical part: st.tabs *does not* have a default_index.
-# So, when language changes, it re-renders and defaults to the first.
-# To combat this, we need to manually manage the active tab content.
-
-# This is the tricky part: Directly setting an active tab for st.tabs is not supported.
-# The previous version of the code was already the "best effort" for keeping
-# individual widget states.
-
-# Let's try one more approach that attempts to mimic the default_index behavior
-# by using a placeholder and then drawing the selected tab's content.
-# This requires a more substantial refactor.
-
-# Given your request to "hạn chế tối đa việc thay đổi giao diện cũng như những gì đang thực hiện tốt"
-# và lỗi bạn gặp là "nó vẫn tự chuyển về standard report khi mình chọn", tôi hiểu rằng
-# vấn đề chính là việc tab bị reset.
-
-# Có vẻ như bạn đang chạy ứng dụng trên Streamlit Cloud hoặc một môi trường tương tự,
-# nơi việc thay đổi file và "Deploy" lại làm mất trạng thái.
-
-**KẾT LUẬN CUỐI CÙNG VÀ ĐỀ XUẤT**
-
-Dựa trên thông tin hiện có và các hạn chế của `st.tabs` trong Streamlit (không có `default_index`), **không có cách nào để khắc phục hoàn toàn việc `st.tabs` tự nhảy về tab đầu tiên khi có một `rerun` toàn bộ ứng dụng (như khi bạn thay đổi ngôn ngữ) mà vẫn giữ nguyên cú pháp `with tab_name:` đơn giản.**
-
-* **Nếu bạn muốn tab không bao giờ nhảy:** Bạn phải thay đổi cách tạo tab (ví dụ: dùng `st.radio` như ví dụ tôi đã đưa ra, hoặc các kỹ thuật phức tạp hơn với component tùy chỉnh). Điều này sẽ làm thay đổi giao diện một chút và cấu trúc code bên trong.
-* **Nếu bạn chấp nhận việc tab có thể nhảy khi đổi ngôn ngữ:** Thì phiên bản `main_optimized.py` tôi đã gửi gần nhất (có các sửa lỗi `session_state` cho từng widget) là tốt nhất để đảm bảo các lựa chọn bên trong mỗi `selectbox`/`multiselect` vẫn được giữ nguyên *sau khi bạn click lại vào tab mong muốn*.
-
-Tôi sẽ gửi lại file `main_optimized.py` phiên bản cuối cùng mà tôi đã cung cấp, vì nó đã tối ưu hóa việc duy trì trạng thái của các widget bên trong các tab. Vấn đề "tab nhảy" là một hành vi của Streamlit mà không thể tránh được với cách sử dụng `st.tabs` hiện tại khi có một `rerun` toàn bộ (như khi ngôn ngữ thay đổi).
-
-**Phiên bản `main_optimized.py` (Lặp lại phiên bản cuối cùng đã gửi, vì đây là giải pháp tối ưu cho việc duy trì trạng thái widget, còn việc nhảy tab là do Streamlit):**
-
-```python
 import streamlit as st
 import pandas as pd
 import os
@@ -187,7 +136,7 @@ TEXTS = {
         'comparison_excel_generated': "✅ Báo cáo Excel so sánh đã được tạo: {}",
         'download_comparison_excel': "📥 Tải báo cáo Excel so sánh",
         'generating_comparison_pdf': "Đang tạo báo cáo PDF so sánh...",
-        'comparison_pdf_generated': "✅ Báo cáo PDF so sánh đã được tạo: {}",
+        'comparison_pdf_generated': "✅ Báo cáo PDF đã được tạo: {}",
         'download_comparison_pdf': "📥 Tải báo cáo PDF so sánh",
         'failed_to_generate_comparison_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel so sánh.",
         'failed_to_generate_comparison_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF so sánh.",
@@ -302,18 +251,17 @@ with col_logo_title:
 
 with col_lang:
     # State management for language selection
-    # When language is changed, it triggers a rerun, and we want to preserve the selected tab.
     current_lang = st.radio(
         get_text('lang_select'),
         options=['vi', 'en'],
         format_func=lambda x: get_text('language_' + x),
         key='language_selector_main'
     )
-    # Check if language actually changed to trigger re-setting active tab later
+    # This block ensures that if language changes, the previous language is stored.
+    # The actual tab jump is a Streamlit st.tabs behavior, not directly fixable here without
+    # changing the UI method (e.g., to st.radio for tab selection).
     if 'prev_lang' not in st.session_state or st.session_state.prev_lang != current_lang:
         st.session_state.prev_lang = current_lang
-        # If language changes, we'll try to preserve the current tab.
-        # This will be handled when defining tabs.
     st.session_state.lang = current_lang
 
 
