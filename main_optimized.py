@@ -659,7 +659,25 @@ with tab_comparison_report_main:
                 'months': comp_months,
                 'projects': comp_projects
             }
-            
+            # main_optimized.py
+# ... (phần code trước đó) ...
+
+# Thêm các dòng DEBUG này ngay trước khi gọi hàm apply_comparison_filters
+print(f"DEBUG: Comparison Mode selected: {comparison_mode}")
+print(f"DEBUG: Projects selected in session_state: {st.session_state.comparison_selected_projects}")
+
+# Tạo comparison_config
+comparison_config = {
+    'selected_years': st.session_state.comparison_selected_years,
+    'selected_months': st.session_state.comparison_selected_months,
+    'selected_projects': st.session_state.comparison_selected_projects,
+    'selected_months_over_time': st.session_state.comparison_selected_months_over_time
+}
+print(f"DEBUG: comparison_config being passed: {comparison_config}")
+
+df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
+
+# ... (phần code sau đó) ...
             df_comparison, message = apply_comparison_filters(df_raw, comparison_report_config, comparison_mode)
 
             if df_comparison.empty:
