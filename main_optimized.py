@@ -25,18 +25,18 @@ def log_user_access(email):
 
 if "user_email" not in st.session_state:
     st.set_page_config(page_title="Triac Time Report", layout="wide")
-    st.title("🔐 Xác thực truy cập")
-    email_input = st.text_input("📧 Nhập email được mời để truy cập:")
+    st.title("🔐 Access authentication")
+    email_input = st.text_input("📧 Enter the invited email to access:")
 
     if email_input:
         email = email_input.strip().lower()
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
             log_user_access(email)
-            st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
+            st.success("✅ Valid email! Entering application...")
             st.experimental_rerun()
         else:
-            st.error("❌ Email không nằm trong danh sách được mời.")
+            st.error("❌ Email is not on the invite list.")
     st.stop()
 
 # ---------------------------
