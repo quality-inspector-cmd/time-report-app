@@ -209,8 +209,8 @@ with tab2:
 with tab3:
     st.markdown(f"### {T['user_guide']}")
     st.markdown("""
-    - Chọn bộ lọc: chế độ, năm, tháng, dự án
-    - Chọn định dạng xuất báo cáo (Excel, PDF hoặc cả hai)
-    - Nhấn "Tạo báo cáo"
-    - Tải về báo cáo đã tạo
+    - Select filters: mode, year, month, project
+    - Select report export format (Excel, PDF or both)
+    - Click "Create report"
+    - Download generated report
     """)
