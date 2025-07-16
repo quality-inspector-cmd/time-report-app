@@ -1,164 +1,203 @@
 import streamlit as st
 import pandas as pd
-import datetime
 import os
+from datetime import datetime
+# Import all functions from the specified module
+from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import setup_paths, load_raw_data, read_configs, apply_filters, export_report, apply_comparison_filters, export_comparison_report, export_comparison_pdf_report
 
-# ĐẢM BẢO TÊN FILE LOGIC DƯỚI ĐÂY CHÍNH XÁC VỚI FILE BẠN ĐÃ LƯU
-# VÀ NÓ NẰM CÙNG THƯ MỤC VỚI main_optimized.py
-# ====================================================================
-from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
-    setup_paths, load_raw_data, read_configs,
-    apply_filters, export_report, export_pdf_report,
-    apply_comparison_filters, export_comparison_report, export_comparison_pdf_report
-)
-# ====================================================================
+st.set_page_config(page_title="Time Report Generator", layout="wide") # Changed to wide layout
+st.title("📊 Time Report Generator")
 
-st.set_page_config(layout="wide", page_title="TRIAC Time Report App")
-
-# Cài đặt paths
+# Setup paths (e.g., template, output files)
 path_dict = setup_paths()
 
-# Header
-st.title("TRIAC Time Report Dashboard")
-st.markdown("---")
+# Check if template file exists
+if not os.path.exists(path_dict['template_file']):
+    st.error(f"❌ Template file not found: {path_dict['template_file']}")
+    st.stop()
 
-# Cố gắng đọc cấu hình và dữ liệu thô
-try:
-    config = read_configs(path_dict)
+# Load raw data and configurations once
+with st.spinner("🔄 Loading data and configurations..."):
     df_raw = load_raw_data(path_dict)
-    st.sidebar.success("Đã tải dữ liệu và cấu hình thành công!")
-except Exception as e:
-    st.sidebar.error(f"Lỗi khi tải dữ liệu hoặc cấu hình: {e}")
-    st.stop() # Dừng ứng dụng nếu không thể tải dữ liệu ban đầu
+    if df_raw.empty:
+        st.error("⚠️ Failed to load raw data. Please check 'Raw Data' sheet in the template file.")
+        st.stop()
 
-# Tạo sidebar cho các tùy chọn lọc
-st.sidebar.header("Cấu hình báo cáo")
+    config_data = read_configs(path_dict)
 
-report_type = st.sidebar.radio(
-    "Chọn loại báo cáo:",
-    ("Báo cáo tiêu chuẩn", "Báo cáo so sánh")
-)
+# Get unique years, months, and projects from raw data for selectbox options
+all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist())
+all_months = list(df_raw['MonthName'].dropna().unique())
+all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
 
-# Lấy danh sách duy nhất của các năm và tháng từ dữ liệu thô
-all_years = sorted(df_raw['Year'].unique().tolist())
-all_months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-all_projects = sorted(df_raw['Project name'].unique().tolist())
+# Main interface tabs
+tab_standard, tab_comparison, tab_data_preview = st.tabs(["Standard Report", "Comparison Report", "Data Preview"])
 
-if report_type == "Báo cáo tiêu chuẩn":
-    st.sidebar.markdown("### Lọc cho Báo cáo tiêu chuẩn")
-    mode_options = ["year", "month", "week"]
-    selected_mode = st.sidebar.selectbox("Chế độ báo cáo", mode_options, index=mode_options.index(config.get('mode', 'year')))
+# =========================================================================
+# STANDARD REPORT TAB
+# =========================================================================
+with tab_standard:
+    st.header("Standard Time Report Configuration")
 
-    selected_year_standard = st.sidebar.selectbox("Chọn năm", all_years, index=all_years.index(config.get('year', datetime.datetime.now().year)) if config.get('year', datetime.datetime.now().year) in all_years else 0)
-    
-    selected_months_standard = []
-    if selected_mode == "month":
-        selected_months_standard = st.sidebar.multiselect(
-            "Chọn tháng (chỉ áp dụng cho chế độ tháng)", 
-            all_months, 
-            default=config.get('months', [])
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        mode = st.selectbox(
+            "Select analysis mode:", 
+            options=['year', 'month', 'week'], 
+            index=['year', 'month', 'week'].index(config_data['mode']) if config_data['mode'] in ['year', 'month', 'week'] else 0,
+            key='standard_mode'
         )
+    with col2:
+        year_options = [y for y in all_years if y is not None] # Filter out None/NaN
+        selected_year = st.selectbox(
+            "Select year:", 
+            options=year_options, 
+            index=year_options.index(config_data['year']) if config_data['year'] in year_options else (0 if year_options else 0), # Ensure valid index
+            key='standard_year'
+        )
+    with col3:
+        # Default months to all if config_data['months'] is empty, otherwise use config
+        default_months_standard = config_data['months'] if config_data['months'] else all_months
+        selected_months = st.multiselect(
+            "Select month(s):", 
+            options=all_months, 
+            default=default_months_standard,
+            key='standard_months'
+        )
+
+    # Project selection for standard report
+    st.subheader("Project Selection for Standard Report")
+    # Initialize included_projects based on config_data's project_filter_df
+    # Only include projects marked 'yes' in the config
+    initial_included_projects_config = config_data['project_filter_df'][
+        config_data['project_filter_df']['Include'].astype(str).str.lower() == 'yes'
+    ]['Project Name'].tolist()
     
-    # Sử dụng 'selected_projects_config' từ biến config chính
-    default_selected_projects_standard = config.get('selected_projects_config', [])
-    selected_projects_standard = st.sidebar.multiselect(
-        "Lọc theo dự án (từ Config_Project_Filter)", 
-        all_projects, 
-        default=default_selected_projects_standard
-    )
-
-    format_options_standard = st.sidebar.multiselect(
-        "Chọn định dạng xuất báo cáo", 
-        ["Excel", "PDF"], 
-        default=["Excel"]
-    )
-
-    if st.sidebar.button("Tạo Báo Cáo Tiêu Chuẩn"):
-        if not format_options_standard:
-            st.warning("Vui lòng chọn ít nhất một định dạng xuất báo cáo.")
-        else:
-            with st.spinner("Đang tạo báo cáo tiêu chuẩn..."):
-                current_config = {
-                    'mode': selected_mode,
-                    'year': selected_year_standard,
-                    'months': selected_months_standard,
-                    # Đảm bảo selected_projects_config luôn được truyền vào
-                    'selected_projects_config': selected_projects_standard 
-                }
-                
-                df_filtered = apply_filters(df_raw, current_config)
-                
-                if df_filtered.empty:
-                    st.warning("Không có dữ liệu phù hợp với các lựa chọn lọc hiện tại.")
-                else:
-                    if "Excel" in format_options_standard:
-                        export_report(df_filtered, current_config, path_dict)
-                        st.success(f"Báo cáo tiêu chuẩn Excel đã được tạo tại {path_dict['output_file']}")
-                    
-                    if "PDF" in format_options_standard:
-                        export_pdf_report(df_filtered, current_config, path_dict)
-                        st.success(f"Báo cáo tiêu chuẩn PDF đã được tạo tại {path_dict['pdf_report']}")
-
-elif report_type == "Báo cáo so sánh":
-    st.sidebar.markdown("### Lọc cho Báo cáo so sánh")
-    comparison_mode_options = [
-        "So Sánh Dự Án Trong Một Tháng",
-        "So Sánh Dự Án Trong Một Năm",
-        "So Sánh Một Dự Án Qua Các Tháng/Năm"
-    ]
-    comparison_mode = st.sidebar.selectbox("Chọn chế độ so sánh", comparison_mode_options)
-
-    selected_years_comparison = st.sidebar.multiselect("Chọn năm", all_years, default=[datetime.datetime.now().year])
-    selected_months_comparison = st.sidebar.multiselect("Chọn tháng", all_months)
+    # Ensure all initial projects from config are actually present in all_projects
+    initial_included_projects_valid = [p for p in initial_included_projects_config if p in all_projects]
     
-    # Sử dụng 'selected_projects_config' từ biến config chính
-    default_selected_projects_comparison = config.get('selected_projects_config', [])
-    selected_projects_comparison = st.sidebar.multiselect(
-        "Chọn dự án để so sánh (từ Config_Project_Filter)", 
-        all_projects, 
-        default=default_selected_projects_comparison
+    # Use the valid initial projects as default, or all_projects if none are configured/valid
+    default_standard_projects = initial_included_projects_valid if initial_included_projects_valid else all_projects
+
+    standard_project_selection = st.multiselect(
+        "Select projects to include (only 'yes' projects from template config will be included by default):", 
+        options=all_projects, 
+        default=default_standard_projects,
+        key='standard_project_selection'
     )
 
-    format_options_comparison = st.sidebar.multiselect(
-        "Chọn định dạng xuất báo cáo so sánh", 
-        ["Excel", "PDF"], 
-        default=["Excel"]
-    )
+    if st.button("🚀 Generate Standard Report", key='generate_standard_report_btn'):
+        # Create a temporary project_filter_df for the standard report based on user selection
+        # This simulates the 'Include' column logic for selected projects
+        temp_project_filter_df_standard = pd.DataFrame({
+            'Project Name': all_projects,
+            'Include': ['yes' if p in standard_project_selection else 'no' for p in all_projects]
+        })
+        
+        standard_report_config = {
+            'mode': mode,
+            'year': selected_year,
+            'months': selected_months,
+            'project_filter_df': temp_project_filter_df_standard[temp_project_filter_df_standard['Project Name'].isin(standard_project_selection)]
+        }
 
-    if st.sidebar.button("Tạo Báo Cáo So Sánh"):
-        if not format_options_comparison:
-            st.warning("Vui lòng chọn ít nhất một định dạng xuất báo cáo so sánh.")
+        df_filtered_standard = apply_filters(df_raw, standard_report_config)
+
+        if df_filtered_standard.empty:
+            st.warning("⚠️ No data after filtering for the standard report. Please check your selections.")
         else:
-            with st.spinner("Đang tạo báo cáo so sánh..."):
-                # Đảm bảo comparison_config_for_functions chứa 'selected_projects_config'
-                comparison_config_for_functions = {
-                    'years': selected_years_comparison,
-                    'months': selected_months_comparison,
-                    'selected_projects_config': selected_projects_comparison # Đảm bảo dòng này
-                }
+            with st.spinner("Generating Excel report..."):
+                excel_success = export_report(df_filtered_standard, standard_report_config, path_dict)
+            
+            if excel_success:
+                st.success(f"✅ Excel Report generated: {os.path.basename(path_dict['output_file'])}")
+                with open(path_dict['output_file'], "rb") as f:
+                    st.download_button("📥 Download Excel Report", data=f, file_name=os.path.basename(path_dict['output_file']), key='download_excel_standard')
                 
-                df_comparison, message = apply_comparison_filters(df_raw, comparison_config_for_functions, comparison_mode)
+                with st.spinner("Generating PDF report..."):
+                    pdf_success = export_pdf_report(df_filtered_standard, standard_report_config, path_dict)
                 
-                if df_comparison.empty:
-                    st.warning(message)
+                if pdf_success:
+                    st.success(f"✅ PDF Report generated: {os.path.basename(path_dict['pdf_report'])}")
+                    with open(path_dict['pdf_report'], "rb") as f:
+                        st.download_button("📥 Download PDF Report", data=f, file_name=os.path.basename(path_dict['pdf_report']), key='download_pdf_standard')
                 else:
-                    if "Excel" in format_options_comparison:
-                        export_success_excel = export_comparison_report(df_comparison, comparison_config_for_functions, path_dict, comparison_mode)
-                        if export_success_excel:
-                            st.success(f"Báo cáo so sánh Excel đã được tạo tại {path_dict['comparison_output_file']}")
-                        else:
-                            st.error("Có lỗi xảy ra khi tạo báo cáo so sánh Excel.")
-                    
-                    if "PDF" in format_options_comparison:
-                        export_success_pdf = export_comparison_pdf_report(df_comparison, comparison_config_for_functions, path_dict, comparison_mode)
-                        if export_success_pdf:
-                            st.success(f"Báo cáo so sánh PDF đã được tạo tại {path_dict['comparison_pdf_report']}")
-                        else:
-                            st.error("Có lỗi xảy ra khi tạo báo cáo so sánh PDF.")
+                    st.error("❌ Failed to generate PDF report.")
+            else:
+                st.error("❌ Failed to generate Excel report.")
 
-# Hiển thị DataFrame thô (tùy chọn, chỉ để debug)
-# st.subheader("Dữ liệu thô (Chỉ để debug)")
-# st.dataframe(df_raw.head())
 
-# st.subheader("Cấu hình đã đọc (Chỉ để debug)")
-# st.json(config)
+# =========================================================================
+# COMPARISON REPORT TAB
+# =========================================================================
+with tab_comparison:
+    st.header("Comparison Report Configuration")
+
+    comparison_mode = st.selectbox(
+        "Select comparison mode:",
+        options=[
+            "So Sánh Dự Án Trong Một Tháng", # Compare Projects in a Month
+            "So Sánh Dự Án Trong Một Năm",   # Compare Projects in a Year (by Month)
+            "So Sánh Một Dự Án Qua Các Tháng/Năm" # Compare One Project Over Time (Months/Years)
+        ],
+        key='comparison_mode_select'
+    )
+
+    # Input for Years, Months, Projects (for comparison)
+    st.subheader("Filter Data for Comparison")
+    
+    col_comp1, col_comp2 = st.columns(2)
+    with col_comp1:
+        comp_years = st.multiselect("Select Year(s):", options=all_years, default=[all_years[0]] if all_years else [], key='comp_years')
+    with col_comp2:
+        comp_months = st.multiselect("Select Month(s):", options=all_months, default=[], key='comp_months')
+    
+    comp_projects = st.multiselect("Select Project(s):", options=all_projects, default=[], key='comp_projects')
+
+    if st.button("🚀 Generate Comparison Report", key='generate_comparison_report_btn'):
+        comparison_config = {
+            'years': comp_years,
+            'months': comp_months,
+            'selected_projects': comp_projects,
+            # For comparison report, project_filter_df is not used in the same way as standard
+            # We directly pass 'selected_projects' to apply_comparison_filters
+        }
+
+        df_comparison, message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
+
+        if df_comparison.empty:
+            st.warning(f"⚠️ {message}")
+        else:
+            st.success("✅ Data filtered successfully for comparison.")
+            st.subheader("Comparison Data Preview")
+            st.dataframe(df_comparison)
+
+            with st.spinner("Generating Comparison Excel Report..."):
+                excel_success_comp = export_comparison_report(df_comparison, comparison_config, path_dict, comparison_mode)
+            
+            if excel_success_comp:
+                st.success(f"✅ Comparison Excel Report generated: {os.path.basename(path_dict['comparison_output_file'])}")
+                with open(path_dict['comparison_output_file'], "rb") as f:
+                    st.download_button("📥 Download Comparison Excel", data=f, file_name=os.path.basename(path_dict['comparison_output_file']), key='download_excel_comparison')
+                
+                with st.spinner("Generating Comparison PDF Report..."):
+                    pdf_success_comp = export_comparison_pdf_report(df_comparison, comparison_config, path_dict, comparison_mode)
+                
+                if pdf_success_comp:
+                    st.success(f"✅ Comparison PDF Report generated: {os.path.basename(path_dict['comparison_pdf_report'])}")
+                    with open(path_dict['comparison_pdf_report'], "rb") as f:
+                        st.download_button("📥 Download Comparison PDF", data=f, file_name=os.path.basename(path_dict['comparison_pdf_report']), key='download_pdf_comparison')
+                else:
+                    st.error("❌ Failed to generate Comparison PDF report.")
+            else:
+                st.error("❌ Failed to generate Comparison Excel report.")
+
+# =========================================================================
+# DATA PREVIEW TAB
+# =========================================================================
+with tab_data_preview:
+    st.subheader("Raw Input Data (First 100 rows)")
+    if not df_raw.empty:
+        st.dataframe(df_raw.head(100))
+    else:
+        st.info("No raw data loaded.")
