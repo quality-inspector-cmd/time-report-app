@@ -190,19 +190,18 @@ def export_pdf_report(df, config, path_dict):
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        # Loại bỏ các dòng liên quan đến font DejaVuSans hoặc Arial để sử dụng font mặc định/tiêu chuẩn
-        pdf.set_font('helvetica', 'B', 16) # Sử dụng font tiêu chuẩn Helvetica
+        pdf.set_font('helvetica', 'B', 16) 
         
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("helvetica", '', 12) # Thay DejaVuSans bằng Helvetica
+        pdf.set_font("helvetica", '', 12) 
         pdf.ln(5)
         pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("helvetica", '', 11) # Thay DejaVuSans bằng Helvetica
+        pdf.set_font("helvetica", '', 11) 
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -211,7 +210,7 @@ def export_pdf_report(df, config, path_dict):
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_font("helvetica", 'B', 11) # Thay DejaVuSans bằng Helvetica
+                pdf.set_font("helvetica", 'B', 11) 
                 pdf.set_y(35)
                 if page_project_name:
                     pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -225,7 +224,7 @@ def export_pdf_report(df, config, path_dict):
     charts_for_pdf = []
 
     try:
-        projects = df['Project name'].unique() # Lấy danh sách dự án từ df đã lọc
+        projects = df['Project name'].unique() 
 
         config_info = {
             "Mode": config.get('mode', 'N/A').capitalize(),
@@ -239,29 +238,27 @@ def export_pdf_report(df, config, path_dict):
             df_proj = df[df['Project name'] == project]
 
             # Bắt đầu đoạn code cho biểu đồ Workcentre
-            fig, ax = plt.subplots(figsize=(10, 5)) # Tăng chiều rộng và chiều cao
+            fig, ax = plt.subplots(figsize=(10, 5)) 
             df_proj.groupby('Workcentre')['Hours'].sum().sort_values().plot(kind='barh', color='skyblue', ax=ax)
-            ax.set_title(f"{project} - Hours by Workcentre", fontsize=9) # Giảm nhẹ kích thước tiêu đề
-            ax.tick_params(axis='y', labelsize=8) # Thêm dòng này để giảm kích thước nhãn trục Y
+            ax.set_title(f"{project} - Hours by Workcentre", fontsize=9) 
+            ax.tick_params(axis='y', labelsize=8) 
             wc_img_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
             plt.tight_layout()
             fig.savefig(wc_img_path, dpi=150)
             plt.close(fig)
             charts_for_pdf.append((wc_img_path, f"{project} - Hours by Workcentre", project))
-            # Kết thúc đoạn code cho biểu đồ Workcentre
 
             # Bắt đầu đoạn code cho biểu đồ Task
             if 'Task' in df_proj.columns and not df_proj['Task'].empty:
-                fig, ax = plt.subplots(figsize=(10, 6)) # Tăng chiều rộng và chiều cao
+                fig, ax = plt.subplots(figsize=(10, 6)) 
                 df_proj.groupby('Task')['Hours'].sum().sort_values().plot(kind='barh', color='lightgreen', ax=ax)
-                ax.set_title(f"{project} - Hours by Task", fontsize=9) # Giảm nhẹ kích thước tiêu đề
-                ax.tick_params(axis='y', labelsize=8) # Thêm dòng này để giảm kích thước nhãn trục Y
+                ax.set_title(f"{project} - Hours by Task", fontsize=9) 
+                ax.tick_params(axis='y', labelsize=8) 
                 task_img_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
                 plt.tight_layout()
                 fig.savefig(task_img_path, dpi=150)
                 plt.close(fig)
                 charts_for_pdf.append((task_img_path, f"{project} - Hours by Task", project))
-            # Kết thúc đoạn code cho biểu đồ Task
 
         create_pdf_from_charts(charts_for_pdf, path_dict['pdf_report'], "TRIAC TIME REPORT - STANDARD", config_info)
 
@@ -289,7 +286,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     
     if selected_projects:
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_projects)]
-    else: # Nếu không có dự án nào được chọn, thì không có dữ liệu để so sánh
+    else: 
         return pd.DataFrame(), "Vui lòng chọn ít nhất một dự án để so sánh."
 
 
@@ -306,52 +303,62 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-        # Chế độ này sẽ được dùng để tạo line chart (nhiều dự án, một năm, theo tháng)
         if len(years) != 1 or len(selected_projects) < 2:
             return pd.DataFrame(), "Cần chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
         
-        # Groupby Project name và MonthName, sau đó unstack để có tháng làm cột
         df_comparison = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
         
-        # Sắp xếp các cột tháng theo thứ tự chuẩn
         month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         existing_months = [m for m in month_order if m in df_comparison.columns]
         df_comparison = df_comparison[existing_months]
 
-        # Thêm dòng 'Total' nếu cần (có thể không cần cho line chart này)
-        # df_comparison.loc['Total'] = df_comparison.sum()
-        
         df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
         
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-        if len(selected_projects) != 1 or (len(months) < 2 and len(years) < 2): # Ít nhất 2 tháng hoặc 2 năm để so sánh
-            return pd.DataFrame(), "Cần chọn MỘT dự án và ít nhất HAI tháng hoặc HAI năm để so sánh."
+        # Logic này được dùng khi bạn chọn 1 dự án và nhiều tháng/năm.
+        # Đảm bảo điều kiện đủ dữ liệu để vẽ đường.
+        if len(selected_projects) != 1:
+            return pd.DataFrame(), "Chế độ 'So Sánh Một Dự Án Qua Các Tháng/Năm' yêu cầu chọn CHỈ MỘT dự án."
         
-        # Nếu chỉ có năm được chọn, thì tổng hợp theo năm, nếu có tháng thì tổng hợp theo năm và tháng
-        if months and years:
+        if not years and not months:
+            return pd.DataFrame(), "Cần chọn ít nhất một năm HOẶC một tháng để so sánh."
+
+        if len(years) == 1 and len(months) >= 2: # Trường hợp 1 dự án, 1 năm, nhiều tháng
             df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
             month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
             existing_months = [m for m in month_order if m in df_comparison.columns]
-            df_comparison = df_comparison[existing_months]
-            df_comparison = df_comparison.reset_index().rename(columns={'index': 'Year'})
-        elif years: # Chỉ có năm được chọn
+            df_comparison = df_comparison[existing_months] # df_comparison có index là Year, columns là các MonthName
+            df_comparison = df_comparison.reset_index() # Giữ Year là cột, không phải index
+            
+        elif len(years) >= 2 and not months: # Trường hợp 1 dự án, nhiều năm, không chọn tháng cụ thể
             df_comparison = df_filtered.groupby(['Year'])['Hours'].sum().reset_index()
             df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-        else: # Chỉ có tháng được chọn (giả định cho nhiều năm)
-             df_comparison = df_filtered.groupby(['MonthName'])['Hours'].sum().reset_index()
-             df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-             # Sắp xếp lại theo thứ tự tháng
-             month_order_df = pd.DataFrame({'MonthName': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']})
-             df_comparison = pd.merge(month_order_df, df_comparison, on='MonthName', how='left').fillna(0)
+            
+        elif len(months) >= 2 and not years: # Trường hợp 1 dự án, nhiều tháng (qua tất cả các năm được chọn/có dữ liệu)
+            df_comparison = df_filtered.groupby(['MonthName'])['Hours'].sum().reset_index()
+            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+            month_order_df = pd.DataFrame({'MonthName': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']})
+            df_comparison = pd.merge(month_order_df, df_comparison, on='MonthName', how='left').fillna(0)
+            
+        elif len(years) >= 2 and len(months) >= 1: # Trường hợp 1 dự án, nhiều năm, và có chọn tháng cụ thể (VD: tháng 1 của 2023, tháng 1 của 2024)
+            df_comparison = df_filtered.groupby(['Year', 'MonthName'])['Hours'].sum().reset_index()
+            # Sắp xếp để tạo Year-Month
+            month_to_num = {name: i for i, name in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], 1)}
+            df_comparison['MonthNum'] = df_comparison['MonthName'].map(month_to_num)
+            df_comparison['YearMonth'] = df_comparison['Year'].astype(str) + '-' + df_comparison['MonthNum'].astype(str).str.zfill(2)
+            df_comparison = df_comparison.sort_values(by=['Year', 'MonthNum'])
+            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+            df_comparison = df_comparison[['YearMonth', 'Total Hours']] # Giữ lại cột kết hợp và cột giờ
 
-
-        # Thêm dòng tổng nếu có nhiều cột dữ liệu (tức là pivot table)
-        if len(df_comparison.columns) > 2: # Nếu có cột năm/tháng và ít nhất 1 cột dữ liệu
-             df_comparison.loc['Total'] = df_comparison.drop(columns=[df_comparison.columns[0]], errors='ignore').sum()
-
+        else: # Các trường hợp không đủ dữ liệu hoặc không được hỗ trợ rõ ràng
+            return pd.DataFrame(), "Cần chọn ít nhất HAI tháng HOẶC HAI năm để so sánh một dự án qua thời gian."
+        
+        # In df_comparison để debug
+        # print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): df_comparison head:\n{df_comparison.head()}")
+        # print(f"DEBUG - apply_comparison_filters (Compare One Project Over Time): df_comparison columns:\n{df_comparison.columns}")
 
         title = f"So sánh giờ của dự án {selected_projects[0]} qua thời gian"
         return df_comparison, title
@@ -414,17 +421,18 @@ def export_comparison_report(df_comparison, comparison_config, path_dict, compar
                 chart.title = "So sánh giờ của một dự án qua các tháng/năm"
                 chart.x_axis.title = "Thời gian (Năm)"
 
-                value_cols = [col for col in df_comparison.columns if col not in ['Year', 'MonthName']]
+                value_cols = [col for col in df_comparison.columns if col not in ['Year', 'MonthName', 'YearMonth']] # Thêm YearMonth
                 
                 for idx, col_name in enumerate(value_cols):
                     series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison)-1)
                     chart.add_data(series, titles_from_data=True)
                 
-                # Cần điều chỉnh cat_ref tùy thuộc vào cách bạn pivot (chỉ năm hoặc năm và tháng)
                 if 'Year' in df_comparison.columns:
                     cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Year') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
                 elif 'MonthName' in df_comparison.columns:
                      cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('MonthName') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
+                elif 'YearMonth' in df_comparison.columns: # Thêm điều kiện này
+                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('YearMonth') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
                 else: # Fallback
                      cats_ref = Reference(ws, min_col=1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
 
@@ -444,19 +452,18 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        # Loại bỏ các dòng liên quan đến font DejaVuSans hoặc Arial để sử dụng font mặc định/tiêu chuẩn
-        pdf.set_font('helvetica', 'B', 16) # Sử dụng font tiêu chuẩn Helvetica
+        pdf.set_font('helvetica', 'B', 16) 
 
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("helvetica", '', 12) # Thay DejaVuSans bằng Helvetica
+        pdf.set_font("helvetica", '', 12) 
         pdf.ln(5)
         pdf.cell(0, 10, f"Generated on: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("helvetica", '', 11) # Thay DejaVuSans bằng Helvetica
+        pdf.set_font("helvetica", '', 11) 
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -465,7 +472,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_font("helvetica", 'B', 11) # Thay DejaVuSans bằng Helvetica
+                pdf.set_font("helvetica", 'B', 11) 
                 pdf.set_y(35)
                 if page_project_name:
                     pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -480,17 +487,12 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         
         df_plot = df.copy() 
         
-        # Thêm kiểm tra DataFrame rỗng
         if df_plot.empty:
             print(f"DEBUG: df_plot is empty for mode '{mode}'. Skipping chart creation.")
-            plt.close(fig) # Đóng hình ảnh rỗng
-            return None # Báo hiệu không có biểu đồ nào được tạo
+            plt.close(fig) 
+            return None 
 
         ax.set_ylim(bottom=0)
-
-        # Đảm bảo không có các thiết lập font cho Matplotlib ảnh hưởng đến tiếng Việt
-        # plt.rcParams['font.family'] = 'DejaVu Sans' # Đã bị loại bỏ
-        # plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] # Đã bị loại bỏ
 
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
@@ -498,64 +500,80 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             ax.tick_params(axis='x', rotation=45, ha='right')
             ax.tick_params(axis='y', labelsize=8) 
         elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            # CHUYỂN SANG BIỂU ĐỒ ĐƯỜNG CHO CHẾ ĐỘ NÀY (ĐA DỰ ÁN QUA THỜI GIAN)
             if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
                 df_plot = df_plot[df_plot['Project Name'] != 'Total']
             
-            # Các cột là tên tháng
             month_columns = [col for col in df_plot.columns if col not in ['Project Name']]
             df_plot[month_columns] = df_plot[month_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
 
-            df_plot.set_index('Project Name', inplace=True) # Đặt Project Name làm index
+            df_plot.set_index('Project Name', inplace=True)
             
-            # Để vẽ tháng trên trục X và mỗi dự án là một đường, cần transpose DataFrame
             df_plot.T.plot(kind='line', ax=ax, colormap='viridis', marker='o') 
             
-            # Thiết lập nhãn trục X là các tháng
             ax.set_xticks(range(len(df_plot.columns))) 
             ax.set_xticklabels(df_plot.columns, rotation=45, ha='right')
             
-            ax.legend(title="Dự án", bbox_to_anchor=(1.05, 1), loc='upper left') # Legend hiển thị tên dự án
+            ax.legend(title="Dự án", bbox_to_anchor=(1.05, 1), loc='upper left') 
             ax.tick_params(axis='y', labelsize=8)
-            x_label = "Tháng" # Cập nhật nhãn trục X
+            x_label = "Tháng" 
             
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            # Giữ nguyên line chart cho chế độ này (một dự án qua thời gian)
             if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
                 df_plot = df_plot[df_plot['Year'] != 'Total']
             
-            data_cols = [col for col in df_plot.columns if col not in ['Year', 'MonthName', 'Total']]
+            # Kiểm tra df_plot để xác định cách vẽ
+            # Trường hợp 1: 1 dự án, 1 năm, nhiều tháng (df_plot có cột 'Year' và các cột tháng)
+            # Sau unstack từ apply_comparison_filters: df_plot có dạng: Year | Month1 | Month2 | ...
+            is_single_year_multi_month = 'Year' in df_plot.columns and len(df_plot['Year'].unique()) == 1 and any(col in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] for col in df_plot.columns)
+
+            if is_single_year_multi_month:
+                # Bỏ cột 'Year' và chuyển vị để các tháng thành index
+                df_plot = df_plot.drop(columns='Year', errors='ignore').T
+                df_plot.columns = ['Total Hours'] # Đặt tên cột là 'Total Hours' cho rõ ràng
+                
+                # Sắp xếp các tháng theo thứ tự tự nhiên
+                month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                df_plot['MonthName_ordered'] = pd.Categorical(df_plot.index, categories=month_order_list, ordered=True)
+                df_plot = df_plot.sort_values(by='MonthName_ordered')
+                df_plot.drop(columns='MonthName_ordered', inplace=True)
+
+                ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon')
+                x_label = f"Tháng ({df.iloc[0]['Year']})" if not df.empty and 'Year' in df.columns else "Tháng"
+                ax.set_xticks(df_plot.index)
             
-            # Sắp xếp lại dữ liệu để trục X có thứ tự đúng (quan trọng cho line chart)
-            if 'Year' in df_plot.columns and 'MonthName' in df_plot.columns:
-                month_to_num = {name: i for i, name in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], 1)}
-                df_plot['MonthNum'] = df_plot['MonthName'].map(month_to_num)
-                df_plot['YearMonth'] = df_plot['Year'].astype(str) + '-' + df_plot['MonthNum'].astype(str).str.zfill(2)
-                df_plot = df_plot.sort_values(by=['Year', 'MonthNum'])
-                df_plot.set_index('YearMonth', inplace=True)
-                x_label = "Thời gian (Năm-Tháng)" 
-            elif 'Year' in df_plot.columns:
+            # Trường hợp 2: 1 dự án, nhiều năm (df_plot có cột 'Year' và 'Total Hours')
+            elif 'Year' in df_plot.columns and 'Total Hours' in df_plot.columns and not any(col in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] for col in df_plot.columns):
                 df_plot = df_plot.sort_values(by='Year')
-                df_plot.set_index('Year', inplace=True)
-                x_label = "Năm" 
-            elif 'MonthName' in df_plot.columns:
+                ax.plot(df_plot['Year'], df_plot['Total Hours'], marker='o', color='salmon')
+                x_label = "Năm"
+                ax.set_xticks(df_plot['Year'])
+
+            # Trường hợp 3: 1 dự án, nhiều tháng qua nhiều năm (df_plot có cột 'YearMonth' và 'Total Hours')
+            elif 'YearMonth' in df_plot.columns and 'Total Hours' in df_plot.columns:
+                df_plot = df_plot.sort_values(by='YearMonth')
+                ax.plot(df_plot['YearMonth'], df_plot['Total Hours'], marker='o', color='salmon')
+                x_label = "Thời gian (Năm-Tháng)"
+                # Điều chỉnh tần suất hiển thị nhãn trục X nếu có quá nhiều điểm
+                if len(df_plot['YearMonth']) > 12: # Ví dụ, nếu nhiều hơn 12 điểm thì chỉ hiển thị 2 tháng 1 lần
+                    step = max(1, len(df_plot['YearMonth']) // 6) # Hiển thị khoảng 6-8 nhãn
+                    ax.set_xticks(df_plot['YearMonth'].iloc[::step])
+                else:
+                    ax.set_xticks(df_plot['YearMonth'])
+
+            # Trường hợp 4: 1 dự án, chỉ có tháng được chọn (tổng hợp tháng 1 qua tất cả các năm)
+            elif 'MonthName' in df_plot.columns and 'Total Hours' in df_plot.columns:
                 month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                 df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
                 df_plot = df_plot.sort_values(by='MonthName_ordered')
-                df_plot.set_index('MonthName', inplace=True)
-                x_label = "Tháng" 
+                ax.plot(df_plot['MonthName'], df_plot['Total Hours'], marker='o', color='salmon')
+                x_label = "Tháng"
+                ax.set_xticks(df_plot['MonthName'])
+            
+            else:
+                print(f"Warning: No suitable plotting data structure found for 'Compare One Project Over Time' mode. df_plot columns: {df_plot.columns}")
+                # Có thể thêm một tin nhắn vào biểu đồ nếu không thể vẽ
+                ax.text(0.5, 0.5, "Không có dữ liệu để vẽ biểu đồ line.", horizontalalignment='center', verticalalignment='center', transform=ax.transAxes, fontsize=12)
 
-
-            if not data_cols: # Nếu chỉ có một cột tổng giờ
-                if 'Total Hours' in df_plot.columns:
-                    ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon') 
-                else:
-                    print("Warning: No 'Total Hours' column found for 'Compare One Project Over Time' mode.")
-                    return None
-            else: # Nếu có nhiều cột tháng (pivot table)
-                df_plot[data_cols] = df_plot[data_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
-                df_plot.plot(kind='line', ax=ax, colormap='plasma', marker='o') # Đã loại bỏ figsize
-                ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
 
             plt.xticks(rotation=45, ha='right')
             ax.tick_params(axis='y', labelsize=8)
@@ -576,9 +594,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             x_label = "Dự án"
         elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            x_label = "Tháng" # Đã cập nhật x_label cho chế độ này
+            x_label = "Tháng" 
         elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            # x_label sẽ được cập nhật trong hàm create_comparison_chart
             pass 
         
         comp_chart_path = os.path.join(tmp_dir, "comparison_chart.png")
