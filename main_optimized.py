@@ -20,15 +20,60 @@ csv_file_path = os.path.join(script_dir, "invited_emails.csv")
 # Gọi hàm setup_paths ngay từ đầu để path_dict có sẵn
 path_dict = setup_paths()
 
-# ==============================================================================
-# CẤU HÌNH TRANG VÀ KHỞI TẠO NGÔN NGỮ ĐƯỢC CHUYỂN LÊN ĐÂY
-# ĐỂ ĐẢM BẢO CHẠY NGAY TỪ ĐẦU
-# ==============================================================================
-st.set_page_config(page_title="Triac Time Report", layout="wide")
+# ---------------------------
+# PHẦN XÁC THỰC TRUY CẬP
+# ---------------------------
 
+@st.cache_data
+def load_invited_emails():
+    try:
+        df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
+        emails = df.iloc[:, 0].astype(str).strip().str.lower().tolist()
+        return emails
+    except FileNotFoundError:
+        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
+        return []
+    except Exception as e:
+        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
+        return []
+
+# Tải danh sách email được mời một lần
+INVITED_EMAILS = load_invited_emails()
+
+# Hàm ghi log truy cập
+def log_user_access(email):
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    log_entry = {"Time": timestamp, "Email": email}
+    if "access_log" not in st.session_state:
+        st.session_state.access_log = []
+    st.session_state.access_log.append(log_entry)
+
+# Logic xác thực người dùng
+if "user_email" not in st.session_state:
+    st.set_page_config(page_title="Triac Time Report", layout="wide")
+    st.title("🔐 Access authentication")
+    email_input = st.text_input("📧 Enter the invited email to access:")
+
+    if email_input:
+        email = email_input.strip().lower()
+        if email in INVITED_EMAILS:
+            st.session_state.user_email = email
+            log_user_access(email)
+            st.success("✅ Valid email! Entering application...")
+            st.rerun()
+        else:
+            st.error("❌ Email is not on the invitation list.")
+    st.stop() # Dừng thực thi nếu chưa xác thực
+
+# ---------------------------
+# PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
+# ---------------------------
 # Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'en' # Mặc định là tiếng Anh (ĐÃ ĐIỀU CHỈNH TỪ 'vi' SANG 'en')
+    st.session_state.lang = 'en' # Mặc định là tiếng Anh
+
+# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
+st.set_page_config(page_title="Triac Time Report", layout="wide")
 
 st.markdown("""
     <style>
@@ -194,51 +239,6 @@ TEXTS = {
 # Lấy từ điển văn bản dựa trên lựa chọn ngôn ngữ hiện tại
 def get_text(key):
     return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
-
-# ---------------------------
-# PHẦN XÁC THỰC TRUY CẬP
-# ---------------------------
-
-@st.cache_data
-def load_invited_emails():
-    try:
-        df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
-        return emails
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
-        return []
-    except Exception as e:
-        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
-        return []
-
-# Tải danh sách email được mời một lần
-INVITED_EMAILS = load_invited_emails()
-
-# Hàm ghi log truy cập
-def log_user_access(email):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = {"Time": timestamp, "Email": email}
-    if "access_log" not in st.session_state:
-        st.session_state.access_log = []
-    st.session_state.access_log.append(log_entry)
-
-# Logic xác thực người dùng
-if "user_email" not in st.session_state:
-    # st.set_page_config(page_title="Triac Time Report", layout="wide") # ĐÃ CHUYỂN LÊN TRÊN, CÓ THỂ XÓA DÒNG NÀY
-    st.title("🔐 " + get_text('access_authentication')) # SỬ DỤNG get_text
-    email_input = st.text_input("📧 " + get_text('enter_email')) # SỬ DỤNG get_text
-
-    if email_input:
-        email = email_input.strip().lower()
-        if email in INVITED_EMAILS:
-            st.session_state.user_email = email
-            log_user_access(email)
-            st.success("✅ " + get_text('valid_email')) # SỬ DỤNG get_text
-            st.rerun()
-        else:
-            st.error("❌ " + get_text('email_not_invited')) # SỬ DỤNG get_text
-    st.stop() # Dừng thực thi nếu chưa xác thực
 
 # Header của ứng dụng
 col_logo_title, col_lang = st.columns([0.8, 0.2])
@@ -601,90 +601,3 @@ with tab_comparison_report_main:
 
             comp_months = st.multiselect(
                 get_text('select_months_comp'),
-                options=all_months,
-                default=[m for m in st.session_state.comparison_selected_months_general if m in all_months], # Ensure default is valid
-                key='comp_months_select_tab'
-            )
-            st.session_state.comparison_selected_months_general = comp_months # Update state
-
-    st.markdown("---")
-    st.subheader(get_text("export_options"))
-    export_excel_comp = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_comp')
-    export_pdf_comp = st.checkbox(get_text("export_pdf_option"), value=False, key='export_pdf_comp')
-
-    if st.button(get_text('generate_comparison_report_btn'), key='generate_comparison_report_btn_tab'):
-        if not export_excel_comp and not export_pdf_comp:
-            st.warning(get_text("warning_select_export_format"))
-        elif validation_error: # Check the validation_error flag
-            # Error messages already shown by individual warnings
-            pass # Do nothing, warnings already displayed
-        else:
-            comparison_config_temp = {
-                'selected_years': comp_years,
-                'selected_months': comp_months,
-                'selected_projects': comp_projects,
-                'original_selected_mode_key': st.session_state.selected_comparison_mode_key
-            }
-
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
-                df_raw, comparison_config_temp, comparison_mode # ĐÃ THÊM 'comparison_mode' VÀO ĐÂY
-            )
-
-            if df_filtered_comparison.empty:
-                st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
-            else:
-                st.success(get_text('data_filtered_success'))
-                st.subheader(get_text('comparison_data_preview'))
-                st.dataframe(df_filtered_comparison.head(100))
-
-                report_generated_comp = False
-                if export_excel_comp:
-                    with st.spinner(get_text('generating_comparison_excel')):
-                        excel_success_comp = export_comparison_report(df_filtered_comparison, comparison_config_temp, path_dict['comparison_output_file'], comparison_mode, st.session_state.lang)
-                    if excel_success_comp:
-                        st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
-                        report_generated_comp = True
-                    else:
-                        st.error(get_text('failed_to_generate_comparison_excel'))
-
-                if export_pdf_comp:
-                    with st.spinner(get_text('generating_comparison_pdf')):
-                        pdf_success_comp = export_comparison_pdf_report(df_filtered_comparison, comparison_config_temp, path_dict['comparison_pdf_report'], path_dict['logo_path'], comparison_mode, st.session_state.lang)
-                    if pdf_success_comp:
-                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
-                        report_generated_comp = True
-                    else:
-                        st.error(get_text('failed_to_generate_comparison_pdf'))
-                
-                if report_generated_comp:
-                    if export_excel_comp and os.path.exists(path_dict['comparison_output_file']):
-                        with open(path_dict['comparison_output_file'], "rb") as f:
-                            st.download_button(get_text("download_comparison_excel"), data=f, file_name=os.path.basename(path_dict['comparison_output_file']), use_container_width=True, key='download_excel_comp_btn')
-                    if export_pdf_comp and os.path.exists(path_dict['comparison_pdf_report']):
-                        with open(path_dict['comparison_pdf_report'], "rb") as f:
-                            st.download_button(get_text("download_comparison_pdf"), data=f, file_name=os.path.basename(path_dict['comparison_pdf_report']), use_container_width=True, key='download_pdf_comp_btn')
-                else:
-                    st.error(get_text('error_generating_report'))
-
-
-# =========================================================================
-# DATA PREVIEW TAB
-# =========================================================================
-with tab_data_preview_main:
-    st.subheader(get_text('raw_data_preview_header'))
-    if not df_raw.empty:
-        st.dataframe(df_raw.head(100))
-    else:
-        st.info(get_text('no_raw_data'))
-
-# =========================================================================
-# USER GUIDE TAB
-# =========================================================================
-with tab_user_guide_main:
-    st.markdown(f"### {get_text('user_guide')}")
-    st.markdown("""
-    - Select filters: mode, year, month, project
-    - Select report export format (Excel, PDF or both)
-    - Click "Create report"
-    - Download generated report
-    """)
