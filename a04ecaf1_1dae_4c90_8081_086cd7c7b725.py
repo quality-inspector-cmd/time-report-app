@@ -136,7 +136,7 @@ def export_report(df_filtered, selected_mode, selected_year, selected_months, se
                         chart2.y_axis.title = 'Hours'
                         chart2.x_axis.title = 'Workcenter'
                         
-                        data = Reference(project_sheet, min_col=workcenter_summary.shape[1]+1, min_row=project_sheet.max_row - len(workcenter_summary), max_row=project_sheet.max_row, max_col=project_sheet.max_column)
+                        data = Reference(project_sheet, min_col=workcenter_summary.shape[1]+1, min_row=project_sheet.max_row - len(workcenter_summary), max_row=project_sheet.max_row, max_col=project_summary.shape[1]+1)
                         categories = Reference(project_sheet, min_col=workcenter_summary.shape[1], min_row=project_sheet.max_row - len(workcenter_summary)+1, max_row=project_sheet.max_row)
                         chart2.add_data(data, titles_from_data=True)
                         chart2.set_categories(categories)
@@ -516,7 +516,7 @@ def export_comparison_pdf_report(df_filtered, comparison_report_mode, output_pat
 
 def generate_reports_on_demand(
     df_raw,
-    config_data,  # <-- ĐÃ THÊM THAM SỐ NÀY
+    config_data,  # <-- ĐÃ THÊM THAM SỐ NÀY ĐỂ KHẮC PHỤC LỖI
     selected_mode,
     selected_year,
     selected_months,
@@ -525,7 +525,7 @@ def generate_reports_on_demand(
     comparison_config_months,
     comparison_config_projects,
     comparison_report_mode,
-    path_dict # <-- ĐÃ THÊM THAM SỐ NÀY
+    path_dict # <-- ĐÃ THÊM THAM SỐ NÀY ĐỂ KHẮC PHỤC LỖI
 ):
     """
     Hàm tổng hợp để tạo cả báo cáo tiêu chuẩn và báo cáo so sánh dựa trên các tham số.
@@ -676,7 +676,7 @@ def generate_reports_on_demand(
 #         standard_report_projects = ["Project Alpha"] # Thay thế bằng tên dự án của bạn
 
 #         # --- Cấu hình cho Báo cáo So sánh ---
-#         comparison_report_mode = "So Sánh Dự Án Trong Một Tháng" # Có thể là:
+#         # comparison_report_mode = "So Sánh Dự Án Trong Một Tháng" # Có thể là:
 #         #   "So Sánh Dự Án Trong Một Tháng"
 #         #   "So Sánh Dự Án Trong Một Năm"
 #         #   "So Sánh Một Dự Án Qua Các Tháng/Năm"
