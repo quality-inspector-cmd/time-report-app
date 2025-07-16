@@ -632,7 +632,9 @@ with tab_comparison_report_main:
                 'original_selected_mode_key': st.session_state.selected_comparison_mode_key # Keep original key for chart titles
             }
 
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_report_config)
+            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
+    df_raw, comparison_config_temp, selected_comparison_mode
+)
 
             if df_filtered_comparison.empty:
                 st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
