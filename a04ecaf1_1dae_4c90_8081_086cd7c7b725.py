@@ -735,6 +735,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 
 # --- Logic chính được tái cấu trúc ---
 def generate_reports_on_demand(
+    df_raw,
     selected_mode,
     selected_year,
     selected_months,
