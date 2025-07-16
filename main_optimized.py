@@ -434,21 +434,23 @@ with tab_comparison_report_main:
     default_display_value = get_text(st.session_state.selected_comparison_mode_key)
     
     # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
-    if default_display_value not in display_options:
-        default_display_value = display_options[0] # Fallback về mục đầu tiên
-        # Cập nhật session_state để phản ánh fallback
-        st.session_state.selected_comparison_mode_key = display_to_key_map[default_display_value]
-
+    # Nếu không tìm thấy, fallback về mục đầu tiên và cập nhật session_state
+    try:
+        current_index = display_options.index(default_display_value)
+    except ValueError:
+        # Giá trị mặc định không tìm thấy trong options hiện tại, fallback về đầu tiên
+        current_index = 0
+        st.session_state.selected_comparison_mode_key = display_to_key_map[display_options[0]]
+        default_display_value = display_options[0] # Cập nhật lại default_display_value cho đúng
 
     selected_comparison_display = st.selectbox(
         get_text('select_comparison_mode'),
         options=display_options,
-        index=display_options.index(default_display_value), # Đặt index dựa trên giá trị mặc định
+        index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
         key='comparison_mode_select_tab_main'
     )
     
     # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
-    # Đảm bảo chỉ cập nhật nếu có sự thay đổi thực sự để tránh loop không cần thiết
     current_selected_key = display_to_key_map[selected_comparison_display]
     if st.session_state.selected_comparison_mode_key != current_selected_key:
         st.session_state.selected_comparison_mode_key = current_selected_key
