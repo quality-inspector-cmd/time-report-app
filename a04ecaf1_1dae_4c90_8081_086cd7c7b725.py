@@ -306,15 +306,21 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
+        # Chế độ này sẽ được dùng để tạo line chart (nhiều dự án, một năm, theo tháng)
         if len(years) != 1 or len(selected_projects) < 2:
             return pd.DataFrame(), "Cần chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
         
+        # Groupby Project name và MonthName, sau đó unstack để có tháng làm cột
         df_comparison = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
+        
+        # Sắp xếp các cột tháng theo thứ tự chuẩn
         month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
         existing_months = [m for m in month_order if m in df_comparison.columns]
         df_comparison = df_comparison[existing_months]
 
-        df_comparison.loc['Total'] = df_comparison.sum()
+        # Thêm dòng 'Total' nếu cần (có thể không cần cho line chart này)
+        # df_comparison.loc['Total'] = df_comparison.sum()
+        
         df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
         
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
@@ -469,82 +475,93 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         pdf.output(output_path, "F")
         print(f"DEBUG: PDF report generated at {output_path}")
 
-# ... (các dòng code trước đó) ...
-
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path):
         fig, ax = plt.subplots(figsize=(12, 7)) 
         
         df_plot = df.copy() 
+        
+        # Thêm kiểm tra DataFrame rỗng
+        if df_plot.empty:
+            print(f"DEBUG: df_plot is empty for mode '{mode}'. Skipping chart creation.")
+            plt.close(fig) # Đóng hình ảnh rỗng
+            return None # Báo hiệu không có biểu đồ nào được tạo
+
         ax.set_ylim(bottom=0)
 
+        # Đảm bảo không có các thiết lập font cho Matplotlib ảnh hưởng đến tiếng Việt
+        # plt.rcParams['font.family'] = 'DejaVu Sans' # Đã bị loại bỏ
+        # plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] # Đã bị loại bỏ
+
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-            # Giữ nguyên bar chart cho chế độ này nếu bạn vẫn muốn so sánh cột giữa các dự án
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
             ax.set_xticks(df_plot['Project name'])
             ax.tick_params(axis='x', rotation=45, ha='right')
-            ax.tick_params(axis='y', labelsize=8)
+            ax.tick_params(axis='y', labelsize=8) 
         elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            # Giữ nguyên bar chart cho chế độ này (bar chồng hoặc nhóm)
+            # CHUYỂN SANG BIỂU ĐỒ ĐƯỜNG CHO CHẾ ĐỘ NÀY (ĐA DỰ ÁN QUA THỜI GIAN)
             if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
                 df_plot = df_plot[df_plot['Project Name'] != 'Total']
             
+            # Các cột là tên tháng
             month_columns = [col for col in df_plot.columns if col not in ['Project Name']]
             df_plot[month_columns] = df_plot[month_columns].apply(pd.to_numeric, errors='coerce').fillna(0)
 
-            df_plot.set_index('Project Name', inplace=True)
-            # Dòng này tạo biểu đồ cột. Bạn có thể giữ nguyên nếu muốn so sánh dự án theo tháng bằng cột.
-            df_plot.plot(kind='bar', ax=ax, figsize=(10,6), colormap='viridis') 
-            ax.set_xticks(range(len(df_plot.index)))
-            ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
-            ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
+            df_plot.set_index('Project Name', inplace=True) # Đặt Project Name làm index
+            
+            # Để vẽ tháng trên trục X và mỗi dự án là một đường, cần transpose DataFrame
+            df_plot.T.plot(kind='line', ax=ax, colormap='viridis', marker='o') 
+            
+            # Thiết lập nhãn trục X là các tháng
+            ax.set_xticks(range(len(df_plot.columns))) 
+            ax.set_xticklabels(df_plot.columns, rotation=45, ha='right')
+            
+            ax.legend(title="Dự án", bbox_to_anchor=(1.05, 1), loc='upper left') # Legend hiển thị tên dự án
             ax.tick_params(axis='y', labelsize=8)
+            x_label = "Tháng" # Cập nhật nhãn trục X
+            
         elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            # BẮT ĐẦU CHỈNH SỬA CHO LINE CHART
+            # Giữ nguyên line chart cho chế độ này (một dự án qua thời gian)
             if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
                 df_plot = df_plot[df_plot['Year'] != 'Total']
             
             data_cols = [col for col in df_plot.columns if col not in ['Year', 'MonthName', 'Total']]
             
             # Sắp xếp lại dữ liệu để trục X có thứ tự đúng (quan trọng cho line chart)
-            # Tạo một cột kết hợp 'Year-Month' nếu cả năm và tháng đều có
             if 'Year' in df_plot.columns and 'MonthName' in df_plot.columns:
                 month_to_num = {name: i for i, name in enumerate(['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'], 1)}
                 df_plot['MonthNum'] = df_plot['MonthName'].map(month_to_num)
                 df_plot['YearMonth'] = df_plot['Year'].astype(str) + '-' + df_plot['MonthNum'].astype(str).str.zfill(2)
                 df_plot = df_plot.sort_values(by=['Year', 'MonthNum'])
                 df_plot.set_index('YearMonth', inplace=True)
-                x_label = "Thời gian (Năm-Tháng)" # Cập nhật nhãn trục X
+                x_label = "Thời gian (Năm-Tháng)" 
             elif 'Year' in df_plot.columns:
                 df_plot = df_plot.sort_values(by='Year')
                 df_plot.set_index('Year', inplace=True)
-                x_label = "Năm" # Cập nhật nhãn trục X
+                x_label = "Năm" 
             elif 'MonthName' in df_plot.columns:
                 month_order_list = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
                 df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
                 df_plot = df_plot.sort_values(by='MonthName_ordered')
                 df_plot.set_index('MonthName', inplace=True)
-                x_label = "Tháng" # Cập nhật nhãn trục X
+                x_label = "Tháng" 
 
 
-            if not data_cols: # Nếu chỉ có một cột tổng giờ (tức là không phải pivot table nhiều tháng)
+            if not data_cols: # Nếu chỉ có một cột tổng giờ
                 if 'Total Hours' in df_plot.columns:
-                    ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon') # Chuyển sang line chart
+                    ax.plot(df_plot.index, df_plot['Total Hours'], marker='o', color='salmon') 
                 else:
                     print("Warning: No 'Total Hours' column found for 'Compare One Project Over Time' mode.")
                     return None
             else: # Nếu có nhiều cột tháng (pivot table)
-                # Chuyển đổi các cột dữ liệu sang dạng số và điền NaN bằng 0
                 df_plot[data_cols] = df_plot[data_cols].apply(pd.to_numeric, errors='coerce').fillna(0)
-                df_plot.plot(kind='line', ax=ax, figsize=(10,6), colormap='plasma', marker='o') # Chuyển sang line chart
+                df_plot.plot(kind='line', ax=ax, colormap='plasma', marker='o') # Đã loại bỏ figsize
                 ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
 
-            # Điều chỉnh nhãn trục X để tránh chồng lấn cho line chart
             plt.xticks(rotation=45, ha='right')
             ax.tick_params(axis='y', labelsize=8)
-            # KẾT THÚC CHỈNH SỬA CHO LINE CHART
 
         ax.set_title(title)
-        ax.set_xlabel(x_label) # Đảm bảo sử dụng x_label đã cập nhật
+        ax.set_xlabel(x_label) 
         ax.set_ylabel(y_label)
         plt.tight_layout()
         fig.savefig(img_path, dpi=200)
@@ -559,9 +576,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             x_label = "Dự án"
         elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            x_label = "Dự án"
+            x_label = "Tháng" # Đã cập nhật x_label cho chế độ này
         elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            x_label = "Thời gian (Tháng/Năm)"
+            # x_label sẽ được cập nhật trong hàm create_comparison_chart
+            pass 
         
         comp_chart_path = os.path.join(tmp_dir, "comparison_chart.png")
         created_chart_path = create_comparison_chart(df_comparison.copy(), comparison_mode, chart_title, x_label, y_label, comp_chart_path)
@@ -569,10 +587,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             charts_for_pdf.append((created_chart_path, chart_title, None))
 
         config_info = {
-            "Che do so sanh": comparison_mode, # Đã bỏ dấu tiếng Việt
-            "Nam": ', '.join(map(str, comparison_config['years'])), # Đã bỏ dấu tiếng Việt
-            "Thang": ', '.join(comparison_config['months']), # Đã bỏ dấu tiếng Việt
-            "Du an": ', '.join(comparison_config['selected_projects']) # Đã bỏ dấu tiếng Việt
+            "Che do so sanh": comparison_mode, 
+            "Nam": ', '.join(map(str, comparison_config['years'])), 
+            "Thang": ', '.join(comparison_config['months']), 
+            "Du an": ', '.join(comparison_config['selected_projects']) 
         }
         
         create_pdf_from_charts(charts_for_pdf, pdf_file, "TRIAC TIME REPORT - COMPARISON", config_info)
