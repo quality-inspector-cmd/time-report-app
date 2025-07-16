@@ -408,25 +408,48 @@ with tab_standard_report_main:
 with tab_comparison_report_main:
     st.header(get_text('comparison_report_header'))
 
-    comparison_mode_options = {
-        get_text('compare_projects_month'): "So Sánh Dự Án Trong Một Tháng",
-        get_text('compare_projects_year'): "So Sánh Dự Án Trong Một Năm",
-        get_text('compare_one_project_over_time'): "So Sánh Một Dự Án Qua Các Tháng/Năm"
+    # Define the mapping from text key to (Vietnamese_internal_string, English_internal_string)
+    # This ensures the correct internal string is passed to backend, regardless of UI language
+    internal_comparison_modes_map = {
+        'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
+        'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
+        'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
     }
+
+    # Create the options list for the selectbox and the mapping for internal values
+    selectbox_options = []
+    comparison_mode_value_map = {} # Maps display text to the internal value to be used by backend
+
+    for key, (vi_val, en_val) in internal_comparison_modes_map.items():
+        display_text = get_text(key) # This gets the UI-language-specific display text
+        
+        # Determine the internal value to pass to a04ecaf1_1dae_4c90_8081_086cd7c7b725.py
+        # It should be the string that a04ecaf1_1dae_4c90_8081_086cd7c7b725.py expects.
+        # Since backend now accepts both VI and EN internal strings for a given mode,
+        # we pass the one matching the current UI language.
+        if st.session_state.lang == 'vi':
+            internal_value_for_backend = vi_val
+        else: # st.session_state.lang == 'en'
+            internal_value_for_backend = en_val
+            
+        selectbox_options.append(display_text)
+        comparison_mode_value_map[display_text] = internal_value_for_backend
 
     selected_comparison_display = st.selectbox(
         get_text('select_comparison_mode'),
-        options=list(comparison_mode_options.keys()),
+        options=selectbox_options, # Use the dynamically generated options
         key='comparison_mode_select_tab_main'
     )
-    comparison_mode = comparison_mode_options[selected_comparison_display]
+    
+    # Get the actual internal comparison_mode string to pass to backend functions
+    comparison_mode = comparison_mode_value_map[selected_comparison_display]
 
     st.subheader(get_text('filter_data_for_comparison'))
 
     comp_years = []
     comp_months = []
     comp_projects = []
-    validation_error = False # Flag để kiểm tra lỗi đầu vào
+    validation_error = False # Flag to check input errors
 
     # Lựa chọn dự án chung cho tất cả các mode so sánh
     comp_projects = st.multiselect(
@@ -436,7 +459,9 @@ with tab_comparison_report_main:
         key='comp_projects_select_tab_common'
     )
 
-    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm":
+    # Note: Use the 'comparison_mode' variable derived from the dynamic map
+    # for the conditional logic.
+    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
         if len(comp_projects) != 1:
             st.warning(get_text('select_single_project_warning'))
             validation_error = True
@@ -474,7 +499,7 @@ with tab_comparison_report_main:
             validation_error = True
             comp_months = [] # Đảm bảo trống
 
-    elif comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "So Sánh Dự Án Trong Một Năm"]:
+    elif comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month", "So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         # Giao diện hiện có cho các mode so sánh khác
         col_comp1, col_comp2 = st.columns(2)
         with col_comp1:
