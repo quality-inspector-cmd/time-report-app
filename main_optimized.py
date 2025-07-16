@@ -5,7 +5,7 @@ from datetime import datetime
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰM CÙNG THƯ MỤC
-# HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
+# HOẶNG THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
 # ==============================================================================
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
@@ -31,10 +31,10 @@ def load_invited_emails():
         emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
         return emails
     except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
+        st.error(f"Error: invited_emails.csv not found at {csv_file_path}. Please check the path.")
         return []
     except Exception as e:
-        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
+        st.error(f"Error loading invited_emails.csv: {e}")
         return []
 
 # Tải danh sách email được mời một lần
@@ -86,7 +86,7 @@ st.markdown("""
 
 # Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'vi' # Mặc định là tiếng Việt
+    st.session_state.lang = 'en' # Mặc định là tiếng Anh
 
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
@@ -253,13 +253,10 @@ with col_lang:
     # State management for language selection
     current_lang = st.radio(
         get_text('lang_select'),
-        options=['vi', 'en'],
+        options=['en', 'vi'], # Đảo thứ tự để 'en' là mặc định trong UI
         format_func=lambda x: get_text('language_' + x),
         key='language_selector_main'
     )
-    # This block ensures that if language changes, the previous language is stored.
-    # The actual tab jump is a Streamlit st.tabs behavior, not directly fixable here without
-    # changing the UI method (e.g., to st.radio for tab selection).
     if 'prev_lang' not in st.session_state or st.session_state.prev_lang != current_lang:
         st.session_state.prev_lang = current_lang
     st.session_state.lang = current_lang
