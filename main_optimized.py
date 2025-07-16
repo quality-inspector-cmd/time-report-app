@@ -300,47 +300,97 @@ with tab_standard_report_main:
 
     col1_std, col2_std, col3_std = st.columns(3)
     with col1_std:
+        # State management for standard analysis mode
+        if 'standard_analysis_mode' not in st.session_state:
+            st.session_state.standard_analysis_mode = config_data['mode'] if config_data['mode'] in ['year', 'month', 'week'] else 'year'
+
+        mode_options = ['year', 'month', 'week']
+        try:
+            mode_index = mode_options.index(st.session_state.standard_analysis_mode)
+        except ValueError:
+            mode_index = 0
+            st.session_state.standard_analysis_mode = mode_options[0]
+
         mode = st.selectbox(
             get_text('select_analysis_mode'),
-            options=['year', 'month', 'week'],
-            index=['year', 'month', 'week'].index(config_data['mode']) if config_data['mode'] in ['year', 'month', 'week'] else 0,
+            options=mode_options,
+            index=mode_index,
             key='standard_mode_tab'
         )
+        st.session_state.standard_analysis_mode = mode # Update state
+
     with col2_std:
+        # State management for standard selected year
+        if 'standard_selected_year' not in st.session_state:
+            st.session_state.standard_selected_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
+        
+        default_std_year_index = 0
+        if st.session_state.standard_selected_year in all_years:
+            default_std_year_index = all_years.index(st.session_state.standard_selected_year)
+        elif all_years:
+             st.session_state.standard_selected_year = all_years[0] # Fallback
+             default_std_year_index = 0
+        elif st.session_state.standard_selected_year is None: # No years available at all
+             default_std_year_index = None
+
+
         selected_year = st.selectbox(
             get_text('select_year'),
             options=all_years,
-            index=all_years.index(config_data['year']) if config_data['year'] in all_years else (0 if all_years else None),
+            index=default_std_year_index,
             key='standard_year_tab'
         )
+        st.session_state.standard_selected_year = selected_year # Update state
+
         if selected_year is None:
             st.warning(get_text('no_year_in_data'))
 
     with col3_std:
-        default_months_standard = config_data['months'] if config_data['months'] else all_months
+        # State management for standard selected months
+        if 'standard_selected_months' not in st.session_state:
+            st.session_state.standard_selected_months = config_data['months'] if config_data['months'] else all_months
+        
+        # Ensure default months are valid in current all_months
+        valid_default_months = [m for m in st.session_state.standard_selected_months if m in all_months]
+        if not valid_default_months and all_months: # Fallback if no valid default or if default is empty but options exist
+            valid_default_months = all_months # Select all months as default if nothing is selected
+
         selected_months = st.multiselect(
             get_text('select_months'),
             options=all_months,
-            default=default_months_standard,
+            default=valid_default_months,
             key='standard_months_tab'
         )
+        st.session_state.standard_selected_months = selected_months # Update state
+
 
     st.subheader(get_text('standard_project_selection_header'))
 
+    # Determine initial included projects based on config for default
     initial_included_projects_config = config_data['project_filter_df'][
         config_data['project_filter_df']['Include'].astype(str).str.lower() == 'yes'
     ]['Project Name'].tolist()
 
-    default_standard_projects = [p for p in initial_included_projects_config if p in all_projects]
-    if not default_standard_projects and all_projects:
-        default_standard_projects = all_projects
+    # State management for standard project selection
+    if 'standard_selected_projects' not in st.session_state:
+        default_standard_projects = [p for p in initial_included_projects_config if p in all_projects]
+        if not default_standard_projects and all_projects:
+            default_standard_projects = all_projects # Default to all if config is empty
+        st.session_state.standard_selected_projects = default_standard_projects
+    
+    # Ensure default value for multiselect is valid
+    current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
+    if not current_std_projects_default and all_projects: # Fallback if selected projects are no longer valid or empty
+        current_std_projects_default = all_projects
 
     standard_project_selection = st.multiselect(
         get_text('standard_project_selection_text'),
         options=all_projects,
-        default=default_standard_projects,
+        default=current_std_projects_default,
         key='standard_project_selection_tab'
     )
+    st.session_state.standard_selected_projects = standard_project_selection # Update state
+
 
     st.markdown("---")
     st.subheader(get_text("export_options"))
@@ -471,62 +521,93 @@ with tab_comparison_report_main:
     comp_projects = []
     validation_error = False # Flag to check input errors
 
-    # Lựa chọn dự án chung cho tất cả các mode so sánh
+    # State management for comparison projects
+    if 'comparison_selected_projects' not in st.session_state:
+        st.session_state.comparison_selected_projects = [] # Default to empty
+
     comp_projects = st.multiselect(
         get_text('select_projects_comp'),
         options=all_projects,
-        default=[],
+        default=[p for p in st.session_state.comparison_selected_projects if p in all_projects], # Ensure default is valid
         key='comp_projects_select_tab_common'
     )
+    st.session_state.comparison_selected_projects = comp_projects # Update state
 
-    # Note: Use the 'comparison_mode' variable derived from the dynamic map
-    # for the conditional logic.
+
     if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
         if len(comp_projects) != 1:
             st.warning(get_text('select_single_project_warning'))
             validation_error = True
 
-        # Lựa chọn năm cho mode "Qua Các Tháng/Năm"
+        # State management for selected years in "Over Time" mode
+        if 'comparison_selected_years_over_time' not in st.session_state:
+            st.session_state.comparison_selected_years_over_time = []
+
         selected_years_over_time = st.multiselect(
             get_text('select_years_for_over_time_months'),
             options=all_years,
-            default=[],
+            default=[y for y in st.session_state.comparison_selected_years_over_time if y in all_years], # Ensure default is valid
             key='comp_years_select_tab_over_time'
         )
-        comp_years = selected_years_over_time # Gán vào comp_years cho config
+        st.session_state.comparison_selected_years_over_time = selected_years_over_time # Update state
+        comp_years = selected_years_over_time # Assign to comp_years for config
+
+        # State management for selected months in "Over Time" mode (if single year selected)
+        if 'comparison_selected_months_over_time' not in st.session_state:
+            st.session_state.comparison_selected_months_over_time = []
+
 
         if len(selected_years_over_time) == 1:
-            # So sánh qua các tháng trong một năm cụ thể
             st.info(get_text('comparison_over_months_note').format(selected_years_over_time[0]))
             comp_months = st.multiselect(
                 get_text('select_months_for_single_year'),
                 options=all_months,
-                default=[],
+                default=[m for m in st.session_state.comparison_selected_months_over_time if m in all_months], # Ensure default is valid
                 key='comp_months_select_tab_over_time'
             )
-            # Nếu chọn một năm, thì tháng là bắt buộc
+            st.session_state.comparison_selected_months_over_time = comp_months # Update state
+
             if not comp_months:
                 st.warning(get_text('no_month_selected_for_single_year'))
                 validation_error = True
 
         elif len(selected_years_over_time) > 1:
-            # So sánh qua nhiều năm, tháng không liên quan
             st.info(get_text('comparison_over_years_note'))
-            # Đảm bảo months trống vì sẽ bị bỏ qua
-            comp_months = []
-        else: # Chưa chọn năm nào
+            comp_months = [] # Months are ignored for multi-year comparison
+            st.session_state.comparison_selected_months_over_time = [] # Clear months state
+        else:
             st.warning(get_text('no_comparison_criteria_selected'))
             validation_error = True
-            comp_months = [] # Đảm bảo trống
+            comp_months = [] # Ensure empty
+            st.session_state.comparison_selected_months_over_time = [] # Clear months state
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month", "So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-        # Giao diện hiện có cho các mode so sánh khác
         col_comp1, col_comp2 = st.columns(2)
         with col_comp1:
-            comp_years = st.multiselect(get_text('select_years'), options=all_years, default=[], key='comp_years_select_tab')
+            # State management for general comparison years
+            if 'comparison_selected_years_general' not in st.session_state:
+                st.session_state.comparison_selected_years_general = []
+
+            comp_years = st.multiselect(
+                get_text('select_years'),
+                options=all_years,
+                default=[y for y in st.session_state.comparison_selected_years_general if y in all_years], # Ensure default is valid
+                key='comp_years_select_tab'
+            )
+            st.session_state.comparison_selected_years_general = comp_years # Update state
+
         with col_comp2:
-            comp_months = st.multiselect(get_text('select_months_comp'), options=all_months, default=[], key='comp_months_select_tab')
-        # comp_projects đã được chọn ở trên, không cần chọn lại
+            # State management for general comparison months
+            if 'comparison_selected_months_general' not in st.session_state:
+                st.session_state.comparison_selected_months_general = []
+
+            comp_months = st.multiselect(
+                get_text('select_months_comp'),
+                options=all_months,
+                default=[m for m in st.session_state.comparison_selected_months_general if m in all_months], # Ensure default is valid
+                key='comp_months_select_tab'
+            )
+            st.session_state.comparison_selected_months_general = comp_months # Update state
 
     st.markdown("---")
     st.subheader(get_text("export_options"))
