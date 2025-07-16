@@ -6,22 +6,34 @@ from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
     apply_filters, export_report, export_pdf_report
 )
+script_dir = os.path.dirname(__file__) 
+csv_file_path = os.path.join(script_dir, "invited_emails.csv")
 
-# ---------------------------
-# ---------------------------
 @st.cache_data
 def load_invited_emails():
-    df = pd.read_csv("invited_emails.csv")
-    return df["email"].str.lower().tolist()
+    try:
+        df = pd.read_csv(csv_file_path) 
+        print(f"DEBUG: File path being read: {csv_file_path}")
+        print(f"DEBUG: Columns detected by pandas: {df.columns.tolist()}")
+        print(f"DEBUG: First 5 rows of DataFrame:\n{df.head()}")
+        if "email" in df.columns:
+            emails = df["email"].astype(str).str.strip().str.lower().tolist()
+            print(f"DEBUG: Loaded invited emails list: {emails}") # In ra danh sách email đã xử lý
+            return emails
+        else:
+            print("ERROR: 'email' column not found in invited_emails.csv.")
+            st.error("Lỗi: Không tìm thấy cột 'email' trong file invited_emails.csv. Vui lòng đảm bảo file có header 'email' (viết thường).")
+            return []
+    except FileNotFoundError:
+        print(f"ERROR: invited_emails.csv not found at {csv_file_path}")
+        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
+        return []
+    except Exception as e:
+        print(f"ERROR: An error occurred while loading invited_emails.csv: {e}")
+        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
+        return []
 
 INVITED_EMAILS = load_invited_emails()
-
-def log_user_access(email):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    log_entry = {"Time": timestamp, "Email": email}
-    if "access_log" not in st.session_state:
-        st.session_state.access_log = []
-    st.session_state.access_log.append(log_entry)
 
 if "user_email" not in st.session_state:
     st.set_page_config(page_title="Triac Time Report", layout="wide")
@@ -30,13 +42,14 @@ if "user_email" not in st.session_state:
 
     if email_input:
         email = email_input.strip().lower()
+        print(f"DEBUG: User input email (processed): '{email}'")
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
             log_user_access(email)
-            st.success("✅ Valid email! Entering application...")
+            st.success("✅ Email hợp lệ! Đang vào ứng dụng...")
             st.experimental_rerun()
         else:
-            st.error("❌ Email is not on the invite list.")
+            st.error("❌ Email không có trong danh sách mời.")
     st.stop()
 
 # ---------------------------
