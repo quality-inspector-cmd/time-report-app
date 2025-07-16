@@ -68,6 +68,9 @@ if "user_email" not in st.session_state:
 # ---------------------------
 # PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
 # ---------------------------
+# Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
+if 'lang' not in st.session_state:
+    st.session_state.lang = 'en' # Mặc định là tiếng Anh (ĐÃ ĐIỀU CHỈNH TỪ 'vi' SANG 'en')
 
 # Cấu hình trang (chỉ chạy một lần sau khi xác thực)
 st.set_page_config(page_title="Triac Time Report", layout="wide")
@@ -83,11 +86,6 @@ st.markdown("""
 # =====================================
 # Khởi tạo ngôn ngữ và từ điển văn bản
 # =====================================
-
-# Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
-if 'lang' not in st.session_state:
-    st.session_state.lang = 'en' # Mặc định là tiếng Anh (ĐÃ ĐIỀU CHỈNH TỪ 'vi' SANG 'en')
-
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
     'vi': {
