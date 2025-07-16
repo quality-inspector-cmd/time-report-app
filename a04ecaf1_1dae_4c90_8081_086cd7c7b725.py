@@ -215,7 +215,7 @@ def export_pdf_report(df, config, path_dict):
         for img_path, chart_title, page_project_name in charts_data:
             if img_path and os.path.exists(img_path):
                 pdf.add_page()
-                if os.path.exists(logo_path):
+                if os.path.exists(logo_path): # Đảm bảo logo được thêm vào mỗi trang biểu đồ
                     pdf.image(logo_path, x=10, y=8, w=25)
                 pdf.set_font("helvetica", 'B', 11) 
                 pdf.set_y(35)
@@ -534,7 +534,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         for img_path, chart_title, page_project_name in charts_data:
             if img_path and os.path.exists(img_path):
                 pdf.add_page()
-                if os.path.exists(logo_path):
+                if os.path.exists(logo_path): # Đảm bảo logo được thêm vào mỗi trang biểu đồ
                     pdf.image(logo_path, x=10, y=8, w=25)
                 pdf.set_font("helvetica", 'B', 11) 
                 pdf.set_y(35)
