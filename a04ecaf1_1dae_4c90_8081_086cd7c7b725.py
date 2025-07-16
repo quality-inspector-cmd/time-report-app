@@ -12,8 +12,10 @@ import re
 import shutil
 
 # --- Cấu hình font cho Matplotlib ---
+# Thử thêm các font thông dụng có hỗ trợ tiếng Việt nếu có trên hệ thống
+# DejaVu Sans là font mặc định của Matplotlib, Liberation Sans và Arial thường có.
 plt.rcParams['font.family'] = 'sans-serif'
-plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Liberation Sans', 'Helvetica', 'Arial']
+plt.rcParams['font.sans-serif'] = ['DejaVu Sans', 'Liberation Sans', 'Arial'] # Sắp xếp ưu tiên
 plt.rcParams['axes.unicode_minus'] = False 
 
 # Hàm hỗ trợ làm sạch tên file
@@ -39,23 +41,28 @@ def read_configs(path_dict):
         year_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'year', 'Value']
         year = int(year_row.values[0]) if not year_row.empty and pd.notna(year_row.values[0]) else None
         months_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'months', 'Value']
+        # Đảm bảo chuyển đổi sang list và loại bỏ khoảng trắng, viết hoa chữ cái đầu
         months = [m.strip().capitalize() for m in str(months_row.values[0]).split(',')] if not months_row.empty and pd.notna(months_row.values[0]) else []
         
         if 'Include' in project_filter_df.columns:
             project_filter_df['Include'] = project_filter_df['Include'].astype(str)
 
+        # Lọc các dự án được đánh dấu là 'Yes'
+        selected_projects = project_filter_df[project_filter_df['Include'].str.lower() == 'yes']['Project Name'].tolist()
+
         return {
             'mode': mode,
             'year': year,
             'months': months,
-            'project_filter_df': project_filter_df
+            'project_filter_df': project_filter_df,
+            'selected_projects_config': selected_projects # Thêm selected_projects vào config
         }
     except FileNotFoundError:
         print(f"Error: Template file not found at {path_dict['template_file']}")
-        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include']), 'selected_projects_config': []}
     except Exception as e:
         print(f"Error reading config: {e}")
-        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+        return {'mode': 'year', 'year': datetime.datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include']), 'selected_projects_config': []}
 
 
 def load_raw_data(path_dict):
@@ -79,9 +86,9 @@ def apply_filters(df, config):
     if config['months']:
         df_filtered = df_filtered[df_filtered['MonthName'].isin(config['months'])]
 
-    if not config['project_filter_df'].empty:
-        selected_project_names = config['project_filter_df']['Project Name'].tolist()
-        df_filtered = df_filtered[df_filtered['Project name'].isin(selected_project_names)]
+    # Use the 'selected_projects_config' from read_configs
+    if config['selected_projects_config']:
+        df_filtered = df_filtered[df_filtered['Project name'].isin(config['selected_projects_config'])]
     else:
         df_filtered = pd.DataFrame(columns=df.columns) 
 
@@ -173,8 +180,9 @@ def export_report(df, config, path_dict):
     ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config.get('years', []))) if config.get('years') else str(config.get('year', 'N/A'))
     ws_config['A3'], ws_config['B3'] = "Months", ', '.join(config.get('months', [])) if config.get('months') else "All"
     
-    if 'project_filter_df' in config and not config['project_filter_df'].empty:
-        ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(config['project_filter_df']['Project Name'])
+    # Use selected_projects_config for display
+    if config['selected_projects_config']:
+        ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(config['selected_projects_config'])
     else:
         ws_config['A4'], ws_config['B4'] = "Projects", "No projects selected or found"
 
@@ -217,7 +225,7 @@ def export_pdf_report(df, config, path_dict):
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
-        print(f"DEBUG: PDF report generated at {output_path}") # This is likely line 420 or close to it
+        print(f"DEBUG: PDF report generated at {output_path}")
 
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
@@ -229,7 +237,7 @@ def export_pdf_report(df, config, path_dict):
             "Mode": config.get('mode', 'N/A').capitalize(),
             "Years": ', '.join(map(str, config.get('years', []))) or str(config.get('year', 'N/A')),
             "Months": ', '.join(config.get('months', [])) or "All",
-            "Projects Included": ', '.join(config['project_filter_df']['Project Name']) if 'project_filter_df' in config and not config['project_filter_df'].empty else "No projects selected or found"
+            "Projects Included": ', '.join(config['selected_projects_config']) if config['selected_projects_config'] else "No projects selected or found"
         }
 
         for project in projects:
@@ -271,13 +279,14 @@ def export_pdf_report(df, config, path_dict):
 def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     years = comparison_config['years']
     months = comparison_config['months']
-    selected_projects = comparison_config['selected_projects']
+    # Sử dụng selected_projects_config từ hàm read_configs đã cập nhật
+    selected_projects = comparison_config['selected_projects_config']
 
     print(f"\nDEBUG - apply_comparison_filters START:")
     print(f"  comparison_mode: {comparison_mode}")
     print(f"  years: {years}")
     print(f"  months: {months}")
-    print(f"  selected_projects: {selected_projects}")
+    print(f"  selected_projects (from config): {selected_projects}")
 
     df_filtered = df_raw.copy()
 
@@ -344,8 +353,9 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             return pd.DataFrame(), error_message
         
         # Determine the time granularity for comparison
-        is_month_comparison = bool(months) and len(years) <= 1 # If months are selected, and at most one year is specified
-        is_year_comparison = bool(years) and not months # If years are selected but no specific months
+        # Use bool(months) instead of `if months:` to explicitly check if list is not empty
+        is_month_comparison = bool(months) and len(years) <= 1 
+        is_year_comparison = bool(years) and not bool(months)
 
         if is_month_comparison:
             print(f"DEBUG: Processing 1 project, specific months.")
@@ -355,6 +365,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             target_months = months if months else month_order_list
             
             # Create a DataFrame with all target months, then merge
+            # This ensures all months are present for the X-axis, filling missing with 0
             full_time_range_df = pd.DataFrame({'MonthName': target_months})
             full_time_range_df['MonthNum'] = full_time_range_df['MonthName'].apply(lambda x: month_order_list.index(x) + 1)
             full_time_range_df = full_time_range_df.sort_values(by='MonthNum').drop(columns='MonthNum')
@@ -428,7 +439,7 @@ def export_comparison_report(df_comparison, comparison_config, path_dict, compar
         ws.cell(row=info_row, column=2, value=', '.join(comparison_config['months']))
         info_row += 1
         ws.cell(row=info_row, column=1, value="Dự án:").font = ws.cell(row=info_row, column=1).font.copy(bold=True)
-        ws.cell(row=info_row, column=2, value=', '.join(comparison_config['selected_projects']))
+        ws.cell(row=info_row, column=2, value=', '.join(comparison_config['selected_projects_config']))
 
         if not df_comparison.empty:
             chart = BarChart() # Default to BarChart, will be changed for LineChart mode
@@ -606,17 +617,17 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
                 print(f"DEBUG: Plotting Line Chart for months.")
                 
                 # Use 'target_months' from comparison_config if specified, otherwise default to all 12.
-                # This ensures x-axis includes all expected months, even if they have 0 data.
                 target_months_for_x = comparison_config['months'] if comparison_config['months'] else month_order_list
                 
                 # Filter df_plot to only include relevant months and order them for plotting
-                df_plot['MonthName_ordered'] = pd.Categorical(df_plot['MonthName'], categories=month_order_list, ordered=True)
-                df_plot = df_plot.sort_values(by='MonthName_ordered')
-
+                # Re-create categorical to ensure all target months are included as categories, even if no data
+                df_plot['MonthName'] = pd.Categorical(df_plot['MonthName'], categories=target_months_for_x, ordered=True)
+                df_plot = df_plot.sort_values(by='MonthName')
+                
                 ax.plot(df_plot['MonthName'], df_plot['Total Hours'], marker='o', color='salmon')
                 
-                # Set x-ticks to display ALL months in the `target_months_for_x` list
-                ax.set_xticks([m for m in month_order_list if m in target_months_for_x])
+                # Explicitly set x-ticks to display ALL months in the `target_months_for_x` list
+                ax.set_xticks(target_months_for_x)
                 
                 if 'Year' in df_plot.columns and len(df_plot['Year'].unique()) == 1:
                     x_label = f"Tháng ({df_plot['Year'].iloc[0]})"
@@ -673,7 +684,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             "Che do so sanh": comparison_mode, 
             "Nam": ', '.join(map(str, comparison_config['years'])) if comparison_config['years'] else "All", 
             "Thang": ', '.join(comparison_config['months']) if comparison_config['months'] else "All", 
-            "Du an": ', '.join(comparison_config['selected_projects']) if comparison_config['selected_projects'] else "No projects selected"
+            "Du an": ', '.join(comparison_config['selected_projects_config']) if comparison_config['selected_projects_config'] else "No projects selected"
         }
         
         print(f"DEBUG: Generating PDF with config_info: {config_info}")
