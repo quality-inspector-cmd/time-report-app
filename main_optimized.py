@@ -4,8 +4,8 @@ import os
 from datetime import datetime
 
 # ==============================================================================
-# Äáº¢M Báº¢O FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' Náº°NG CÃ™NG THÆ¯ Má»¤C
-# HOáº¶C THAY THáº¾ TÃŠN FILE Náº¾U Báº N ÄÃƒ Äá»”I TÃŠN NÃ“.
+# ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
+# HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
 # ==============================================================================
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
@@ -17,59 +17,59 @@ from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
 script_dir = os.path.dirname(__file__)
 csv_file_path = os.path.join(script_dir, "invited_emails.csv")
 
-# Gá»i hÃ m setup_paths ngay tá»« Ä‘áº§u Ä‘á»ƒ path_dict cÃ³ sáºµn
+# Gọi hàm setup_paths ngay từ đầu để path_dict có sẵn
 path_dict = setup_paths()
 
 # ==============================================================================
-# KHá»žI Táº O CÃC BIáº¾N TRáº NG THÃI PHIÃŠN (SESSION STATE VARIABLES)
+# KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
 # ==============================================================================
 if 'comparison_mode' not in st.session_state:
-    st.session_state.comparison_mode = "So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng" # Hoáº·c giÃ¡ trá»‹ máº·c Ä‘á»‹nh phÃ¹ há»£p
+    st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
 
 if 'comparison_selected_years' not in st.session_state:
-    st.session_state.comparison_selected_years = [datetime.now().year] # Hoáº·c giÃ¡ trá»‹ máº·c Ä‘á»‹nh phÃ¹ há»£p
+    st.session_state.comparison_selected_years = [datetime.now().year] # Hoặc giá trị mặc định phù hợp
 
 if 'comparison_selected_months' not in st.session_state:
-    st.session_state.comparison_selected_months = [] # Hoáº·c giÃ¡ trá»‹ máº·c Ä‘á»‹nh phÃ¹ há»£p
+    st.session_state.comparison_selected_months = [] # Hoặc giá trị mặc định phù hợp
 
 if 'comparison_selected_projects' not in st.session_state:
-    st.session_state.comparison_selected_projects = [] # Hoáº·c giÃ¡ trá»‹ máº·c Ä‘á»‹nh phÃ¹ há»£p
+    st.session_state.comparison_selected_projects = [] # Hoặc giá trị mặc định phù hợp
 
 if 'comparison_selected_months_over_time' not in st.session_state:
-    st.session_state.comparison_selected_months_over_time = [] # Khá»Ÿi táº¡o lÃ  má»™t danh sÃ¡ch rá»—ng hoáº·c giÃ¡ trá»‹ máº·c Ä‘á»‹nh phÃ¹ há»£p
+    st.session_state.comparison_selected_months_over_time = [] # Khởi tạo là một danh sách rỗng hoặc giá trị mặc định phù hợp
 
-if 'selected_years' not in st.session_state: # VÃ­ dá»¥ cho bá»™ lá»c bÃ¡o cÃ¡o tiÃªu chuáº©n
+if 'selected_years' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
     st.session_state.selected_years = [datetime.now().year]
 
-if 'selected_months' not in st.session_state: # VÃ­ dá»¥ cho bá»™ lá»c bÃ¡o cÃ¡o tiÃªu chuáº©n
+if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cáo tiêu chuẩn
     st.session_state.selected_months = []
 
-# ThÃªm dÃ²ng nÃ y Ä‘á»ƒ máº·c Ä‘á»‹nh ngÃ´n ngá»¯ lÃ  tiáº¿ng Anh
+# Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
 if 'selected_language' not in st.session_state:
     st.session_state.selected_language = "English"
 
 # ---------------------------
-# PHáº¦N XÃC THá»°C TRUY Cáº¬P
+# PHẦN XÁC THỰC TRUY CẬP
 # ---------------------------
 
 @st.cache_data
 def load_invited_emails():
     try:
         df = pd.read_csv(csv_file_path, header=None, encoding='utf-8')
-        # Sá»­a lá»—i: ThÃªm .str trÆ°á»›c .strip()
+        # Sửa lỗi: Thêm .str trước .strip()
         emails = df.iloc[:, 0].astype(str).str.strip().str.lower().tolist()
         return emails
     except FileNotFoundError:
-        st.error(f"Lá»—i: KhÃ´ng tÃ¬m tháº¥y file invited_emails.csv táº¡i {csv_file_path}. Vui lÃ²ng kiá»ƒm tra Ä‘Æ°á»ng dáº«n.")
+        st.error(f"Lỗi: Không tìm thấy file invited_emails.csv tại {csv_file_path}. Vui lòng kiểm tra đường dẫn.")
         return []
     except Exception as e:
-        st.error(f"Lá»—i khi táº£i file invited_emails.csv: {e}")
+        st.error(f"Lỗi khi tải file invited_emails.csv: {e}")
         return []
 
-# Táº£i danh sÃ¡ch email Ä‘Æ°á»£c má»i má»™t láº§n
+# Tải danh sách email được mời một lần
 INVITED_EMAILS = load_invited_emails()
 
-# HÃ m ghi log truy cáº­p
+# Hàm ghi log truy cập
 def log_user_access(email):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     log_entry = {"Time": timestamp, "Email": email}
@@ -77,31 +77,31 @@ def log_user_access(email):
         st.session_state.access_log = []
     st.session_state.access_log.append(log_entry)
 
-# Logic xÃ¡c thá»±c ngÆ°á»i dÃ¹ng
+# Logic xác thực người dùng
 if "user_email" not in st.session_state:
     st.set_page_config(page_title="Triac Time Report", layout="wide")
-    st.title("ðŸ” Access authentication")
-    email_input = st.text_input("ðŸ“§ Enter the invited email to access:")
+    st.title("🔐 Access authentication")
+    email_input = st.text_input("📧 Enter the invited email to access:")
 
     if email_input:
         email = email_input.strip().lower()
         if email in INVITED_EMAILS:
             st.session_state.user_email = email
             log_user_access(email)
-            st.success("âœ… Valid email! Entering application...")
+            st.success("✅ Valid email! Entering application...")
             st.rerun()
         else:
-            st.error("âŒ Email is not on the invitation list.")
-    st.stop() # Dá»«ng thá»±c thi náº¿u chÆ°a xÃ¡c thá»±c
+            st.error("❌ Email is not on the invitation list.")
+    st.stop() # Dừng thực thi nếu chưa xác thực
 
 # ---------------------------
-# PHáº¦N GIAO DIá»†N CHÃNH Cá»¦A á»¨NG Dá»¤NG
+# PHẦN GIAO DIỆN CHÍNH CỦA ỨNG DỤNG
 # ---------------------------
-# Sá»­ dá»¥ng session_state Ä‘á»ƒ lÆ°u trá»¯ lá»±a chá»n ngÃ´n ngá»¯
+# Sử dụng session_state để lưu trữ lựa chọn ngôn ngữ
 if 'lang' not in st.session_state:
-    st.session_state.lang = 'en' # Máº·c Ä‘á»‹nh lÃ  tiáº¿ng Anh
+    st.session_state.lang = 'en' # Mặc định là tiếng Anh
 
-# Cáº¥u hÃ¬nh trang (chá»‰ cháº¡y má»™t láº§n sau khi xÃ¡c thá»±c)
+# Cấu hình trang (chỉ chạy một lần sau khi xác thực)
 st.set_page_config(page_title="Triac Time Report", layout="wide")
 
 st.markdown("""
@@ -113,91 +113,91 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================
-# Khá»Ÿi táº¡o ngÃ´n ngá»¯ vÃ  tá»« Ä‘iá»ƒn vÄƒn báº£n
+# Khởi tạo ngôn ngữ và từ điển văn bản
 # =====================================
-# Tá»« Ä‘iá»ƒn cho cÃ¡c chuá»—i vÄƒn báº£n
+# Từ điển cho các chuỗi văn bản
 TEXTS = {
     'vi': {
-        'app_title': "ðŸ“Š CÃ´ng cá»¥ táº¡o bÃ¡o cÃ¡o thá»i gian",
-        'lang_select': "Chá»n ngÃ´n ngá»¯:",
-        'language_vi': "Tiáº¿ng Viá»‡t",
+        'app_title': "📊 Công cụ tạo báo cáo thời gian",
+        'lang_select': "Chọn ngôn ngữ:",
+        'language_vi': "Tiếng Việt",
         'language_en': "English",
-        'template_not_found': "âŒ KhÃ´ng tÃ¬m tháº¥y file template: {}. Vui lÃ²ng Ä‘áº£m báº£o file náº±m cÃ¹ng thÆ° má»¥c vá»›i á»©ng dá»¥ng.",
-        'failed_to_load_raw_data': "âš ï¸ KhÃ´ng thá»ƒ táº£i dá»¯ liá»‡u thÃ´. Vui lÃ²ng kiá»ƒm tra sheet 'Raw Data' trong file template vÃ  Ä‘á»‹nh dáº¡ng dá»¯ liá»‡u.",
-        'loading_data': "ðŸ”„ Äang táº£i dá»¯ liá»‡u vÃ  cáº¥u hÃ¬nh...",
-        'tab_standard_report': "BÃ¡o cÃ¡o tiÃªu chuáº©n",
-        'tab_comparison_report': "BÃ¡o cÃ¡o so sÃ¡nh",
-        'tab_data_preview': "Xem trÆ°á»›c dá»¯ liá»‡u",
-        'standard_report_header': "Cáº¥u hÃ¬nh bÃ¡o cÃ¡o thá»i gian tiÃªu chuáº©n",
-        'select_analysis_mode': "Chá»n cháº¿ Ä‘á»™ phÃ¢n tÃ­ch:",
-        'select_year': "Chá»n nÄƒm:",
-        'select_months': "Chá»n thÃ¡ng(cÃ¡c thÃ¡ng):",
-        'standard_project_selection_header': "Lá»±a chá»n dá»± Ã¡n cho bÃ¡o cÃ¡o tiÃªu chuáº©n",
-        'standard_project_selection_text': "Chá»n dá»± Ã¡n Ä‘á»ƒ bao gá»“m (máº·c Ä‘á»‹nh chá»‰ bao gá»“m cÃ¡c dá»± Ã¡n 'yes' tá»« cáº¥u hÃ¬nh template):",
-        'generate_standard_report_btn': "ðŸš€ Táº¡o bÃ¡o cÃ¡o tiÃªu chuáº©n",
-        'no_year_selected_error': "Vui lÃ²ng chá»n má»™t nÄƒm há»£p lá»‡ Ä‘á»ƒ táº¡o bÃ¡o cÃ¡o.",
-        'no_project_selected_warning_standard': "Vui lÃ²ng chá»n Ã­t nháº¥t má»™t dá»± Ã¡n Ä‘á»ƒ táº¡o bÃ¡o cÃ¡o tiÃªu chuáº©n.",
-        'no_data_after_filter_standard': "âš ï¸ KhÃ´ng cÃ³ dá»¯ liá»‡u sau khi lá»c cho bÃ¡o cÃ¡o tiÃªu chuáº©n. Vui lÃ²ng kiá»ƒm tra cÃ¡c lá»±a chá»n cá»§a báº¡n.",
-        'generating_excel_report': "Äang táº¡o bÃ¡o cÃ¡o Excel...",
-        'excel_report_generated': "âœ… BÃ¡o cÃ¡o Excel Ä‘Ã£ Ä‘Æ°á»£c táº¡o: {}",
-        'download_excel_report': "ðŸ“¥ Táº£i bÃ¡o cÃ¡o Excel",
-        'generating_pdf_report': "Äang táº¡o bÃ¡o cÃ¡o PDF...",
-        'pdf_report_generated': "âœ… BÃ¡o cÃ¡o PDF Ä‘Ã£ Ä‘Æ°á»£c táº¡o: {}",
-        'download_pdf_report': "ðŸ“¥ Táº£i bÃ¡o cÃ¡o PDF",
-        'failed_to_generate_excel': "âŒ ÄÃ£ xáº£y ra lá»—i khi táº¡o bÃ¡o cÃ¡o Excel.",
-        'failed_to_generate_pdf': "âŒ ÄÃ£ xáº£y ra lá»—i khi táº¡o bÃ¡o cÃ¡o PDF.",
-        'comparison_report_header': "Cáº¥u hÃ¬nh bÃ¡o cÃ¡o so sÃ¡nh",
-        'select_comparison_mode': "Chá»n cháº¿ Ä‘á»™ so sÃ¡nh:",
-        'compare_projects_month': "So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng",
-        'compare_projects_year': "So SÃ¡nh Dá»± Ãn Trong Má»™t NÄƒm",
-        'compare_one_project_over_time': "So SÃ¡nh Má»™t Dá»± Ãn Qua CÃ¡c ThÃ¡ng/NÄƒm",
-        'filter_data_for_comparison': "Lá»c dá»¯ liá»‡u Ä‘á»ƒ so sÃ¡nh",
-        'select_years': "Chá»n nÄƒm(cÃ¡c nÄƒm):", # DÃ¹ng chung cho cÃ¡c mode
-        'select_months_comp': "Chá»n thÃ¡ng(cÃ¡c thÃ¡ng):", # DÃ¹ng chung cho cÃ¡c mode
-        'select_projects_comp': "Chá»n dá»± Ã¡n(cÃ¡c dá»± Ã¡n):", # DÃ¹ng chung cho cÃ¡c mode
-        'generate_comparison_report_btn': "ðŸš€ Táº¡o bÃ¡o cÃ¡o so sÃ¡nh",
-        'no_data_after_filter_comparison': "âš ï¸ {}",
-        'data_filtered_success': "âœ… Dá»¯ liá»‡u Ä‘Ã£ Ä‘Æ°á»£c lá»c thÃ nh cÃ´ng cho so sÃ¡nh.",
-        'comparison_data_preview': "Xem trÆ°á»›c dá»¯ liá»‡u so sÃ¡nh",
-        'generating_comparison_excel': "Äang táº¡o bÃ¡o cÃ¡o Excel so sÃ¡nh...",
-        'comparison_excel_generated': "âœ… BÃ¡o cÃ¡o Excel so sÃ¡nh Ä‘Ã£ Ä‘Æ°á»£c táº¡o: {}",
-        'download_comparison_excel': "ðŸ“¥ Táº£i bÃ¡o cÃ¡o Excel so sÃ¡nh",
-        'generating_comparison_pdf': "Äang táº¡o bÃ¡o cÃ¡o PDF so sÃ¡nh...",
-        'comparison_pdf_generated': "âœ… BÃ¡o cÃ¡o PDF so sÃ¡nh Ä‘Ã£ Ä‘Æ°á»£c táº¡o: {}",
-        'download_comparison_pdf': "ðŸ“¥ Táº£i bÃ¡o cÃ¡o PDF so sÃ¡nh",
-        'failed_to_generate_comparison_excel': "âŒ ÄÃ£ xáº£y ra lá»—i khi táº¡o bÃ¡o cÃ¡o Excel so sÃ¡nh.",
-        'failed_to_generate_comparison_pdf': "âŒ ÄÃ£ xáº£y ra lá»—i khi táº¡o bÃ¡o cÃ¡o PDF so sÃ¡nh.",
-        'raw_data_preview_header': "Dá»¯ liá»‡u Ä‘áº§u vÃ o thÃ´ (100 hÃ ng Ä‘áº§u)",
-        'no_raw_data': "KhÃ´ng cÃ³ dá»¯ liá»‡u thÃ´ Ä‘Æ°á»£c táº£i.",
-        'no_year_in_data': "KhÃ´ng cÃ³ nÄƒm nÃ o trong dá»¯ liá»‡u Ä‘á»ƒ chá»n.",
-        'user_guide': "HÆ°á»›ng dáº«n sá»­ dá»¥ng",
-        'export_options': "TÃ¹y chá»n xuáº¥t bÃ¡o cÃ¡o",
-        'export_excel_option': "Xuáº¥t ra Excel (.xlsx)",
-        'export_pdf_option': "Xuáº¥t ra PDF (.pdf)",
-        'report_button': "Táº¡o bÃ¡o cÃ¡o",
-        'no_data': "KhÃ´ng cÃ³ dá»¯ liá»‡u sau khi lá»c",
-        'report_done': "ÄÃ£ táº¡o bÃ¡o cÃ¡o",
-        'download_excel': "Táº£i Excel",
-        'download_pdf': "Táº£i PDF",
-        'warning_select_export_format': "Vui lÃ²ng chá»n Ã­t nháº¥t má»™t Ä‘á»‹nh dáº¡ng xuáº¥t bÃ¡o cÃ¡o (Excel hoáº·c PDF).",
-        'error_generating_report': "CÃ³ lá»—i xáº£y ra khi táº¡o bÃ¡o cÃ¡o. Vui lÃ²ng thá»­ láº¡i.",
-        # ThÃªm cÃ¡c tin nháº¯n má»›i cho mode "So SÃ¡nh Má»™t Dá»± Ãn Qua CÃ¡c ThÃ¡ng/NÄƒm"
-        'select_single_project_warning': "Vui lÃ²ng chá»n CHá»ˆ Má»˜T dá»± Ã¡n cho cháº¿ Ä‘á»™ nÃ y.",
-        'select_years_for_over_time_months': "Chá»n nÄƒm (hoáº·c cÃ¡c nÄƒm) báº¡n muá»‘n so sÃ¡nh:",
-        'select_months_for_single_year': "Chá»n thÃ¡ng(cÃ¡c thÃ¡ng) trong nÄƒm Ä‘Ã£ chá»n:",
-        'comparison_over_years_note': "LÆ°u Ã½: Báº¡n Ä‘Ã£ chá»n nhiá»u nÄƒm. BÃ¡o cÃ¡o sáº½ so sÃ¡nh dá»¯ liá»‡u cá»§a dá»± Ã¡n qua cÃ¡c nÄƒm Ä‘Ã£ chá»n. Lá»±a chá»n thÃ¡ng sáº½ bá»‹ bá» qua.",
-        'comparison_over_months_note': "LÆ°u Ã½: BÃ¡o cÃ¡o sáº½ so sÃ¡nh dá»¯ liá»‡u cá»§a dá»± Ã¡n qua cÃ¡c thÃ¡ng Ä‘Ã£ chá»n trong nÄƒm {}.",
-        'no_comparison_criteria_selected': "Vui lÃ²ng chá»n Ã­t nháº¥t má»™t nÄƒm hoáº·c má»™t thÃ¡ng Ä‘á»ƒ so sÃ¡nh.",
-        'no_month_selected_for_single_year': "Vui lÃ²ng chá»n Ã­t nháº¥t má»™t thÃ¡ng khi so sÃ¡nh má»™t dá»± Ã¡n trong má»™t nÄƒm cá»¥ thá»ƒ."
+        'template_not_found': "❌ Không tìm thấy file template: {}. Vui lòng đảm bảo file nằm cùng thư mục với ứng dụng.",
+        'failed_to_load_raw_data': "⚠️ Không thể tải dữ liệu thô. Vui lòng kiểm tra sheet 'Raw Data' trong file template và định dạng dữ liệu.",
+        'loading_data': "🔄 Đang tải dữ liệu và cấu hình...",
+        'tab_standard_report': "Báo cáo tiêu chuẩn",
+        'tab_comparison_report': "Báo cáo so sánh",
+        'tab_data_preview': "Xem trước dữ liệu",
+        'standard_report_header': "Cấu hình báo cáo thời gian tiêu chuẩn",
+        'select_analysis_mode': "Chọn chế độ phân tích:",
+        'select_year': "Chọn năm:",
+        'select_months': "Chọn tháng(các tháng):",
+        'standard_project_selection_header': "Lựa chọn dự án cho báo cáo tiêu chuẩn",
+        'standard_project_selection_text': "Chọn dự án để bao gồm (mặc định chỉ bao gồm các dự án 'yes' từ cấu hình template):",
+        'generate_standard_report_btn': "🚀 Tạo báo cáo tiêu chuẩn",
+        'no_year_selected_error': "Vui lòng chọn một năm hợp lệ để tạo báo cáo.",
+        'no_project_selected_warning_standard': "Vui lòng chọn ít nhất một dự án để tạo báo cáo tiêu chuẩn.",
+        'no_data_after_filter_standard': "⚠️ Không có dữ liệu sau khi lọc cho báo cáo tiêu chuẩn. Vui lòng kiểm tra các lựa chọn của bạn.",
+        'generating_excel_report': "Đang tạo báo cáo Excel...",
+        'excel_report_generated': "✅ Báo cáo Excel đã được tạo: {}",
+        'download_excel_report': "📥 Tải báo cáo Excel",
+        'generating_pdf_report': "Đang tạo báo cáo PDF...",
+        'pdf_report_generated': "✅ Báo cáo PDF đã được tạo: {}",
+        'download_pdf_report': "📥 Tải báo cáo PDF",
+        'failed_to_generate_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel.",
+        'failed_to_generate_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF.",
+        'comparison_report_header': "Cấu hình báo cáo so sánh",
+        'select_comparison_mode': "Chọn chế độ so sánh:",
+        'compare_projects_month': "So Sánh Dự Án Trong Một Tháng",
+        'compare_projects_year': "So Sánh Dự Án Trong Một Năm",
+        'compare_one_project_over_time': "So Sánh Một Dự Án Qua Các Tháng/Năm",
+        'filter_data_for_comparison': "Lọc dữ liệu để so sánh",
+        'select_years': "Chọn năm(các năm):", # Dùng chung cho các mode
+        'select_months_comp': "Chọn tháng(các tháng):", # Dùng chung cho các mode
+        'select_projects_comp': "Chọn dự án(các dự án):", # Dùng chung cho các mode
+        'generate_comparison_report_btn': "🚀 Tạo báo cáo so sánh",
+        'no_data_after_filter_comparison': "⚠️ {}",
+        'data_filtered_success': "✅ Dữ liệu đã được lọc thành công cho so sánh.",
+        'comparison_data_preview': "Xem trước dữ liệu so sánh",
+        'generating_comparison_excel': "Đang tạo báo cáo Excel so sánh...",
+        'comparison_excel_generated': "✅ Báo cáo Excel so sánh đã được tạo: {}",
+        'download_comparison_excel': "📥 Tải báo cáo Excel so sánh",
+        'generating_comparison_pdf': "Đang tạo báo cáo PDF so sánh...",
+        'comparison_pdf_generated': "✅ Báo cáo PDF so sánh đã được tạo: {}",
+        'download_comparison_pdf': "📥 Tải báo cáo PDF so sánh",
+        'failed_to_generate_comparison_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel so sánh.",
+        'failed_to_generate_comparison_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF so sánh.",
+        'raw_data_preview_header': "Dữ liệu đầu vào thô (100 hàng đầu)",
+        'no_raw_data': "Không có dữ liệu thô được tải.",
+        'no_year_in_data': "Không có năm nào trong dữ liệu để chọn.",
+        'user_guide': "Hướng dẫn sử dụng",
+        'export_options': "Tùy chọn xuất báo cáo",
+        'export_excel_option': "Xuất ra Excel (.xlsx)",
+        'export_pdf_option': "Xuất ra PDF (.pdf)",
+        'report_button': "Tạo báo cáo",
+        'no_data': "Không có dữ liệu sau khi lọc",
+        'report_done': "Đã tạo báo cáo",
+        'download_excel': "Tải Excel",
+        'download_pdf': "Tải PDF",
+        'warning_select_export_format': "Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).",
+        'error_generating_report': "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
+        # Thêm các tin nhắn mới cho mode "So Sánh Một Dự Án Qua Các Tháng/Năm"
+        'select_single_project_warning': "Vui lòng chọn CHỈ MỘT dự án cho chế độ này.",
+        'select_years_for_over_time_months': "Chọn năm (hoặc các năm) bạn muốn so sánh:",
+        'select_months_for_single_year': "Chọn tháng(các tháng) trong năm đã chọn:",
+        'comparison_over_years_note': "Lưu ý: Bạn đã chọn nhiều năm. Báo cáo sẽ so sánh dữ liệu của dự án qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.",
+        'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
+        'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
+        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể."
     },
     'en': {
-        'app_title': "ðŸ“Š Time Report Generator",
+        'app_title': "📊 Time Report Generator",
         'lang_select': "Select language:",
-        'language_vi': "Tiáº¿ng Viá»‡t",
+        'language_vi': "Tiếng Việt",
         'language_en': "English",
-        'template_not_found': "âŒ Template file not found: {}. Please ensure the file is in the same directory as the application.",
-        'failed_to_load_raw_data': "âš ï¸ Failed to load raw data. Please check the 'Raw Data' sheet in the template file and data format.",
-        'loading_data': "ðŸ”„ Loading data and configurations...",
+        'template_not_found': "❌ Template file not found: {}. Please ensure the file is in the same directory as the application.",
+        'failed_to_load_raw_data': "⚠️ Failed to load raw data. Please check the 'Raw Data' sheet in the template file and data format.",
+        'loading_data': "🔄 Loading data and configurations...",
         'tab_standard_report': "Standard Report",
         'tab_comparison_report': "Comparison Report",
         'tab_data_preview': "Data Preview",
@@ -207,18 +207,18 @@ TEXTS = {
         'select_months': "Select month(s):",
         'standard_project_selection_header': "Project Selection for Standard Report",
         'standard_project_selection_text': "Select projects to include (only 'yes' projects from template config will be included by default):",
-        'generate_standard_report_btn': "ðŸš€ Generate Standard Report",
+        'generate_standard_report_btn': "🚀 Generate Standard Report",
         'no_year_selected_error': "Please select a valid year to generate the report.",
         'no_project_selected_warning_standard': "Please select at least one project to generate the standard report.",
-        'no_data_after_filter_standard': "âš ï¸ No data after filtering for the standard report. Please check your selections.",
+        'no_data_after_filter_standard': "⚠️ No data after filtering for the standard report. Please check your selections.",
         'generating_excel_report': "Generating Excel report...",
-        'excel_report_generated': "âœ… Excel Report generated: {}",
-        'download_excel_report': "ðŸ“¥ Download Excel Report",
+        'excel_report_generated': "✅ Excel Report generated: {}",
+        'download_excel_report': "📥 Download Excel Report",
         'generating_pdf_report': "Generating PDF report...",
-        'pdf_report_generated': "âœ… PDF Report generated: {}",
-        'download_pdf_report': "ðŸ“¥ Download PDF Report",
-        'failed_to_generate_excel': "âŒ Failed to generate Excel report.",
-        'failed_to_generate_pdf': "âŒ Failed to generate PDF report.",
+        'pdf_report_generated': "✅ PDF Report generated: {}",
+        'download_pdf_report': "📥 Download PDF Report",
+        'failed_to_generate_excel': "❌ Failed to generate Excel report.",
+        'failed_to_generate_pdf': "❌ Failed to generate PDF report.",
         'comparison_report_header': "Comparison Report Configuration",
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
@@ -228,18 +228,18 @@ TEXTS = {
         'select_years': "Select Year(s):",
         'select_months_comp': "Select Month(s):",
         'select_projects_comp': "Select Project(s):",
-        'generate_comparison_report_btn': "ðŸš€ Generate Comparison Report",
-        'no_data_after_filter_comparison': "âš ï¸ {}",
-        'data_filtered_success': "âœ… Data filtered successfully for comparison.",
+        'generate_comparison_report_btn': "🚀 Generate Comparison Report",
+        'no_data_after_filter_comparison': "⚠️ {}",
+        'data_filtered_success': "✅ Data filtered successfully for comparison.",
         'comparison_data_preview': "Comparison Data Preview",
         'generating_comparison_excel': "Generating Comparison Excel Report...",
-        'comparison_excel_generated': "âœ… Comparison Excel Report generated: {}",
-        'download_comparison_excel': "ðŸ“¥ Download Comparison Excel",
+        'comparison_excel_generated': "✅ Comparison Excel Report generated: {}",
+        'download_comparison_excel': "📥 Download Comparison Excel",
         'generating_comparison_pdf': "Generating Comparison PDF Report...",
-        'comparison_pdf_generated': "âœ… PDF Report generated: {}",
-        'download_comparison_pdf': "ðŸ“¥ Download Comparison PDF",
-        'failed_to_generate_comparison_excel': "âŒ Failed to generate Comparison Excel report.",
-        'failed_to_generate_comparison_pdf': "âŒ Failed to generate Comparison PDF report.",
+        'comparison_pdf_generated': "✅ PDF Report generated: {}",
+        'download_comparison_pdf': "📥 Download Comparison PDF",
+        'failed_to_generate_comparison_excel': "❌ Failed to generate Comparison Excel report.",
+        'failed_to_generate_comparison_pdf': "❌ Failed to generate Comparison PDF report.",
         'raw_data_preview_header': "Raw Input Data (First 100 rows)",
         'no_raw_data': "No raw data loaded.",
         'no_year_in_data': "No years in data to select.",
@@ -265,16 +265,16 @@ TEXTS = {
     }
 }
 
-# Láº¥y tá»« Ä‘iá»ƒn vÄƒn báº£n dá»±a trÃªn lá»±a chá»n ngÃ´n ngá»¯ hiá»‡n táº¡i
+# Lấy từ điển văn bản dựa trên lựa chọn ngôn ngữ hiện tại
 def get_text(key):
     return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
 
-# Header cá»§a á»©ng dá»¥ng
+# Header của ứng dụng
 col_logo_title, col_lang = st.columns([0.8, 0.2])
 with col_logo_title:
-    st.image("triac_logo.png", width=110) # Logo cá»‘ Ä‘á»‹nh
-    st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True) # TiÃªu Ä‘á» cá»‘ Ä‘á»‹nh
-    st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True) # Phá»¥ Ä‘á» cá»‘ Ä‘á»‹nh
+    st.image("triac_logo.png", width=110) # Logo cố định
+    st.markdown("<div class='report-title'>Triac Time Report Generator</div>", unsafe_allow_html=True) # Tiêu đề cố định
+    st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True) # Phụ đề cố định
 
 with col_lang:
     st.session_state.lang = st.radio(
@@ -488,18 +488,18 @@ with tab_comparison_report_main:
     # Define the mapping from text key to (Vietnamese_internal_string, English_internal_string)
     # This ensures the correct internal string is passed to backend, regardless of UI language
     internal_comparison_modes_map = {
-        'compare_projects_month': ("So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng", "Compare Projects in a Month"),
-        'compare_projects_year': ("So SÃ¡nh Dá»± Ãn Trong Má»™t NÄƒm", "Compare Projects in a Year"),
-        'compare_one_project_over_time': ("So SÃ¡nh Má»™t Dá»± Ãn Qua CÃ¡c ThÃ¡ng/NÄƒm", "Compare One Project Over Time (Months/Years)")
+        'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
+        'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
+        'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
     }
 
-    # Khá»Ÿi táº¡o giÃ¡ trá»‹ máº·c Ä‘á»‹nh náº¿u chÆ°a cÃ³ trong session_state
+    # Khởi tạo giá trị mặc định nếu chưa có trong session_state
     if 'selected_comparison_mode_key' not in st.session_state:
-        # Máº·c Ä‘á»‹nh chá»n key Ä‘áº§u tiÃªn trong danh sÃ¡ch
+        # Mặc định chọn key đầu tiên trong danh sách
         st.session_state.selected_comparison_mode_key = list(internal_comparison_modes_map.keys())[0]
 
-    # Táº¡o list cÃ¡c options Ä‘á»ƒ hiá»ƒn thá»‹ trong selectbox
-    # vÃ  má»™t map Ä‘á»ƒ tÃ¬m key tá»« display text
+    # Tạo list các options để hiển thị trong selectbox
+    # và một map để tìm key từ display text
     display_options = []
     display_to_key_map = {}
     for key in internal_comparison_modes_map.keys():
@@ -507,34 +507,34 @@ with tab_comparison_report_main:
         display_options.append(display_text)
         display_to_key_map[display_text] = key
 
-    # Láº¥y giÃ¡ trá»‹ hiá»ƒn thá»‹ máº·c Ä‘á»‹nh dá»±a trÃªn key Ä‘Ã£ lÆ°u
+    # Lấy giá trị hiển thị mặc định dựa trên key đã lưu
     default_display_value = get_text(st.session_state.selected_comparison_mode_key)
     
-    # Äáº£m báº£o giÃ¡ trá»‹ máº·c Ä‘á»‹nh tá»“n táº¡i trong display_options Ä‘á»ƒ trÃ¡nh lá»—i
-    # Náº¿u khÃ´ng tÃ¬m tháº¥y, fallback vá» má»¥c Ä‘áº§u tiÃªn vÃ  cáº­p nháº­t session_state
+    # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
+    # Nếu không tìm thấy, fallback về mục đầu tiên và cập nhật session_state
     try:
         current_index = display_options.index(default_display_value)
     except ValueError:
-        # GiÃ¡ trá»‹ máº·c Ä‘á»‹nh khÃ´ng tÃ¬m tháº¥y trong options hiá»‡n táº¡i, fallback vá» Ä‘áº§u tiÃªn
+        # Giá trị mặc định không tìm thấy trong options hiện tại, fallback về đầu tiên
         current_index = 0
         st.session_state.selected_comparison_mode_key = display_to_key_map[display_options[0]]
-        default_display_value = display_options[0] # Cáº­p nháº­t láº¡i default_display_value cho Ä‘Ãºng
+        default_display_value = display_options[0] # Cập nhật lại default_display_value cho đúng
 
     selected_comparison_display = st.selectbox(
         get_text('select_comparison_mode'),
         options=display_options,
-        index=current_index, # Äáº·t index dá»±a trÃªn giÃ¡ trá»‹ máº·c Ä‘á»‹nh Ä‘Ã£ Ä‘Æ°á»£c kiá»ƒm tra
+        index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
         key='comparison_mode_select_tab_main'
     )
     
-    # Cáº­p nháº­t key lá»±a chá»n vÃ o session_state khi ngÆ°á»i dÃ¹ng thay Ä‘á»•i
+    # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
     current_selected_key = display_to_key_map[selected_comparison_display]
     if st.session_state.selected_comparison_mode_key != current_selected_key:
         st.session_state.selected_comparison_mode_key = current_selected_key
 
 
-    # Láº¥y giÃ¡ trá»‹ chuá»—i ná»™i bá»™ (internal string) Ä‘á»ƒ truyá»n vÃ o backend
-    # Dá»±a trÃªn key Ä‘Ã£ lÆ°u vÃ  ngÃ´n ngá»¯ hiá»‡n táº¡i
+    # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
+    # Dựa trên key đã lưu và ngôn ngữ hiện tại
     vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
     if st.session_state.lang == 'vi':
         comparison_mode = vi_val
@@ -561,7 +561,7 @@ with tab_comparison_report_main:
     st.session_state.comparison_selected_projects = comp_projects # Update state
 
 
-    if comparison_mode == "So SÃ¡nh Má»™t Dá»± Ãn Qua CÃ¡c ThÃ¡ng/NÄƒm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
+    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
         if len(comp_projects) != 1:
             st.warning(get_text('select_single_project_warning'))
             validation_error = True
@@ -608,7 +608,7 @@ with tab_comparison_report_main:
             comp_months = [] # Ensure empty
             st.session_state.comparison_selected_months_over_time = [] # Clear months state
 
-    elif comparison_mode in ["So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng", "Compare Projects in a Month", "So SÃ¡nh Dá»± Ãn Trong Má»™t NÄƒm", "Compare Projects in a Year"]:
+    elif comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month", "So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         col_comp1, col_comp2 = st.columns(2)
         with col_comp1:
             # State management for general comparison years
@@ -628,7 +628,7 @@ with tab_comparison_report_main:
             if 'comparison_selected_months_general' not in st.session_state:
                 st.session_state.comparison_selected_months_general = []
 
-            if comparison_mode in ["So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng", "Compare Projects in a Month"]:
+            if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
                 comp_months = st.multiselect(
                     get_text('select_months_comp'),
                     options=all_months,
@@ -644,7 +644,7 @@ with tab_comparison_report_main:
             st.warning(get_text('no_comparison_criteria_selected'))
             validation_error = True
         
-        if comparison_mode in ["So SÃ¡nh Dá»± Ãn Trong Má»™t ThÃ¡ng", "Compare Projects in a Month"] and not comp_months:
+        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"] and not comp_months:
             st.warning(get_text('no_comparison_criteria_selected'))
             validation_error = True
 
@@ -665,7 +665,7 @@ with tab_comparison_report_main:
             # Error messages already displayed by specific conditions
             pass
         else:
-            # DEBUG print statements (giá»¯ láº¡i Ä‘á»ƒ cháº©n Ä‘oÃ¡n váº¥n Ä‘á» dá»± Ã¡n)
+            # DEBUG print statements (giữ lại để chẩn đoán vấn đề dự án)
             print(f"DEBUG: Comparison Mode selected before filter: {comparison_mode}")
             print(f"DEBUG: Selected Projects before filter: {comp_projects}")
             print(f"DEBUG: Selected Years before filter: {comp_years}")
@@ -676,8 +676,8 @@ with tab_comparison_report_main:
                 'selected_years': comp_years,
                 'selected_months': comp_months,
                 'selected_projects': comp_projects,
-                # 'selected_months_over_time' khÃ´ng cáº§n truyá»n riÃªng náº¿u Ä‘Ã£ gÃ¡n vÃ o comp_months
-                # nÃ³ Ä‘Ã£ Ä‘Æ°á»£c xá»­ lÃ½ trong logic trÃªn
+                # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
+                # nó đã được xử lý trong logic trên
             }
             
             # Print the final config before calling the function
