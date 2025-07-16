@@ -18,28 +18,45 @@ def setup_paths():
     today = datetime.datetime.today().strftime('%Y%m%d')
     return {
         'template_file': "Time_report.xlsm",
-        'output_file': f"Time_report_Standard_{today}.xlsx", # Đổi tên để phân biệt
-        'pdf_report': f"Time_report_Standard_{today}.pdf",    # Đổi tên để phân biệt
-        'comparison_output_file': f"Time_report_Comparison_{today}.xlsx", # Đường dẫn mới cho Excel so sánh
-        'comparison_pdf_report': f"Time_report_Comparison_{today}.pdf"    # Đường dẫn mới cho PDF so sánh
+        'output_file': f"Time_report_Standard_{today}.xlsx",
+        'pdf_report': f"Time_report_Standard_{today}.pdf",
+        'comparison_output_file': f"Time_report_Comparison_{today}.xlsx",
+        'comparison_pdf_report': f"Time_report_Comparison_{today}.pdf"
     }
 
 def read_configs(path_dict):
-    year_mode_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Year_Mode', engine='openpyxl')
-    project_filter_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Project_Filter', engine='openpyxl')
+    """
+    Reads configuration from the template file.
+    This function is primarily for setting initial defaults or for non-Streamlit mode.
+    In Streamlit, much of this configuration is handled by user selections.
+    """
+    try:
+        year_mode_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Year_Mode', engine='openpyxl')
+        project_filter_df = pd.read_excel(path_dict['template_file'], sheet_name='Config_Project_Filter', engine='openpyxl')
 
-    mode = str(year_mode_df.loc[year_mode_df['Key'].str.lower() == 'mode', 'Value'].values[0]).strip().lower()
-    year_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'year', 'Value']
-    year = int(year_row.values[0]) if not year_row.empty and pd.notna(year_row.values[0]) else None
-    months_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'months', 'Value']
-    months = [m.strip().capitalize() for m in str(months_row.values[0]).split(',')] if not months_row.empty else []
+        mode = str(year_mode_df.loc[year_mode_df['Key'].str.lower() == 'mode', 'Value'].values[0]).strip().lower()
+        year_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'year', 'Value']
+        year = int(year_row.values[0]) if not year_row.empty and pd.notna(year_row.values[0]) else None
+        months_row = year_mode_df.loc[year_mode_df['Key'].str.lower() == 'months', 'Value']
+        months = [m.strip().capitalize() for m in str(months_row.values[0]).split(',')] if not months_row.empty and pd.notna(months_row.values[0]) else []
+        
+        # Ensure 'Include' column is treated as string for case-insensitive comparison
+        if 'Include' in project_filter_df.columns:
+            project_filter_df['Include'] = project_filter_df['Include'].astype(str)
 
-    return {
-        'mode': mode,
-        'year': year,
-        'months': months,
-        'project_filter_df': project_filter_df
-    }
+        return {
+            'mode': mode,
+            'year': year,
+            'months': months,
+            'project_filter_df': project_filter_df
+        }
+    except FileNotFoundError:
+        print(f"Error: Template file not found at {path_dict['template_file']}")
+        return {'mode': 'year', 'year': datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+    except Exception as e:
+        print(f"Error reading config: {e}")
+        return {'mode': 'year', 'year': datetime.now().year, 'months': [], 'project_filter_df': pd.DataFrame(columns=['Project Name', 'Include'])}
+
 
 def load_raw_data(path_dict):
     df = pd.read_excel(path_dict['template_file'], sheet_name='Raw Data', engine='openpyxl')
@@ -54,7 +71,7 @@ def apply_filters(df, config):
     df_filtered = df.copy()
     if 'years' in config and config['years']: # Dành cho multiselect years
         df_filtered = df_filtered[df_filtered['Year'].isin(config['years'])]
-    elif 'year' in config and config['year']: # Dành cho single select year
+    elif 'year' in config and config['year']: # Dành cho single select year (có thể không dùng trong Streamlit UI mới)
         df_filtered = df_filtered[df_filtered['Year'] == config['year']]
 
     if config['months']:
@@ -72,12 +89,25 @@ def apply_filters(df, config):
     return df_filtered
 
 def export_report(df, config, path_dict):
-    mode = config['mode']
+    mode = config.get('mode', 'year') # Default to 'year' if not specified
+    
+    # Ensure 'Year', 'MonthName', 'Project name' columns exist before grouping
+    required_cols = ['Year', 'Project name', 'Hours']
+    if mode == 'month':
+        required_cols.append('MonthName')
+    
+    for col in required_cols:
+        if col not in df.columns:
+            raise KeyError(f"Missing required column for grouping: {col}")
+
     if mode == 'year':
         summary = df.groupby(['Year', 'Project name'])['Hours'].sum().reset_index()
     elif mode == 'month':
         summary = df.groupby(['Year', 'MonthName', 'Project name'])['Hours'].sum().reset_index()
     else: # week mode
+        # Ensure 'Week' column exists for 'week' mode
+        if 'Week' not in df.columns:
+            raise KeyError("Missing 'Week' column for 'week' mode report.")
         summary = df.groupby(['Year', 'Week', 'Project name'])['Hours'].sum().reset_index()
 
     with pd.ExcelWriter(path_dict['output_file'], engine='openpyxl') as writer:
@@ -117,7 +147,7 @@ def export_report(df, config, path_dict):
     # Create project sheets
     for project in df['Project name'].unique():
         df_proj = df[df['Project name'] == project]
-        ws_proj = wb.create_sheet(title=project[:31]) # Truncate project name for sheet title
+        ws_proj = wb.create_sheet(title=sanitize_filename(project)[:31]) # Truncate and sanitize project name for sheet title
 
         # Task summary
         summary_task = df_proj.groupby('Task')['Hours'].sum().reset_index().sort_values('Hours', ascending=False)
@@ -151,10 +181,15 @@ def export_report(df, config, path_dict):
         
     # Config info
     ws_config = wb.create_sheet("Config_Info")
-    ws_config['A1'], ws_config['B1'] = "Mode", config['mode']
-    ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config.get('years', [config.get('year')])))
-    ws_config['A3'], ws_config['B3'] = "Months", ', '.join(config['months']) if config['months'] else "All"
-    ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(config['project_filter_df']['Project Name'])
+    ws_config['A1'], ws_config['B1'] = "Mode", config.get('mode', 'N/A')
+    ws_config['A2'], ws_config['B2'] = "Years", ', '.join(map(str, config.get('years', []))) if config.get('years') else str(config.get('year', 'N/A'))
+    ws_config['A3'], ws_config['B3'] = "Months", ', '.join(config.get('months', [])) if config.get('months') else "All"
+    
+    # Check if project_filter_df is available and not empty before trying to access it
+    if 'project_filter_df' in config and not config['project_filter_df'].empty:
+        ws_config['A4'], ws_config['B4'] = "Projects", ', '.join(config['project_filter_df']['Project Name'])
+    else:
+        ws_config['A4'], ws_config['B4'] = "Projects", "All selected" # Or "None selected" based on context
 
     # Optionally remove 'Raw_Data' if exists
     if 'Raw_Data' in wb.sheetnames:
@@ -168,19 +203,27 @@ def export_pdf_report(df, config, path_dict):
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
+        # Load DejaVuSans font for Vietnamese characters
+        # Make sure 'DejaVuSansCondensed.ttf' is available in the deployment environment or in your repository
+        try:
+            pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True)
+        except RuntimeError:
+            print("Warning: DejaVuSansCondensed.ttf not found. PDF might not display Vietnamese characters correctly.")
+            pdf.add_font('Arial', '', 'arial.ttf', uni=True) # Fallback to Arial if available
+
 
         # COVER PAGE
         pdf.add_page()
         if os.path.exists(logo_path):
             pdf.image(logo_path, x=10, y=10, w=30)
-        pdf.set_font("Arial", 'B', 16)
+        pdf.set_font("DejaVuSans", 'B', 16)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("Arial", '', 12)
+        pdf.set_font("DejaVuSans", '', 12)
         pdf.ln(5)
         pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("Arial", '', 11)
+        pdf.set_font("DejaVuSans", '', 11)
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -190,7 +233,7 @@ def export_pdf_report(df, config, path_dict):
                 pdf.add_page()
                 if os.path.exists(logo_path):
                     pdf.image(logo_path, x=10, y=8, w=25)
-                pdf.set_font("Arial", 'B', 11)
+                pdf.set_font("DejaVuSans", 'B', 11)
                 pdf.set_y(35)
                 if page_project_name:
                     pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -207,10 +250,10 @@ def export_pdf_report(df, config, path_dict):
         projects = df['Project name'].unique()
 
         config_info = {
-            "Mode": config['mode'].capitalize(),
-            "Years": ', '.join(map(str, config.get('years', []))) or str(config.get('year')),
+            "Mode": config.get('mode', 'N/A').capitalize(),
+            "Years": ', '.join(map(str, config.get('years', []))) or str(config.get('year', 'N/A')),
             "Months": ', '.join(config.get('months', [])) or "All",
-            "Projects Included": ', '.join(config['project_filter_df']['Project Name'])
+            "Projects Included": ', '.join(config['project_filter_df']['Project Name']) if 'project_filter_df' in config and not config['project_filter_df'].empty else "All selected"
         }
 
         # Generate Charts per Project (Standard Report)
@@ -269,7 +312,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     if df_filtered.empty:
         return pd.DataFrame(), f"Không có dữ liệu cho chế độ so sánh: {comparison_mode}"
 
-    if comparison_mode == "So Sánh Dự Án Trong Một Tháng" or comparison_mode == "Compare Projects in a Month":
+    if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
         # Tổng hợp giờ theo Project cho một tháng/năm cụ thể
         # Yêu cầu 1 năm, 1 tháng, nhiều dự án
         if len(years) != 1 or len(months) != 1 or len(selected_projects) < 2:
@@ -280,7 +323,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
         return df_comparison, title
 
-    elif comparison_mode == "So Sánh Dự Án Trong Một Năm" or comparison_mode == "Compare Projects in a Year":
+    elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         # Tổng hợp giờ theo Project và Month cho một năm
         # Yêu cầu 1 năm, nhiều dự án (tháng là tất cả các tháng được chọn)
         if len(years) != 1 or len(selected_projects) < 2:
@@ -299,7 +342,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         return df_comparison, title
 
-    elif comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
         # Tổng hợp giờ cho một Project theo Month và Year
         # Yêu cầu 1 dự án, nhiều tháng (và nhiều năm nếu chọn)
         if len(selected_projects) != 1 or len(months) < 2: # Ít nhất 2 tháng để so sánh
@@ -328,84 +371,88 @@ def export_comparison_report(df_comparison, comparison_config, path_dict, compar
     output_file = path_dict['comparison_output_file']
     
     with pd.ExcelWriter(output_file, engine='openpyxl') as writer:
-        df_comparison.to_excel(writer, sheet_name='Comparison Report', index=False) # index=False nếu cột đầu tiên đã là tên cột
+        # writer.book is the workbook object
+        # writer.sheets gives access to existing sheets if needed
+        df_comparison.to_excel(writer, sheet_name='Comparison Report', index=False) 
 
         wb = writer.book
         ws = writer.sheets['Comparison Report']
 
         # Tiêu đề báo cáo
-        title_format = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center'})
-        ws.merge_cells('A1:D1') # Điều chỉnh phạm vi merge phù hợp
+        # title_format = wb.add_format({'bold': True, 'font_size': 14, 'align': 'center'}) # add_format is for xlsxwriter, not openpyxl
+        # For openpyxl, directly set font properties
+        ws.merge_cells('A1:D1') # Điều chỉnh phạm vi merge phù hợp, có thể cần điều chỉnh dynamic
         ws['A1'].value = f"BÁO CÁO SO SÁNH: {comparison_mode}"
+        ws['A1'].font = ws['A1'].font.copy(bold=True, size=14) # Set font bold and size
 
         # Thông tin cấu hình
         info_row = 2
-        ws.cell(row=info_row, column=1, value="Năm:").font = wb.add_format({'bold': True})
+        ws.cell(row=info_row, column=1, value="Năm:").font = ws.cell(row=info_row, column=1).font.copy(bold=True)
         ws.cell(row=info_row, column=2, value=', '.join(map(str, comparison_config['years'])))
         info_row += 1
-        ws.cell(row=info_row, column=1, value="Tháng:").font = wb.add_format({'bold': True})
+        ws.cell(row=info_row, column=1, value="Tháng:").font = ws.cell(row=info_row, column=1).font.copy(bold=True)
         ws.cell(row=info_row, column=2, value=', '.join(comparison_config['months']))
         info_row += 1
-        ws.cell(row=info_row, column=1, value="Dự án:").font = wb.add_format({'bold': True})
+        ws.cell(row=info_row, column=1, value="Dự án:").font = ws.cell(row=info_row, column=1).font.copy(bold=True)
         ws.cell(row=info_row, column=2, value=', '.join(comparison_config['selected_projects']))
 
-        # Đặt DataFrame sau thông tin cấu hình
-        start_row_data = info_row + 2
-        for r_idx, r in enumerate(dataframe_to_rows(df_comparison, index=False, header=True)):
-            for c_idx, cell_val in enumerate(r):
-                ws.cell(row=start_row_data + r_idx, column=c_idx + 1, value=cell_val)
-        
-        # Thêm biểu đồ so sánh (ví dụ)
-        # Kiểm tra xem DataFrame có cột 'Total Hours' (cho mode 1) hoặc các cột tháng (cho mode 2, 3)
+        # Dataframe already written, but its position can be adjusted if needed
+        # If you wrote it with to_excel, it's already there.
+        # To add a chart:
         if not df_comparison.empty:
             chart = BarChart()
             chart.y_axis.title = "Giờ"
             
-            if comparison_mode == "So Sánh Dự Án Trong Một Tháng" or comparison_mode == "Compare Projects in a Month":
-                # Data for 'Total Hours' (col 2), Categories for 'Project Name' (col 1)
-                data_col_idx = df_comparison.columns.get_loc('Total Hours') + 1
-                cat_col_idx = df_comparison.columns.get_loc('Project name') + 1
+            # Determine data and category references based on comparison mode
+            if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
                 chart.title = "So sánh giờ theo Dự án"
                 chart.x_axis.title = "Dự án"
                 
-                data_ref = Reference(ws, min_col=data_col_idx, min_row=start_row_data, max_row=start_row_data + len(df_comparison) -1)
-                cats_ref = Reference(ws, min_col=cat_col_idx, min_row=start_row_data + 1, max_row=start_row_data + len(df_comparison))
-                chart.add_data(data_ref, titles_from_data=False) # Set to False if you explicitly provide titles or titles are not in the first row of data_ref
+                # Assuming 'Project name' is in A and 'Total Hours' is in B
+                # And df_comparison was written starting from A7 if previous info took up rows
+                # Let's assume data starts right after config info for chart references
+                data_start_row = info_row + 2 # Assuming 2 rows after config info for column headers
+                
+                data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison) -1)
+                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
+                
+                chart.add_data(data_ref, titles_from_data=False) 
                 chart.set_categories(cats_ref)
             
-            elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"] :
-                # Data for months, Categories for Project Name
-                # Loại bỏ cột 'Project Name' và 'Total' khỏi data_cols_indices nếu có
-                data_cols_indices = [df_comparison.columns.get_loc(col) + 1 for col in df_comparison.columns if col not in ['Project Name', 'Total']]
-                cat_col_idx = df_comparison.columns.get_loc('Project Name') + 1
+            elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
                 chart.title = "So sánh giờ theo Dự án và Tháng"
                 chart.x_axis.title = "Dự án"
-
-                # For unstacked data, we need to iterate over series
-                for col_idx in data_cols_indices:
-                    series_ref = Reference(ws, min_col=col_idx, min_row=start_row_data, max_row=start_row_data + len(df_comparison) -1)
-                    chart.add_data(series_ref, titles_from_data=True)
                 
-                cats_ref = Reference(ws, min_col=cat_col_idx, min_row=start_row_data + 1, max_row=start_row_data + len(df_comparison))
+                data_start_row = info_row + 2
+                
+                # Get columns that are months, exclude 'Project Name' and 'Total' if present in index or columns
+                value_cols = [col for col in df_comparison.columns if col not in ['Project Name', 'Total', 'Year']]
+                
+                # Add each month as a series
+                for idx, col_name in enumerate(value_cols):
+                    # Series data: (sheet, min_col, min_row, max_col, max_row, title_from_data=False)
+                    series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison)-1)
+                    chart.add_data(series, titles_from_data=True)
+
+                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
                 chart.set_categories(cats_ref)
 
-            elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"] :
-                # Data for months, Categories for Year
-                data_cols_indices = [df_comparison.columns.get_loc(col) + 1 for col in df_comparison.columns if col not in ['Year', 'Total']]
-                cat_col_idx = df_comparison.columns.get_loc('Year') + 1
+            elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
                 chart.title = "So sánh giờ của một dự án qua các tháng/năm"
                 chart.x_axis.title = "Thời gian (Năm)"
 
-                # For unstacked data, we need to iterate over series
-                for col_idx in data_cols_indices:
-                    series_ref = Reference(ws, min_col=col_idx, min_row=start_row_data, max_row=start_row_data + len(df_comparison) -1)
-                    chart.add_data(series_ref, titles_from_data=True)
-                
-                cats_ref = Reference(ws, min_col=cat_col_idx, min_row=start_row_data + 1, max_row=start_row_data + len(df_comparison))
+                data_start_row = info_row + 2
+                value_cols = [col for col in df_comparison.columns if col not in ['Year', 'Total', 'Project Name']]
+
+                for idx, col_name in enumerate(value_cols):
+                    series = Reference(ws, min_col=df_comparison.columns.get_loc(col_name) + 1, min_row=data_start_row, max_row=data_start_row + len(df_comparison)-1)
+                    chart.add_data(series, titles_from_data=True)
+
+                cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Year') + 1, min_row=data_start_row + 1, max_row=data_start_row + len(df_comparison))
                 chart.set_categories(cats_ref)
 
 
-            ws.add_chart(chart, f"A{start_row_data + len(df_comparison) + 2}") # Đặt biểu đồ bên dưới bảng
+            ws.add_chart(chart, f"A{info_row + len(df_comparison) + 5}") # Đặt biểu đồ bên dưới bảng, cộng thêm một số hàng để có khoảng cách
 
         wb.save(output_file)
         return True
@@ -423,7 +470,13 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
     def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path="triac_logo.png"):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True) # Ensure font supports Vietnamese
+        # Load DejaVuSans font for Vietnamese characters
+        try:
+            pdf.add_font('DejaVuSans', '', 'DejaVuSansCondensed.ttf', uni=True) 
+        except RuntimeError:
+            print("Warning: DejaVuSansCondensed.ttf not found. PDF might not display Vietnamese characters correctly.")
+            pdf.add_font('Arial', '', 'arial.ttf', uni=True) # Fallback to Arial if available
+
 
         # COVER PAGE
         pdf.add_page()
@@ -465,12 +518,16 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         # Đảm bảo trục y luôn bắt đầu từ 0
         ax.set_ylim(bottom=0)
 
-        if mode == "So Sánh Dự Án Trong Một Tháng" or mode == "Compare Projects in a Month":
+        # Set font for matplotlib to support Vietnamese
+        plt.rcParams['font.family'] = 'DejaVu Sans'
+        plt.rcParams['font.sans-serif'] = ['DejaVu Sans'] # Or your preferred font that supports Vietnamese
+
+        if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             # Bar chart: Projects vs Total Hours
             ax.bar(df_plot['Project name'], df_plot['Total Hours'], color='skyblue')
             ax.set_xticks(df_plot['Project name'])
             ax.tick_params(axis='x', rotation=45, ha='right')
-        elif mode == "So Sánh Dự Án Trong Một Năm" or mode == "Compare Projects in a Year":
+        elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             # Grouped Bar Chart: Projects vs Months
             # Loại bỏ dòng 'Total' nếu có để không vẽ vào biểu đồ
             if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
@@ -485,7 +542,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
             ax.set_xticks(range(len(df_plot.index)))
             ax.set_xticklabels(df_plot.index, rotation=45, ha='right')
             ax.legend(title="Tháng", bbox_to_anchor=(1.05, 1), loc='upper left')
-        elif mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or mode == "Compare One Project Over Time (Months/Years)":
+        elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             # Line chart or Bar chart: Year/Month vs Hours
             # Loại bỏ dòng 'Total' nếu có để không vẽ vào biểu đồ
             if 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
@@ -516,11 +573,11 @@ def export_comparison_pdf_report(df_comparison, comparison_config, path_dict, co
         y_label = "Tổng số giờ"
 
         # Định nghĩa x_label dựa trên mode so sánh
-        if comparison_mode == "So Sánh Dự Án Trong Một Tháng" or comparison_mode == "Compare Projects in a Month":
+        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             x_label = "Dự án"
-        elif comparison_mode == "So Sánh Dự Án Trong Một Năm" or comparison_mode == "Compare Projects in a Year":
+        elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             x_label = "Dự án"
-        elif comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
+        elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             x_label = "Thời gian (Tháng/Năm)"
         
         comp_chart_path = os.path.join(tmp_dir, "comparison_chart.png")
