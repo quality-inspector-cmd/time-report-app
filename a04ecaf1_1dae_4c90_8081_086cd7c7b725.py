@@ -322,6 +322,10 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
             shutil.rmtree(tmp_dir)
 
 def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
+    print("DEBUG: apply_comparison_filters called with:")
+    print(f"  df_raw type: {type(df_raw)}")
+    print(f"  comparison_config type: {type(comparison_config)}")
+    print(f"  comparison_mode type: {type(comparison_mode)} value: {comparison_mode}")
     """Áp dụng bộ lọc và tạo DataFrame tóm tắt cho báo cáo so sánh."""
     years = comparison_config.get('years', [])
     months = comparison_config.get('months', [])
