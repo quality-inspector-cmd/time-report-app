@@ -4,7 +4,7 @@ import os
 import io
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mticker
-import matplotlib.font_manager as fm # Thêm dòng này để quản lý font
+import matplotlib.font_manager as fm
 from reportlab.lib.pagesizes import letter, landscape
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, Image
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -27,20 +27,6 @@ matplotlib.rcParams['pdf.fonttype'] = 42 # Type 42 (TrueType)
 matplotlib.rcParams['ps.fonttype'] = 42 # Type 42 (TrueType)
 
 # Cấu hình ReportLab để sử dụng font có sẵn hoặc tự định nghĩa nếu cần
-# ReportLab sử dụng font riêng, và DejaVu Sans không phải là font mặc định của nó.
-# Cần đăng ký font TrueType nếu muốn dùng các font không phải Helvetica/Times/Courier.
-# Tuy nhiên, đối với các font cơ bản, ReportLab có thể tự fallback.
-# Nếu bạn muốn đảm bảo DejaVu Sans cho ReportLab, bạn sẽ cần file .ttf và đăng ký:
-# from reportlab.pdfbase import pdfmetrics
-# from reportlab.pdfbase.ttfonts import TTFont
-# try:
-#     # Thay thế 'path/to/DejaVuSans.ttf' bằng đường dẫn thực tế của font nếu bạn có
-#     # Hoặc tải nó từ internet và đặt vào thư mục dự án
-#     pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
-#     # Sau đó sử dụng 'DejaVuSans' trong ParagraphStyle
-# except Exception as e:
-#     print(f"Could not register DejaVuSans for ReportLab: {e}. Falling back to default.")
-
 # Mặc định, ReportLab sử dụng Helvetica, Times-Roman, Courier.
 # Chúng ta sẽ sử dụng Helvetica làm font mặc định cho ReportLab để đảm bảo tính tương thích
 # và tránh lỗi font nếu DejaVu Sans .ttf không được tìm thấy/đăng ký.
@@ -48,11 +34,14 @@ matplotlib.rcParams['ps.fonttype'] = 42 # Type 42 (TrueType)
 
 # ==============================================================================
 
+# Định nghĩa thứ tự tháng chuẩn
+MONTH_ORDER = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+
 
 def setup_paths():
     script_dir = os.path.dirname(__file__)
     return {
-        "template_file": os.path.join(script_dir, "Time_report.xlsm"),
+        "template_file": os.path.join(script_dir, "Time_report.xlsm"), # Đã sửa tên file
         "output_file": os.path.join(script_dir, "Triac_Time_Report.xlsx"),
         "pdf_report": os.path.join(script_dir, "Triac_Time_Report.pdf"),
         "comparison_output_file": os.path.join(script_dir, "Triac_Comparison_Report.xlsx"),
@@ -85,7 +74,7 @@ def read_configs(template_path):
         df_config.set_index(0, inplace=True)
         config['mode'] = df_config.loc['Analysis Mode', 1]
         config['year'] = int(df_config.loc['Year', 1])
-        
+
         months_str = df_config.loc['Month(s)', 1]
         if isinstance(months_str, str):
             config['months'] = [m.strip() for m in months_str.split(',')]
@@ -120,7 +109,7 @@ def apply_filters(df_raw, config):
             config['project_filter_df']['Include'].astype(str).str.lower() == 'yes'
         ]['Project Name'].tolist()
         df_filtered = df_filtered[df_filtered['Project name'].isin(included_projects)]
-    
+
     return df_filtered
 
 def export_report(df_filtered, config, output_path):
@@ -174,11 +163,11 @@ def export_report(df_filtered, config, output_path):
             # Add a title
             title_format = workbook.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter'})
             subtitle_format = workbook.add_format({'bold': False, 'font_size': 12, 'align': 'center', 'valign': 'vcenter'})
-            
+
             # Merge cells for title
             max_col = len(pivot_df.columns) - 1
             worksheet.merge_range(0, 0, 0, max_col, f"Time Report {title_suffix}", title_format)
-            
+
             # Format columns
             currency_format = workbook.add_format({'num_format': '#,##0.00'})
             for col_num, value in enumerate(pivot_df.columns):
@@ -190,7 +179,7 @@ def export_report(df_filtered, config, output_path):
             # Adjust column width for 'Project name'
             max_project_name_len = pivot_df['Project name'].astype(str).map(len).max()
             worksheet.set_column(0, 0, max_project_name_len + 2)
-            
+
             # Make header bold
             header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
             for col_num, value in enumerate(pivot_df.columns):
@@ -252,14 +241,14 @@ def export_pdf_report(df_filtered, config, output_pdf_path, logo_path):
             plot_title = f"Total Hours per Project for Year {config['year']}"
             x_label = "Project Name"
             y_label = "Total Hours"
-        
+
         if pivot_df.empty:
             print("No data to generate PDF report.")
             return False
 
         # Generate a plot (Bar Chart)
         plt.figure(figsize=(10, 6))
-        
+
         # Determine how to plot based on columns
         if config['mode'] == 'year':
             plt.bar(pivot_df['Project name'], pivot_df['Total Hours'])
@@ -270,12 +259,12 @@ def export_pdf_report(df_filtered, config, output_pdf_path, logo_path):
             # For this example, let's sum up for a single bar chart if multiple columns exist,
             # otherwise, the plot would become too complex to generalize easily for PDF.
             # A more advanced solution would be to generate multiple charts or a stacked bar chart.
-            
+
             # Exclude 'Project name' from numeric columns
             numeric_cols = pivot_df.select_dtypes(include=np.number).columns.tolist()
             if 'Year' in numeric_cols: # Remove Year if it appears as a column
                 numeric_cols.remove('Year')
-            
+
             if not numeric_cols:
                 print("No numeric data columns to plot for PDF.")
                 return False
@@ -290,7 +279,7 @@ def export_pdf_report(df_filtered, config, output_pdf_path, logo_path):
                 plt.bar(pivot_df['Project name'], pivot_df[numeric_cols[0]])
                 plt.xticks(rotation=45, ha="right")
                 plot_title = f"Hours per Project {title_suffix}"
-                
+
         plt.title(plot_title)
         plt.xlabel(x_label)
         plt.ylabel(y_label)
@@ -307,9 +296,7 @@ def export_pdf_report(df_filtered, config, output_pdf_path, logo_path):
         styles = getSampleStyleSheet()
 
         # Custom styles for ReportLab (using Helvetica for better compatibility on various systems)
-        # Nếu muốn dùng DejaVu Sans trong ReportLab, bạn cần đăng ký font.
-        # Ở đây, tôi tạm thời sử dụng Helvetica, font mặc định của ReportLab.
-        
+
         styles.add(ParagraphStyle(name='TitleStyle',
                                   parent=styles['h1'],
                                   fontName='Helvetica-Bold', # Sử dụng font Helvetica
@@ -371,7 +358,7 @@ def export_pdf_report(df_filtered, config, output_pdf_path, logo_path):
             ('TOPPADDING', (0,0), (-1,-1), 6),
             ('BOTTOMPADDING', (0,0), (-1,-1), 6),
         ])
-        
+
         # Apply conditional formatting for numbers (right align, format as currency if applicable)
         for i, col_name in enumerate(pivot_df.columns):
             if pivot_df[col_name].dtype in ['float64', 'int64'] and col_name not in ['Year', 'Week']:
@@ -407,23 +394,23 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode_internal
         if not comparison_config.get('months') or not comparison_config.get('years') or len(comparison_config['years']) != 1:
             message = "For 'Compare Projects in a Month' mode, please select exactly one year and one or more months."
             return pd.DataFrame(), message
-        
+
         selected_year = comparison_config['years'][0]
         selected_months = comparison_config['months']
         df_filtered = df_filtered[
-            (df_filtered['Year'] == selected_year) & 
+            (df_filtered['Year'] == selected_year) &
             (df_filtered['MonthName'].isin(selected_months))
         ]
-        
+
         # Aggregate by Project and Month
-        df_pivot = pd.pivot_table(df_filtered, 
-                                  values='Hours', 
-                                  index='Project name', 
-                                  columns='MonthName', 
+        df_pivot = pd.pivot_table(df_filtered,
+                                  values='Hours',
+                                  index='Project name',
+                                  columns='MonthName',
                                   aggfunc='sum',
                                   fill_value=0)
         # Ensure month order
-        df_pivot = df_pivot[[m for m in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] if m in df_pivot.columns]]
+        df_pivot = df_pivot[[m for m in MONTH_ORDER if m in df_pivot.columns]]
         df_pivot['Total Hours'] = df_pivot.sum(axis=1) # Add total column
         df_pivot = df_pivot.reset_index()
         message = f"Comparing projects for year {selected_year}, month(s): {', '.join(selected_months)}"
@@ -432,19 +419,19 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode_internal
         if not comparison_config.get('years') or len(comparison_config['years']) != 1:
             message = "For 'Compare Projects in a Year' mode, please select exactly one year."
             return pd.DataFrame(), message
-        
+
         selected_year = comparison_config['years'][0]
         df_filtered = df_filtered[df_filtered['Year'] == selected_year]
 
         # Aggregate by Project and Month (all months of the year)
-        df_pivot = pd.pivot_table(df_filtered, 
-                                  values='Hours', 
-                                  index='Project name', 
-                                  columns='MonthName', 
+        df_pivot = pd.pivot_table(df_filtered,
+                                  values='Hours',
+                                  index='Project name',
+                                  columns='MonthName',
                                   aggfunc='sum',
                                   fill_value=0)
         # Ensure month order
-        df_pivot = df_pivot[[m for m in ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'] if m in df_pivot.columns]]
+        df_pivot = df_pivot[[m for m in MONTH_ORDER if m in df_pivot.columns]]
         df_pivot['Total Hours'] = df_pivot.sum(axis=1) # Add total column
         df_pivot = df_pivot.reset_index()
         message = f"Comparing projects for year {selected_year}"
@@ -472,7 +459,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode_internal
             if not comparison_config.get('months'):
                 message = "Please select months for 'Compare One Project Over Time' within a single year."
                 return pd.DataFrame(), message
-            
+
             # Compare across months within a single year for the selected project
             df_filtered = df_filtered[df_filtered['MonthName'].isin(comparison_config['months'])]
             df_pivot = pd.pivot_table(df_filtered,
@@ -481,7 +468,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode_internal
                                       aggfunc='sum',
                                       fill_value=0).reset_index()
             df_pivot.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-            df_pivot['MonthName'] = pd.Categorical(df_pivot['MonthName'], categories=df_raw['MonthName'].cat.categories, ordered=True)
+            # Dòng đã sửa để sử dụng MONTH_ORDER
+            df_pivot['MonthName'] = pd.Categorical(df_pivot['MonthName'], categories=[m for m in MONTH_ORDER if m in df_pivot['MonthName'].unique()], ordered=True)
             df_pivot = df_pivot.sort_values('MonthName')
             message = f"Comparing '{selected_project}' across months {', '.join(comparison_config['months'])} in year {selected_year}"
         else:
@@ -506,7 +494,7 @@ def export_comparison_report(df_comparison, comparison_config, output_path, comp
             worksheet = writer.sheets[report_sheet_name]
 
             title_format = workbook.add_format({'bold': True, 'font_size': 16, 'align': 'center', 'valign': 'vcenter'})
-            
+
             report_title = ""
             if comparison_mode_internal_string == "So Sánh Dự Án Trong Một Tháng" or comparison_mode_internal_string == "Compare Projects in a Month":
                 report_title = f"Project Comparison for Year {comparison_config['years'][0]}, Month(s): {', '.join(comparison_config['months'])}"
@@ -529,7 +517,7 @@ def export_comparison_report(df_comparison, comparison_config, output_path, comp
                 worksheet.set_column(col_num, col_num, max_len + 2)
                 if df_comparison[value].dtype in ['float64', 'int64'] and value not in ['Year', 'Week']:
                     worksheet.set_column(col_num, col_num, None, currency_format)
-            
+
             # Make header bold
             header_format = workbook.add_format({'bold': True, 'align': 'center', 'valign': 'vcenter', 'border': 1})
             for col_num, value in enumerate(df_comparison.columns):
