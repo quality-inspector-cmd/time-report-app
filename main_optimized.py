@@ -4,7 +4,6 @@ import os
 from datetime import datetime
 
 # ==============================================================================
-# SỬA LỖI: THÊM LẠI DÒNG IMPORT TỪ FILE LOGIC BÁO CÁO CỦA BẠN
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰM CÙNG THƯ MỤC
 # HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
 # ==============================================================================
@@ -111,7 +110,10 @@ translations = {
         "download_excel": "Download Excel",
         "download_pdf": "Download PDF",
         "data_preview": "Data preview",
-        "user_guide": "User Guide"
+        "user_guide": "User Guide",
+        "export_options": "Export Options", # Thêm bản dịch mới
+        "export_excel_option": "Export as Excel (.xlsx)", # Thêm bản dịch mới
+        "export_pdf_option": "Export as PDF (.pdf)" # Thêm bản dịch mới
     },
     "Tiếng Việt": {
         "mode": "Chọn chế độ",
@@ -124,7 +126,10 @@ translations = {
         "download_excel": "Tải Excel",
         "download_pdf": "Tải PDF",
         "data_preview": "Xem dữ liệu",
-        "user_guide": "Hướng dẫn"
+        "user_guide": "Hướng dẫn",
+        "export_options": "Tùy chọn xuất báo cáo", # Thêm bản dịch mới
+        "export_excel_option": "Xuất ra Excel (.xlsx)", # Thêm bản dịch mới
+        "export_pdf_option": "Xuất ra PDF (.pdf)" # Thêm bản dịch mới
     }
 }
 
@@ -154,29 +159,48 @@ with tab1:
     included = project_df[project_df['Include'].str.lower() == 'yes']['Project Name'].tolist()
     selected_projects = st.multiselect(T["project"], sorted(project_df['Project Name'].unique()), default=included)
 
-    if st.button(T["report_button"], use_container_width=True):
-        with st.spinner("Đang tạo báo cáo..."):
-            config = {
-                'mode': mode,
-                'years': years,
-                'months': months,
-                'project_filter_df': project_df[
-                    project_df['Project Name'].isin(selected_projects) &
-                    (project_df['Include'].str.lower() == 'yes')
-                ]
-            }
-            df_filtered = apply_filters(df_raw, config)
-            if df_filtered.empty:
-                st.warning(T["no_data"])
-            else:
-                export_report(df_filtered, config, path_dict)
-                export_pdf_report(df_filtered, config, path_dict)
-                st.success(f"{T['report_done']}: {os.path.basename(path_dict['output_file'])}")
+    st.markdown("---") # Đường phân cách
+    st.subheader(T["export_options"]) # Tiêu đề cho tùy chọn xuất
+    export_excel = st.checkbox(T["export_excel_option"], value=True) # Mặc định chọn Excel
+    export_pdf = st.checkbox(T["export_pdf_option"], value=False) # Mặc định không chọn PDF
 
-                with open(path_dict['output_file'], "rb") as f:
-                    st.download_button(T["download_excel"], f, file_name=os.path.basename(path_dict['output_file']), use_container_width=True)
-                with open(path_dict['pdf_report'], "rb") as f:
-                    st.download_button(T["download_pdf"], f, file_name=os.path.basename(path_dict['pdf_report']), use_container_width=True)
+    if st.button(T["report_button"], use_container_width=True):
+        if not export_excel and not export_pdf:
+            st.warning("Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).")
+        else:
+            with st.spinner("Đang tạo báo cáo..."):
+                config = {
+                    'mode': mode,
+                    'years': years,
+                    'months': months,
+                    'project_filter_df': project_df[
+                        project_df['Project Name'].isin(selected_projects) &
+                        (project_df['Include'].str.lower() == 'yes')
+                    ]
+                }
+                df_filtered = apply_filters(df_raw, config)
+                if df_filtered.empty:
+                    st.warning(T["no_data"])
+                else:
+                    report_generated = False
+                    if export_excel:
+                        export_report(df_filtered, config, path_dict)
+                        report_generated = True
+                    if export_pdf:
+                        export_pdf_report(df_filtered, config, path_dict)
+                        report_generated = True
+                    
+                    if report_generated:
+                        st.success(f"{T['report_done']}.")
+                        
+                        if export_excel:
+                            with open(path_dict['output_file'], "rb") as f:
+                                st.download_button(T["download_excel"], f, file_name=os.path.basename(path_dict['output_file']), use_container_width=True)
+                        if export_pdf:
+                            with open(path_dict['pdf_report'], "rb") as f:
+                                st.download_button(T["download_pdf"], f, file_name=os.path.basename(path_dict['pdf_report']), use_container_width=True)
+                    else:
+                        st.error("Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.")
 
 with tab2:
     st.subheader(T["data_preview"])
@@ -186,6 +210,7 @@ with tab3:
     st.markdown(f"### {T['user_guide']}")
     st.markdown("""
     - Chọn bộ lọc: chế độ, năm, tháng, dự án
+    - Chọn định dạng xuất báo cáo (Excel, PDF hoặc cả hai)
     - Nhấn "Tạo báo cáo"
-    - Tải về Excel hoặc PDF
+    - Tải về báo cáo đã tạo
     """)
