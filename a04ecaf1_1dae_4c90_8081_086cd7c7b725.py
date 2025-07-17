@@ -239,25 +239,26 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("helvetica", '', 11)
-    for key, value in config_info.items():
-    if key == "Months" and value != "All":
-    pdf.ln(5)
-    pdf.set_font("helvetica", 'B', 11)
-    pdf.cell(0, 10, "Months:", ln=True, align='L')
-    pdf.set_font("helvetica", '', 11)
-    months = value.split(', ')
-            for i, m in enumerate(months, start=1):
-                pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
-        elif key == "Projects Included" and value != "No projects selected or found":
-            pdf.ln(5)
-            pdf.set_font("helvetica", 'B', 11)
-            pdf.cell(0, 10, "Projects:", ln=True, align='L')
-            pdf.set_font("helvetica", '', 11)
-            projects = value.split(', ')
-            for i, p in enumerate(projects, start=1):
-                pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
-        else:
-            pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
+        for key, value in config_info.items():
+            if key == "Months" and value != "All":
+                pdf.ln(5)
+                pdf.set_font("helvetica", 'B', 11)
+                pdf.cell(0, 10, "Months:", ln=True, align='L')
+                pdf.set_font("helvetica", '', 11)
+                months = value.split(', ')
+                for i, m in enumerate(months, start=1):
+                    pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
+            elif key == "Projects Included" and value != "No projects selected or found":
+                pdf.ln(5)
+                pdf.set_font("helvetica", 'B', 11)
+                pdf.cell(0, 10, "Projects:", ln=True, align='L')
+                pdf.set_font("helvetica", '', 11)
+                projects = value.split(', ')
+                for i, p in enumerate(projects, start=1):
+                    pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
+            else:
+                pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
+
 
     for img_path, chart_title, page_project_name in charts_data:
         if img_path and os.path.exists(img_path):
