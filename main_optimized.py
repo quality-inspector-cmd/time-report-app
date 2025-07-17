@@ -277,13 +277,13 @@ with col_logo_title:
     st.markdown("<div class='report-subtitle'>Reporting tool for time tracking and analysis</div>", unsafe_allow_html=True) # Phụ đề cố định
 
 with col_lang:
-    st.session_state.lang = st.radio(
-        get_text('lang_select'),
+    selected_lang = st.radio(
+        "Select language:",
         options=['vi', 'en'],
-        format_func=lambda x: get_text('language_' + x),
+        format_func=lambda x: "Tiếng Việt" if x == "vi" else "English",
         key='language_selector_main'
     )
-        if st.session_state.lang != selected_lang:
+    if st.session_state.lang != selected_lang:
         st.session_state.lang = selected_lang
 # Check if template file exists
 if not os.path.exists(path_dict['template_file']):
