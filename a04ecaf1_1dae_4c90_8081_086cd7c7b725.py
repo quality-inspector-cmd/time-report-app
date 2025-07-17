@@ -224,21 +224,22 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
-def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path_inner):
-    pdf = FPDF()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.set_font('helvetica', 'B', 16) 
-    
-    pdf.add_page()
-    if os.path.exists(logo_path_inner):
-        pdf.image(logo_path_inner, x=10, y=10, w=30)
-    pdf.ln(40)
-    pdf.cell(0, 10, title, ln=True, align='C')
-    pdf.set_font("helvetica", '', 12) 
-    pdf.ln(5)
-    pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
-    pdf.ln(10)
-    pdf.set_font("helvetica", '', 11)
+    def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path_inner):
+        pdf = FPDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
+        pdf.set_font('helvetica', 'B', 16)
+
+        pdf.add_page()
+        if os.path.exists(logo_path_inner):
+            pdf.image(logo_path_inner, x=10, y=10, w=30)
+        pdf.ln(40)
+        pdf.cell(0, 10, title, ln=True, align='C')
+        pdf.set_font("helvetica", '', 12)
+        pdf.ln(5)
+        pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
+        pdf.ln(10)
+        pdf.set_font("helvetica", '', 11)
+
         for key, value in config_info.items():
             if key == "Months" and value != "All":
                 pdf.ln(5)
@@ -259,24 +260,23 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
             else:
                 pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
+        for img_path, chart_title, page_project_name in charts_data:
+            if img_path and os.path.exists(img_path):
+                pdf.add_page()
+                if os.path.exists(logo_path_inner):
+                    pdf.image(logo_path_inner, x=10, y=8, w=25)
+                pdf.set_font("helvetica", 'B', 11)
+                pdf.set_y(35)
+                if page_project_name:
+                    pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
+                pdf.cell(0, 10, chart_title, ln=True, align='C')
+                pdf.image(img_path, x=10, y=45, w=190)
 
-    for img_path, chart_title, page_project_name in charts_data:
-        if img_path and os.path.exists(img_path):
-            pdf.add_page()
-            if os.path.exists(logo_path_inner):
-                pdf.image(logo_path_inner, x=10, y=8, w=25)
-            pdf.set_font("helvetica", 'B', 11) 
-            pdf.set_y(35)
-            if page_project_name:
-                pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
-            pdf.cell(0, 10, chart_title, ln=True, align='C')
-            pdf.image(img_path, x=10, y=45, w=190)
-
-    pdf.output(output_path, "F")
-    print(f"DEBUG: PDF report generated at {output_path}")
+        pdf.output(output_path, "F")
+        print(f"DEBUG: PDF report generated at {output_path}")
 
     try:
-        projects = df['Project name'].unique() 
+        projects = df['Project name'].unique()
 
         config_info = {
             "Mode": config.get('mode', 'N/A').capitalize(),
@@ -287,7 +287,7 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
 
         plt.rcParams['font.family'] = 'sans-serif'
         plt.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'Liberation Sans']
-        plt.rcParams['axes.unicode_minus'] = False 
+        plt.rcParams['axes.unicode_minus'] = False
 
         for project in projects:
             safe_project = sanitize_filename(project)
@@ -338,7 +338,7 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
             pdf.cell(0, 10, "No charts generated for this report.", ln=True, align='C')
             pdf.output(pdf_report_path, "F")
             return True
-            
+
         create_pdf_from_charts(charts_for_pdf, pdf_report_path, "TRIAC TIME REPORT - STANDARD", config_info, logo_path)
         return True
     except Exception as e:
