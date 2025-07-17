@@ -224,55 +224,57 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
-    def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path_inner):
-        pdf = FPDF()
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_font('helvetica', 'B', 16) 
-        
-        pdf.add_page()
-        if os.path.exists(logo_path_inner):
-            pdf.image(logo_path_inner, x=10, y=10, w=30)
-        pdf.ln(40)
-        pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("helvetica", '', 12) 
-        pdf.ln(5)
-        pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
-        pdf.ln(10)
-        pdf.set_font("helvetica", '', 11) 
-        for key, value in config_info.items():
-    if key == "Months" and value != "All":
-        pdf.ln(5)
-        pdf.set_font("helvetica", 'B', 11)
-        pdf.cell(0, 10, "Months:", ln=True, align='L')
-        pdf.set_font("helvetica", '', 11)
-        months = value.split(', ')
-        for i, m in enumerate(months, start=1):
-            pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
-    elif key == "Projects Included" and value != "No projects selected or found":
-        pdf.ln(5)
-        pdf.set_font("helvetica", 'B', 11)
-        pdf.cell(0, 10, "Projects:", ln=True, align='L')
-        pdf.set_font("helvetica", '', 11)
-        projects = value.split(', ')
-        for i, p in enumerate(projects, start=1):
-            pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
-    else:
-        pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
+def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_path_inner):
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.set_font('helvetica', 'B', 16) 
+    
+    pdf.add_page()
+    if os.path.exists(logo_path_inner):
+        pdf.image(logo_path_inner, x=10, y=10, w=30)
+    pdf.ln(40)
+    pdf.cell(0, 10, title, ln=True, align='C')
+    pdf.set_font("helvetica", '', 12) 
+    pdf.ln(5)
+    pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
+    pdf.ln(10)
+    pdf.set_font("helvetica", '', 11)
 
-        for img_path, chart_title, page_project_name in charts_data:
-            if img_path and os.path.exists(img_path):
-                pdf.add_page()
-                if os.path.exists(logo_path_inner):
-                    pdf.image(logo_path_inner, x=10, y=8, w=25)
-                pdf.set_font("helvetica", 'B', 11) 
-                pdf.set_y(35)
-                if page_project_name:
-                    pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
-                pdf.cell(0, 10, chart_title, ln=True, align='C')
-                pdf.image(img_path, x=10, y=45, w=190)
+    # ✅ THỤT LỀ ĐÚNG Ở ĐÂY
+    for key, value in config_info.items():
+        if key == "Months" and value != "All":
+            pdf.ln(5)
+            pdf.set_font("helvetica", 'B', 11)
+            pdf.cell(0, 10, "Months:", ln=True, align='L')
+            pdf.set_font("helvetica", '', 11)
+            months = value.split(', ')
+            for i, m in enumerate(months, start=1):
+                pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
+        elif key == "Projects Included" and value != "No projects selected or found":
+            pdf.ln(5)
+            pdf.set_font("helvetica", 'B', 11)
+            pdf.cell(0, 10, "Projects:", ln=True, align='L')
+            pdf.set_font("helvetica", '', 11)
+            projects = value.split(', ')
+            for i, p in enumerate(projects, start=1):
+                pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
+        else:
+            pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
-        pdf.output(output_path, "F")
-        print(f"DEBUG: PDF report generated at {output_path}")
+    for img_path, chart_title, page_project_name in charts_data:
+        if img_path and os.path.exists(img_path):
+            pdf.add_page()
+            if os.path.exists(logo_path_inner):
+                pdf.image(logo_path_inner, x=10, y=8, w=25)
+            pdf.set_font("helvetica", 'B', 11) 
+            pdf.set_y(35)
+            if page_project_name:
+                pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
+            pdf.cell(0, 10, chart_title, ln=True, align='C')
+            pdf.image(img_path, x=10, y=45, w=190)
+
+    pdf.output(output_path, "F")
+    print(f"DEBUG: PDF report generated at {output_path}")
 
     try:
         projects = df['Project name'].unique() 
