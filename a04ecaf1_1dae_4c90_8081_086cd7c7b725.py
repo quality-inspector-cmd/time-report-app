@@ -240,12 +240,12 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
     pdf.ln(10)
     pdf.set_font("helvetica", '', 11)
     for key, value in config_info.items():
-            if key == "Months" and value != "All":
-            pdf.ln(5)
-            pdf.set_font("helvetica", 'B', 11)
-            pdf.cell(0, 10, "Months:", ln=True, align='L')
-            pdf.set_font("helvetica", '', 11)
-            months = value.split(', ')
+    if key == "Months" and value != "All":
+    pdf.ln(5)
+    pdf.set_font("helvetica", 'B', 11)
+    pdf.cell(0, 10, "Months:", ln=True, align='L')
+    pdf.set_font("helvetica", '', 11)
+    months = value.split(', ')
             for i, m in enumerate(months, start=1):
                 pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
         elif key == "Projects Included" and value != "No projects selected or found":
