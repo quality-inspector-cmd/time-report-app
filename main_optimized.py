@@ -743,3 +743,8 @@ with tab_user_guide_main:
     - Click "Create report"
     - Download generated report
     """)
+
+    # 👇 Thêm đoạn này để xem access log (nếu có)
+    if "access_log" in st.session_state:
+        st.write("📜 Current session access log:")
+        st.dataframe(pd.DataFrame(st.session_state.access_log))
