@@ -239,8 +239,6 @@ def create_pdf_from_charts(charts_data, output_path, title, config_info, logo_pa
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
     pdf.set_font("helvetica", '', 11)
-
-    # ✅ THỤT LỀ ĐÚNG Ở ĐÂY
     for key, value in config_info.items():
         if key == "Months" and value != "All":
             pdf.ln(5)
