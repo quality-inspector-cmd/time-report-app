@@ -239,7 +239,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
         pdf.ln(10)
         pdf.set_font("helvetica", '', 11) 
-for key, value in config_info.items():
+        for key, value in config_info.items():
     if key == "Months" and value != "All":
         pdf.ln(5)
         pdf.set_font("helvetica", 'B', 11)
