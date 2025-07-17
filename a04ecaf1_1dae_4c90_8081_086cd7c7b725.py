@@ -137,14 +137,14 @@ def export_report(df, config, output_file_path):
         
         if len(summary) > 0:
             data_col_idx = summary.columns.get_loc('Hours') + 1
-            cats_col_idx = summary.columns.get_loc('Month name') + 1
+            cats_col_idx = summary.columns.get_loc('Month Name') + 1
 
             data_ref = Reference(ws, min_col=data_col_idx, min_row=2, max_row=ws.max_row)
             cats_ref = Reference(ws, min_col=cats_col_idx, min_row=2, max_row=ws.max_row)
 
             chart = BarChart()
             chart.title = f"Total Hours by Project ({mode})"
-            chart.x_axis.title = "Month name"
+            chart.x_axis.title = "Month Name"
             chart.y_axis.title = "Hours"
             
             chart.add_data(data_ref, titles_from_data=False) 
