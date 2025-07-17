@@ -130,26 +130,35 @@ def export_report(df, config, output_file_path):
 
     try:
         with pd.ExcelWriter(output_file_path, engine='openpyxl') as writer:
-            summary.to_excel(writer, sheet_name='Summary', index=False)
+            # Ghi summary cơ bản để giữ nguyên dòng xử lý
+            df.to_excel(writer, sheet_name='RawData', index=False)
 
         wb = load_workbook(output_file_path)
-        ws = wb['Summary']
-        
-        if len(summary) > 0:
-            data_col_idx = summary.columns.get_loc('Hours') + 1
-            cats_col_idx = summary.columns.get_loc('Month Name') + 1
 
-            data_ref = Reference(ws, min_col=data_col_idx, min_row=2, max_row=ws.max_row)
-            cats_ref = Reference(ws, min_col=cats_col_idx, min_row=2, max_row=ws.max_row)
+        # === Ghi summary dạng MonthName - Hours ===
+        summary_chart = df.groupby('MonthName')['Hours'].sum().reset_index()
+        summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
 
-            chart = BarChart()
-            chart.title = f"Total Hours by Project ({mode})"
-            chart.x_axis.title = "Month Name"
-            chart.y_axis.title = "Hours"
-            
-            chart.add_data(data_ref, titles_from_data=False) 
-            chart.set_categories(cats_ref)
-            ws.add_chart(chart, "F2")
+        if 'Summary' in wb.sheetnames:
+            ws = wb['Summary']
+            wb.remove(ws)
+        ws = wb.create_sheet("Summary", 0)
+
+        ws.append(['MonthName', 'Hours'])
+        for row in summary_chart.itertuples(index=False):
+            ws.append([row.MonthName, row.Hours])
+
+        # Thêm biểu đồ vào sheet Summary
+        data_ref = Reference(ws, min_col=2, min_row=1, max_row=1 + len(summary_chart))
+        cats_ref = Reference(ws, min_col=1, min_row=2, max_row=1 + len(summary_chart))
+
+        chart = BarChart()
+        chart.title = "Total Hours by Month"
+        chart.x_axis.title = "Month"
+        chart.y_axis.title = "Hours"
+        chart.add_data(data_ref, titles_from_data=True)
+        chart.set_categories(cats_ref)
+        ws.add_chart(chart, "E2")
 
         for project in df['Project name'].unique():
             df_proj = df[df['Project name'] == project]
