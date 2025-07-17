@@ -283,8 +283,8 @@ with col_lang:
         format_func=lambda x: get_text('language_' + x),
         key='language_selector_main'
     )
-
-
+        if st.session_state.lang != selected_lang:
+        st.session_state.lang = selected_lang
 # Check if template file exists
 if not os.path.exists(path_dict['template_file']):
     st.error(get_text('template_not_found').format(path_dict['template_file']))
