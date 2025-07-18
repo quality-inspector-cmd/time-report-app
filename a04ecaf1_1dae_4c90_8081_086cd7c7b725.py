@@ -303,7 +303,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                     ax.set_xlabel("Hours")
                     ax.set_ylabel("Workcentre")
                     # ➕ Thêm nhãn số giờ
-                    for container in ax.containers:
+                for container in ax.containers:
                     ax.bar_label(container, fmt='%.1f', label_type='edge', fontsize=8, padding=3)
                     wc_img_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
                     plt.tight_layout()
@@ -321,7 +321,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                     ax.set_xlabel("Hours")
                     ax.set_ylabel("Task")
                     # ➕ Thêm nhãn số giờ
-                    for container in ax.containers:
+                for container in ax.containers:
                     ax.bar_label(container, fmt='%.1f', label_type='edge', fontsize=8, padding=3)
                     task_img_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
                     plt.tight_layout()
