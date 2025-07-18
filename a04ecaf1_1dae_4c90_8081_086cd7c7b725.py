@@ -142,7 +142,7 @@ def export_report(df, config, output_file_path):
         if 'Summary' in wb.sheetnames:
             ws = wb['Summary']
             wb.remove(ws)
-        ws = wb.create_sheet("Summary", 0)
+        ws = wb.create_sheet("Summary", 0)t
 
         ws.append(['MonthName', 'Hours'])
         for row in summary_chart.itertuples(index=False):
@@ -302,6 +302,9 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                     ax.tick_params(axis='y', labelsize=8)
                     ax.set_xlabel("Hours")
                     ax.set_ylabel("Workcentre")
+                    # ➕ Thêm nhãn số giờ
+                    for container in ax.containers:
+                    ax.bar_label(container, fmt='%.1f', label_type='edge', fontsize=8, padding=3)
                     wc_img_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
                     plt.tight_layout()
                     fig.savefig(wc_img_path, dpi=150)
@@ -317,6 +320,9 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                     ax.tick_params(axis='y', labelsize=8)
                     ax.set_xlabel("Hours")
                     ax.set_ylabel("Task")
+                    # ➕ Thêm nhãn số giờ
+                    for container in ax.containers:
+                    ax.bar_label(container, fmt='%.1f', label_type='edge', fontsize=8, padding=3)
                     task_img_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
                     plt.tight_layout()
                     fig.savefig(task_img_path, dpi=150)
