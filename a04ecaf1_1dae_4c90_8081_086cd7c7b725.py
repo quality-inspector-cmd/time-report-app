@@ -260,8 +260,8 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                     y = y_start + row * row_height
                     pdf.set_xy(x, y)
                     pdf.cell(col_width, row_height, f"{i + 1}. {m}", ln=0)
-
-pdf.ln((len(months) // cols + 1) * row_height + 2)
+                pdf.ln((len(months) // cols + 1) * row_height + 2)
+                
             elif key == "Projects Included" and value != "No projects selected or found":
                 pdf.ln(5)
                 pdf.set_font("helvetica", 'B', 11)
@@ -282,7 +282,7 @@ pdf.ln((len(months) // cols + 1) * row_height + 2)
                     pdf.set_xy(x, y)
                     pdf.cell(col_width, row_height, f"{i + 1}. {p}", ln=0)
 
-pdf.ln((len(projects) // cols + 1) * row_height + 2)  # Move cursor below the block
+                pdf.ln((len(projects) // cols + 1) * row_height + 2)  # Move cursor below the block
             else:
                 pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
