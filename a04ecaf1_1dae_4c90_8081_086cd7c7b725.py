@@ -142,7 +142,7 @@ def export_report(df, config, output_file_path):
         if 'Summary' in wb.sheetnames:
             ws = wb['Summary']
             wb.remove(ws)
-        ws = wb.create_sheet("Summary", 0)t
+        ws = wb.create_sheet("Summary", 0)
 
         ws.append(['MonthName', 'Hours'])
         for row in summary_chart.itertuples(index=False):
