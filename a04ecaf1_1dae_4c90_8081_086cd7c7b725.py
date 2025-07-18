@@ -247,16 +247,42 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                 pdf.cell(0, 10, "Months:", ln=True, align='L')
                 pdf.set_font("helvetica", '', 11)
                 months = value.split(', ')
-                for i, m in enumerate(months, start=1):
-                    pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
+                col_width = 60
+                cols = 3
+                row_height = 7
+                x_start = pdf.get_x()
+                y_start = pdf.get_y()
+
+                for i, m in enumerate(months):
+                    col = i % cols
+                    row = i // cols
+                    x = x_start + col * col_width
+                    y = y_start + row * row_height
+                    pdf.set_xy(x, y)
+                    pdf.cell(col_width, row_height, f"{i + 1}. {m}", ln=0)
+
+pdf.ln((len(months) // cols + 1) * row_height + 2)
             elif key == "Projects Included" and value != "No projects selected or found":
                 pdf.ln(5)
                 pdf.set_font("helvetica", 'B', 11)
                 pdf.cell(0, 10, "Projects:", ln=True, align='L')
                 pdf.set_font("helvetica", '', 11)
                 projects = value.split(', ')
-                for i, p in enumerate(projects, start=1):
-                    pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
+                col_width = 60  # Width per column
+                cols = 3        # Number of columns
+                row_height = 7
+                x_start = pdf.get_x()
+                y_start = pdf.get_y()
+
+                for i, p in enumerate(projects):
+                    col = i % cols
+                    row = i // cols
+                    x = x_start + col * col_width
+                    y = y_start + row * row_height
+                    pdf.set_xy(x, y)
+                    pdf.cell(col_width, row_height, f"{i + 1}. {p}", ln=0)
+
+pdf.ln((len(projects) // cols + 1) * row_height + 2)  # Move cursor below the block
             else:
                 pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
