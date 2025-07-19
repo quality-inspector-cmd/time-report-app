@@ -382,6 +382,8 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
 def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     print("DEBUG: apply_comparison_filters called with:")
+    if not isinstance(df_raw, pd.DataFrame):
+        return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ."    
     print(f"  df_raw type: {type(df_raw)}")
     print(f"  comparison_config type: {type(comparison_config)}")
     print(f"  comparison_mode type: {type(comparison_mode)} value: {comparison_mode}")
@@ -391,6 +393,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     selected_projects = comparison_config.get('selected_projects', [])
 
     df_filtered = df_raw.copy()
+    df_filtered['Hours'] = pd.to_numeric(df_filtered['Hours'], errors='coerce').fillna(0)
 
     if years:
         df_filtered = df_filtered[df_filtered['Year'].isin(years)]
