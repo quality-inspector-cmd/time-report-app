@@ -715,7 +715,7 @@ with tab_comparison_report_main:
                         st.error(get_text('failed_to_generate_comparison_excel'))
 
                 if export_pdf_comp:
-                    with st.spinner(get_text('generating_comparison_pdf'))
+                    with st.spinner(get_text('generating_comparison_pdf')):
                         try:
                             pdf_success_comp = export_comparison_pdf_report(
                                 df_filtered_comparison,
