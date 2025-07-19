@@ -697,7 +697,7 @@ with tab_comparison_report_main:
 
                 output_file_dir = os.path.dirname(path_dict['comparison_output_file'])
                 if output_file_dir:
-                os.makedirs(output_file_dir, exist_ok=True)
+                    os.makedirs(output_file_dir, exist_ok=True)
 
                 pdf_report_dir = os.path.dirname(path_dict['comparison_pdf_report'])
                 if pdf_report_dir:
