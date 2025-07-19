@@ -562,12 +562,12 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         return True
                     
                     # Thêm từng series dữ liệu cho mỗi dự án
-                    for r_idx, project_name in enumerate(df_chart_data['Project Name']):
+                    for r_idx, project_name in enumerate(df_chart_data['Project name']):
                         series_ref = Reference(ws, min_col=min_col_month, 
                                                min_row=data_start_row + r_idx, 
                                                max_col=max_col_month, 
                                                max_row=data_start_row + r_idx)
-                        title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, 
+                        title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, 
                                               min_row=data_start_row + r_idx, 
                                               max_row=data_start_row + r_idx)
                         chart.add_data(series_ref, titles_from_data=True)
