@@ -681,6 +681,13 @@ with tab_comparison_report_main:
             }
             
             # Print the final config before calling the function
+            comparison_output_folder = "outputs/comparison"
+            path_dict = {
+                "comparison_output_excel": os.path.join(comparison_output_folder, "comparison_result.xlsx"),
+                "comparison_output_file": os.path.join(comparison_output_folder, "comparison_export.xlsx"),
+                "comparison_pdf_output": os.path.join(comparison_output_folder, "comparison_chart.png"),
+                "comparison_pdf_report": os.path.join(comparison_output_folder, "comparison_report.pdf"),
+            }
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
 
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
