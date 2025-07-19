@@ -705,7 +705,7 @@ with tab_comparison_report_main:
                                 comparison_mode,
                                 path_dict['comparison_output_file']
                                 )
-                        except Exception as e
+                        except Exception as e:
                             excel_success_comp = False
                             st.error(f"❌ Lỗi khi xuất Excel: {e}")
                     if excel_success_comp:
