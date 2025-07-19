@@ -620,6 +620,9 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
 
 def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path):
     """Xuất báo cáo PDF so sánh với biểu đồ."""
+    if df_comparison.empty:
+        print("WARNING: df_comparison is empty. Skipping PDF report export.")
+        return False
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
