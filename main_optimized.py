@@ -684,11 +684,25 @@ with tab_comparison_report_main:
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
 
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
-
+            print(f"DEBUG: path_dict = {path_dict}")
             if df_filtered_comparison.empty:
                 # Đảm bảo thư mục chứa file output tồn tại
-                os.makedirs(os.path.dirname(path_dict['comparison_output_file']), exist_ok=True)
-                os.makedirs(os.path.dirname(path_dict['comparison_pdf_report']), exist_ok=True)
+                comparison_excel_dir = os.path.dirname(path_dict['comparison_output_excel'])
+                if comparison_excel_dir:
+                    os.makedirs(comparison_excel_dir, exist_ok=True)
+
+                comparison_pdf_dir = os.path.dirname(path_dict['comparison_pdf_output'])
+                if comparison_pdf_dir:
+                    os.makedirs(comparison_pdf_dir, exist_ok=True)
+
+                output_file_dir = os.path.dirname(path_dict['comparison_output_file'])
+                if output_file_dir:
+                os.makedirs(output_file_dir, exist_ok=True)
+
+                pdf_report_dir = os.path.dirname(path_dict['comparison_pdf_report'])
+                if pdf_report_dir:
+                     os.makedirs(pdf_report_dir, exist_ok=True)
+
                 st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
                 st.success(get_text('data_filtered_success'))
