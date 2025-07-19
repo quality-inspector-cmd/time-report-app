@@ -659,8 +659,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         df_plot = df.copy()  
         
         # Loại bỏ hàng 'Total' nếu có để không ảnh hưởng đến biểu đồ
-        if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
-            df_plot = df_plot[df_plot['Project Name'] != 'Total']
+        if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project name'].values:
+            df_plot = df_plot[df_plot['Project name'] != 'Total']
         elif 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
             df_plot = df_plot[df_plot['Year'] != 'Total']
         
@@ -689,13 +689,13 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 return None
 
             # Chuyển đổi từ wide sang long format để vẽ line chart dễ hơn với seaborn/matplotlib
-            df_plot_long = df_plot.melt(id_vars=['Project Name'], value_vars=existing_months, var_name='Month', value_name='Hours')
+            df_plot_long = df_plot.melt(id_vars=['Project name'], value_vars=existing_months, var_name='Month', value_name='Hours')
             
             # Sắp xếp tháng để đường biểu đồ đúng thứ tự
             df_plot_long['Month'] = pd.Categorical(df_plot_long['Month'], categories=month_order, ordered=True)
             df_plot_long = df_plot_long.sort_values('Month')
 
-            for project_name, data in df_plot_long.groupby('Project Name'):
+            for project_name, data in df_plot_long.groupby('Project name'):
                 ax.plot(data['Month'], data['Hours'], marker='o', label=project_name)
             ax.legend(title='Dự án')
             ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
@@ -704,7 +704,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             selected_project_name = comparison_config_inner.get('selected_projects', ['Dự án không xác định'])[0]
             
             if 'MonthName' in df_plot.columns: # So sánh theo tháng trong một năm
-                df_plot.plot(kind='bar', x='MonthName', y=f'Total Hours for {selected_project_name}', ax=ax, color='purple')
+                y_col = f'Total Hours for {selected_project_name}'
+                if y_col not in df_plot.columns:
+                    raise ValueError(f"Không tìm thấy cột '{y_col}' trong bảng dữ liệu để vẽ biểu đồ.")    
+                df_plot.plot(kind='bar', x='MonthName', y=y_col, ax=ax, color='purple')
                 ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
             elif 'Year' in df_plot.columns: # So sánh theo năm
                 df_plot.plot(kind='line', x='Year', y=f'Total Hours for {selected_project_name}', ax=ax, marker='o', color='red')
