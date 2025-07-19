@@ -570,8 +570,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, 
                                               min_row=data_start_row + r_idx, 
                                               max_row=data_start_row + r_idx)
-                        chart.add_data(series_ref, titles_from_data=True)
-                        chart.series[r_idx].title = title_ref
+                        chart.series[r_idx].title = project_name  # chuỗi str
                     
                     chart.set_categories(cats_ref)
 
