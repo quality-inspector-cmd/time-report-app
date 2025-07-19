@@ -686,6 +686,9 @@ with tab_comparison_report_main:
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
 
             if df_filtered_comparison.empty:
+                # Đảm bảo thư mục chứa file output tồn tại
+                os.makedirs(os.path.dirname(path_dict['comparison_output_file']), exist_ok=True)
+                os.makedirs(os.path.dirname(path_dict['comparison_pdf_report']), exist_ok=True)
                 st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
                 st.success(get_text('data_filtered_success'))
@@ -695,7 +698,16 @@ with tab_comparison_report_main:
                 report_generated_comp = False
                 if export_excel_comp:
                     with st.spinner(get_text('generating_comparison_excel')):
-                        excel_success_comp = export_comparison_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_output_file'])
+                        try:
+                            excel_success_comp = export_comparison_report(
+                                df_filtered_comparison,
+                                comparison_config,
+                                comparison_mode,
+                                path_dict['comparison_output_file']
+                                )
+                        except Exception as e
+                            excel_success_comp = False
+                            st.error(f"❌ Lỗi khi xuất Excel: {e}")
                     if excel_success_comp:
                         st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
                         report_generated_comp = True
@@ -703,8 +715,17 @@ with tab_comparison_report_main:
                         st.error(get_text('failed_to_generate_comparison_excel'))
 
                 if export_pdf_comp:
-                    with st.spinner(get_text('generating_comparison_pdf')):
-                        pdf_success_comp = export_comparison_pdf_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_pdf_report'], path_dict['logo_path'])
+                    with st.spinner(get_text('generating_comparison_pdf'))
+                        try:
+                            pdf_success_comp = export_comparison_pdf_report(
+                                df_filtered_comparison,
+                                comparison_config,
+                                comparison_mode,
+                                path_dict['comparison_pdf_report']
+                            )
+                        except Exception as e:
+                            pdf_success_comp = False
+                            st.error(f"❌ Lỗi khi xuất PDF: {e}")
                     if pdf_success_comp:
                         st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
                         report_generated_comp = True
