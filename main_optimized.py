@@ -786,7 +786,7 @@ with tab_comparison_report_main:
                             key="exp_pdf_comp_btn"        
                         )
                 else:
-                    st.error(get_text('⚠️ error_generating_report'))
+                    st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
 # DATA PREVIEW TAB
 # =========================================================================
