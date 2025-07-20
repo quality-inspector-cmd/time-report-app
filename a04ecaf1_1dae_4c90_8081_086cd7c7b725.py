@@ -391,7 +391,15 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     years = comparison_config.get('years', [])
     months = comparison_config.get('months', [])
     selected_projects = comparison_config.get('selected_projects', [])
+    # Ép kiểu đảm bảo chắc chắn là list
+    years = list(years) if isinstance(years, (list, tuple, pd.Series)) else [years] if years else []
+    months = list(months) if isinstance(months, (list, tuple, pd.Series)) else [months] if months else []
+    selected_projects = list(selected_projects) if isinstance(selected_projects, (list, tuple, pd.Series)) else [selected_projects] if selected_projects else []
 
+    # In ra log để debug
+    print("DEBUG | years:", years, type(years))
+    print("DEBUG | months:", months, type(months))
+    print("DEBUG | selected_projects:", selected_projects, type(selected_projects))
     df_filtered = df_raw.copy()
     df_filtered['Hours'] = pd.to_numeric(df_filtered['Hours'], errors='coerce').fillna(0)
 
