@@ -777,14 +777,14 @@ with tab_comparison_report_main:
                             )
                     if os.path.exists(path_dict["comparison_pdf_report"]):
                         with open(path_dict["comparison_pdf_report"], "rb") as f_pdf:
-                        st.download_button(
-                            label="🖨️ Tải PDF So sánh",
-                            data=f_pdf,
-                            file_name=os.path.basename(path_dict["comparison_pdf_report"]),
-                            mime="application/pdf",
-                            use_container_width=True,
-                            key="exp_pdf_comp_btn"        
-                        )
+                            st.download_button(
+                                label="🖨️ Tải PDF So sánh",
+                                data=f_pdf,
+                                file_name=os.path.basename(path_dict["comparison_pdf_report"]),
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key="exp_pdf_comp_btn"        
+                            )
                 else:
                     st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
