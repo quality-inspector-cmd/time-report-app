@@ -741,8 +741,9 @@ with tab_comparison_report_main:
                             pdf_success_comp = export_comparison_pdf_report(
                                 df_filtered_comparison,
                                 comparison_config,
+                                path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
                                 comparison_mode,
-                                path_dict['comparison_pdf_report']
+                                path_dict['logo']                    # ✅ thêm logo_path
                             )
                         except Exception as e:
                             pdf_success_comp = False
