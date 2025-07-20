@@ -687,7 +687,8 @@ with tab_comparison_report_main:
                 "comparison_output_file": os.path.join(comparison_output_folder, "comparison_export.xlsx"),
                 "comparison_pdf_output": os.path.join(comparison_output_folder, "comparison_chart.png"),
                 "comparison_pdf_report": os.path.join(comparison_output_folder, "comparison_report.pdf"),
-            }
+                "logo": path_dict["logo_path"]  # ✅ đảm bảo tồn tại
+            })
             # ✅ Thêm dòng này sau khi path_dict đã tạo
             path_dict["logo"] = path_dict["logo_path"]
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
