@@ -632,6 +632,14 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
 
 def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path):
     """Xuất báo cáo PDF so sánh với biểu đồ."""
+
+    print("=== [DEBUG] GỌI export_comparison_pdf_report ===")
+    print(f"  pdf_file_path: {pdf_file_path}")
+    print(f"  comparison_mode: {comparison_mode}")
+    print(f"  logo_path: {logo_path}")
+    print(f"  df_comparison.shape: {df_comparison.shape}")
+    print(f"  comparison_config: {comparison_config}")
+    
     if df_comparison.empty:
         print("WARNING: df_comparison is empty. Skipping PDF report export.")
         return False
