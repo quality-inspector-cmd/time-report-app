@@ -689,7 +689,7 @@ with tab_comparison_report_main:
                 "comparison_pdf_report": os.path.join(comparison_output_folder, "comparison_report.pdf"),
             }
             # ✅ Thêm dòng này sau khi path_dict đã tạo
-            path_dict["logo"] = paths["logo_path"]
+            path_dict["logo"] = path_dict["logo_path"]
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
 
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
