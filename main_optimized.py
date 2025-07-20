@@ -764,27 +764,27 @@ with tab_comparison_report_main:
                         with open(path_dict['comparison_pdf_report'], "rb") as f:
                             st.download_button(get_text("download_comparison_pdf"), data=f, file_name=os.path.basename(path_dict['comparison_pdf_report']), use_container_width=True, key='download_pdf_comp_btn')
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
-                with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
-                    if os.path.exists(path_dict["comparison_output_file"]):
-                        with open(path_dict["comparison_output_file"], "rb") as f_excel:
-                            st.download_button(
-                                label="📄 Tải Excel So sánh",
-                                data=f_excel,
-                                file_name=os.path.basename(path_dict["comparison_output_file"]),
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True,
-                                key="exp_excel_comp_btn"
-                            )
-                    if os.path.exists(path_dict["comparison_pdf_report"]):
-                        with open(path_dict["comparison_pdf_report"], "rb") as f_pdf:
-                            st.download_button(
-                                label="🖨️ Tải PDF So sánh",
-                                data=f_pdf,
-                                file_name=os.path.basename(path_dict["comparison_pdf_report"]),
-                                mime="application/pdf",
-                                use_container_width=True,
-                                key="exp_pdf_comp_btn"        
-                            )
+                    with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
+                        if os.path.exists(path_dict["comparison_output_file"]):
+                            with open(path_dict["comparison_output_file"], "rb") as f_excel:
+                                st.download_button(
+                                    label="📄 Tải Excel So sánh",
+                                    data=f_excel,
+                                    file_name=os.path.basename(path_dict["comparison_output_file"]),
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True,
+                                    key="exp_excel_comp_btn"
+                                )
+                        if os.path.exists(path_dict["comparison_pdf_report"]):
+                            with open(path_dict["comparison_pdf_report"], "rb") as f_pdf:
+                                st.download_button(
+                                    label="🖨️ Tải PDF So sánh",
+                                    data=f_pdf,
+                                    file_name=os.path.basename(path_dict["comparison_pdf_report"]),
+                                    mime="application/pdf",
+                                    use_container_width=True,
+                                    key="exp_pdf_comp_btn"        
+                                )
                 else:
                     st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
