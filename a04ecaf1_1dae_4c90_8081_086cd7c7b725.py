@@ -635,6 +635,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     if df_comparison.empty:
         print("WARNING: df_comparison is empty. Skipping PDF report export.")
         return False
+    if not logo_path or not os.path.exists(logo_path):
+        print(f"ERROR: Logo file missing or invalid: {logo_path}")
+        return False  # hoặc raise Exception("Missing logo_path")
+        
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
