@@ -682,36 +682,29 @@ with tab_comparison_report_main:
             print("✅ DEBUG - comparison_config:", comparison_config)
             # Print the final config before calling the function
             comparison_output_folder = "outputs/comparison"
-            path_dict = {
+            comparison_path_dict = path_dict.copy()  # path_dict được định nghĩa trước đó ở đầu chương trình
+            # Thêm các key cho báo cáo so sánh
+            comparison_path_dict.update({
                 "comparison_output_excel": os.path.join(comparison_output_folder, "comparison_result.xlsx"),
                 "comparison_output_file": os.path.join(comparison_output_folder, "comparison_export.xlsx"),
                 "comparison_pdf_output": os.path.join(comparison_output_folder, "comparison_chart.png"),
                 "comparison_pdf_report": os.path.join(comparison_output_folder, "comparison_report.pdf"),
                 "logo": path_dict["logo_path"]  # ✅ đảm bảo tồn tại
             })
-            # ✅ Thêm dòng này sau khi path_dict đã tạo
-            path_dict["logo"] = path_dict["logo_path"]
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
+            print(f"DEBUG: comparison_path_dict = {comparison_path_dict}")
+            # ✅ Thêm dòng này sau khi path_dict đã tạo
+            # Áp dụng filter
+            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
+                df_raw, comparison_config, comparison_mode
+            )
 
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
-            print(f"DEBUG: path_dict = {path_dict}")
             if df_filtered_comparison.empty:
                 # Đảm bảo thư mục chứa file output tồn tại
-                comparison_excel_dir = os.path.dirname(path_dict['comparison_output_excel'])
-                if comparison_excel_dir:
-                    os.makedirs(comparison_excel_dir, exist_ok=True)
-
-                comparison_pdf_dir = os.path.dirname(path_dict['comparison_pdf_output'])
-                if comparison_pdf_dir:
-                    os.makedirs(comparison_pdf_dir, exist_ok=True)
-
-                output_file_dir = os.path.dirname(path_dict['comparison_output_file'])
-                if output_file_dir:
-                    os.makedirs(output_file_dir, exist_ok=True)
-
-                pdf_report_dir = os.path.dirname(path_dict['comparison_pdf_report'])
-                if pdf_report_dir:
-                     os.makedirs(pdf_report_dir, exist_ok=True)
+                for key in ["comparison_output_excel", "comparison_pdf_output", "comparison_output_file", "comparison_pdf_report"]:
+                    folder = os.path.dirname(comparison_path_dict[key])
+                    if folder:
+                        os.makedirs(folder, exist_ok=True)
 
                 st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
@@ -744,9 +737,9 @@ with tab_comparison_report_main:
                             pdf_success_comp = export_comparison_pdf_report(
                                 df_filtered_comparison,
                                 comparison_config,
-                                path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
+                                comparison_path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
                                 comparison_mode,
-                                path_dict['logo']                    # ✅ thêm logo_path
+                                comparison_path_dict['logo']                    # ✅ thêm logo_path
                             )
                         except Exception as e:
                             pdf_success_comp = False
