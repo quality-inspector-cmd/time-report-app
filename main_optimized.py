@@ -673,13 +673,13 @@ with tab_comparison_report_main:
 
 
             comparison_config = {
-                'selected_years': comp_years,
-                'selected_months': comp_months,
+                'years': comp_years,
+                'months': comp_months,
                 'selected_projects': comp_projects,
                 # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
                 # nó đã được xử lý trong logic trên
             }
-            
+            print("✅ DEBUG - comparison_config:", comparison_config)
             # Print the final config before calling the function
             comparison_output_folder = "outputs/comparison"
             path_dict = {
