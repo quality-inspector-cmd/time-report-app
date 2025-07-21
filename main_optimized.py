@@ -753,34 +753,39 @@ with tab_comparison_report_main:
                 
                 if report_generated_comp:
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
-                    with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
-                        excel_bytes = f_excel.read()
-                    with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
-                        pdf_bytes = f_pdf.read()
-                    
                     with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
-                        if export_excel_comp and os.path.exists(comparison_path_dict["comparison_output_file"]):
-                            with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
+                        st.write("🪵 DEBUG path dict:", comparison_path_dict)
+
+                        excel_path = comparison_path_dict.get("comparison_output_file")
+                        pdf_path = comparison_path_dict.get("comparison_pdf_report")
+                        # ⬇️ Tải Excel
+                        if export_excel_comp and excel_path and os.path.exists(excel_path):
+                            with open(excel_path, "rb") as f_excel:
                                 excel_data = f_excel.read()  # ✅ đọc nội dung
-                                st.download_button(
-                                    label="📄 Tải Excel So sánh",
-                                    data=excel_data,
-                                    file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    use_container_width=True,
-                                    key="exp_excel_comp_btn"
-                                )
-                        if export_pdf_comp and os.path.exists(comparison_path_dict["comparison_pdf_report"]):
-                            with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
+                            st.download_button(
+                                label="📄 Tải Excel So sánh",
+                                data=excel_data,
+                                file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True,
+                                key="exp_excel_comp_btn"
+                            )
+                        else:
+                            st.warning(f"⚠️ File Excel không tồn tại: {excel_path}")
+                        # ⬇️ Tải PDF
+                        if export_pdf_comp and pdf_path and os.path.exists(pdf_path):
+                            with open(pdf_path, "rb") as f_pdf:
                                 pdf_data = f_pdf.read()  # ✅ đọc nội dung
-                                st.download_button(
-                                    label="🖨️ Tải PDF So sánh",
-                                    data=pdf_data,
-                                    file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
-                                    mime="application/pdf",
-                                    use_container_width=True,
-                                    key="exp_pdf_comp_btn"        
-                                )
+                            st.download_button(
+                                label="🖨️ Tải PDF So sánh",
+                                data=pdf_data,
+                                file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key="exp_pdf_comp_btn"        
+                            )
+                        else:
+                            st.warning(f"⚠️ File PDF không tồn tại: {pdf_path}")
                 else:
                     st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
