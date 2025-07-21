@@ -652,6 +652,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 
     def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
         pdf = FPDF()
+        pdf.add_font("Unicode", "", "DejaVuSans.ttf", uni=True)  # ⬅️ phải có dòng này
         pdf.set_auto_page_break(auto=True, margin=15)
         # ✅ Thêm font Unicode (DejaVuSans.ttf nằm trong thư mục "fonts")
         font_path = "fonts/DejaVuSans.ttf"
@@ -671,7 +672,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
          
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
-
+    try:
         for img_path, chart_title, page_project_name in charts_data:
             if img_path and os.path.exists(img_path):
                 pdf.add_page()
