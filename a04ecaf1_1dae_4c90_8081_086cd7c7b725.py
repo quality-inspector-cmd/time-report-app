@@ -495,6 +495,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
 def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode):
     """Xuất báo cáo so sánh ra file Excel."""
     try:
+        # ✅ Đảm bảo thư mục chứa file tồn tại
+        os.makedirs(os.path.dirname(output_file_path), exist_ok=True)
         with pd.ExcelWriter(output_file_path, engine='openpyxl') as writer:
             if df_comparison.empty:
                 empty_df_for_excel = pd.DataFrame({"Message": ["Không có dữ liệu để hiển thị với các bộ lọc đã chọn."]})
