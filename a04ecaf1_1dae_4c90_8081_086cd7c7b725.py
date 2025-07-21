@@ -647,7 +647,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         return False, "Dữ liệu rỗng"
     if not logo_path or not os.path.exists(logo_path):
         print(f"ERROR: Logo file missing or invalid: {logo_path}")
-        return False,, "Thiếu file logo"
+        return False,"Thiếu file logo"
         
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
