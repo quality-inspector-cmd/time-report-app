@@ -5,7 +5,7 @@ matplotlib
 seaborn
 python-docx
 pillow
-fpdf
 reportlab
 plotly
 kaleido
+fpdf2==2.7.8
