@@ -753,6 +753,11 @@ with tab_comparison_report_main:
                 
                 if report_generated_comp:
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
+                    with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
+                        excel_bytes = f_excel.read()
+                    with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
+                        pdf_bytes = f_pdf.read()
+                    
                     with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
                         if export_excel_comp and os.path.exists(comparison_path_dict["comparison_output_file"]):
                             with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
