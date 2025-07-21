@@ -701,8 +701,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 
         ax.set_ylim(bottom=0)
         
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'Liberation Sans']
+        plt.rcParams['font.family'] = 'DejaVu Sans'  # font mặc định luôn có trong matplotlib
         plt.rcParams['axes.unicode_minus'] = False 
 
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
@@ -757,6 +756,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         plt.tight_layout()
         fig.savefig(img_path, dpi=200)
         plt.close(fig)
+        print(f"[DEBUG] Chart saved at {img_path}, exists? {os.path.exists(img_path)}")
         return img_path
 
     try:
