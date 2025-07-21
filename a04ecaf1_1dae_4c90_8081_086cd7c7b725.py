@@ -652,123 +652,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
-def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
-    try:
-        pdf = FPDF()
-        font_path = "fonts/DejaVuSans.ttf"
-        pdf.add_font("Unicode", "", font_path, uni=True)
-        pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_font("Unicode", size=14)
-        # ✅ Thêm font Unicode (DejaVuSans.ttf nằm trong thư mục "fonts")
-        
-        pdf.add_page()
-        if os.path.exists(logo_path_inner):
-            pdf.image(logo_path_inner, x=10, y=10, w=30)
-        pdf.ln(40)
-        pdf.cell(0, 10, title, ln=True, align='C')
-        
-        pdf.set_font("Unicode", size=12) 
-        pdf.ln(5)
-        pdf.cell(0, 10, f"Ngày tạo: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
-        pdf.ln(10)
-         
-        for key, value in config_info.items():
-            pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
-            
-        for img_path, chart_title, page_project_name in charts_data:
-            if img_path and os.path.exists(img_path):
-                pdf.add_page()
-                if os.path.exists(logo_path_inner):
-                    pdf.image(logo_path_inner, x=10, y=8, w=25) 
-                pdf.set_y(35)
-                pdf.set_font("Unicode", size=12)
-                if page_project_name:
-                    pdf.cell(0, 10, f"Dự án: {page_project_name}", ln=True, align='C')
-                pdf.cell(0, 10, chart_title, ln=True, align='C')
-                pdf.image(img_path, x=10, y=45, w=190)
-
-        pdf.output(output_path, "F")
-        
-        if os.path.exists(output_path):
-            return True, f"✅ PDF đã tạo tại: {output_path}"
-        else:
-            return False, f"⚠️ File PDF không tồn tại: {output_path}"
-    except Exception as e:
-        return False, f"❌ Lỗi khi xuất PDF: {e}"
-
-    def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
-        fig, ax = plt.subplots(figsize=(12, 7))  
-        df_plot = df.copy()  
-        
-        # Loại bỏ hàng 'Total' nếu có để không ảnh hưởng đến biểu đồ
-        if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project name'].values:
-            df_plot = df_plot[df_plot['Project name'] != 'Total']
-        elif 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
-            df_plot = df_plot[df_plot['Year'] != 'Total']
-        
-        if df_plot.empty:
-            print(f"DEBUG: df_plot is empty for mode '{mode}' after dropping 'Total'. Skipping chart creation.")
-            plt.close(fig)  
-            return None  
-
-        ax.set_ylim(bottom=0)
-        plt.rcParams['font.family'] = 'DejaVu Sans'  # font mặc định luôn có trong matplotlib
-        plt.rcParams['axes.unicode_minus'] = False 
-
-        if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-            df_plot.plot(kind='bar', x='Project name', y='Total Hours', ax=ax, color='teal')
-        elif mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-            # Đảm bảo thứ tự tháng cho các cột
-            existing_months = [m for m in month_order if m in df_plot.columns]
-            
-            # Nếu df_plot không có cột nào để vẽ (ngoại trừ Project Name và Total Hours)
-            if not existing_months:
-                print(f"DEBUG: No month columns found for line chart in mode '{mode}'. Skipping chart creation.")
-                plt.close(fig)
-                return None
-
-            # Chuyển đổi từ wide sang long format để vẽ line chart dễ hơn với seaborn/matplotlib
-            df_plot_long = df_plot.melt(id_vars=['Project name'], value_vars=existing_months, var_name='Month', value_name='Hours')
-            
-            # Sắp xếp tháng để đường biểu đồ đúng thứ tự
-            df_plot_long['Month'] = pd.Categorical(df_plot_long['Month'], categories=month_order, ordered=True)
-            df_plot_long = df_plot_long.sort_values('Month')
-
-            for project_name, data in df_plot_long.groupby('Project name'):
-                ax.plot(data['Month'], data['Hours'], marker='o', label=project_name)
-            ax.legend(title='Dự án')
-            ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
-
-        elif mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            selected_project_name = comparison_config_inner.get('selected_projects', ['Dự án không xác định'])[0]
-            
-            if 'MonthName' in df_plot.columns: # So sánh theo tháng trong một năm
-                y_col = f'Total Hours for {selected_project_name}'
-                if y_col not in df_plot.columns:
-                    raise ValueError(f"Không tìm thấy cột '{y_col}' trong bảng dữ liệu để vẽ biểu đồ.")    
-                df_plot.plot(kind='bar', x='MonthName', y=y_col, ax=ax, color='purple')
-                ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
-            elif 'Year' in df_plot.columns: # So sánh theo năm
-                df_plot.plot(kind='line', x='Year', y=f'Total Hours for {selected_project_name}', ax=ax, marker='o', color='red')
-            else:
-                print(f"DEBUG: Invalid columns for chart in mode '{mode}'. Skipping chart creation.")
-                plt.close(fig)
-                return None
-        else:
-            print(f"DEBUG: Unknown comparison mode '{mode}'. Skipping chart creation.")
-            plt.close(fig)
-            return None
-
-        ax.set_title(title, fontsize=12)
-        ax.set_xlabel(x_label, fontsize=10)
-        ax.set_ylabel(y_label, fontsize=10)
-        
-        plt.tight_layout()
-        fig.savefig(img_path, dpi=200)
-        plt.close(fig)
-        print(f"[DEBUG] Chart saved at {img_path}, exists? {os.path.exists(img_path)}")
-        return img_path
+def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_config, pdf_file_path, logo_path):
+    tmp_dir = "tmp_comparison"
+    os.makedirs(tmp_dir, exist_ok=True)
+    charts_for_pdf = []
 
     try:
         pdf_config_info = {
@@ -787,15 +674,15 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             chart_title = f"So sánh giờ giữa các dự án trong {comparison_config['months'][0]}, năm {comparison_config['years'][0]}"
             x_label = "Dự án"
             chart_path = os.path.join(tmp_dir, "comparison_chart_month.png")
+
         elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             chart_title = f"So sánh giờ giữa các dự án trong năm {comparison_config['years'][0]} (theo tháng)"
             x_label = "Tháng"
-            
-            
+            chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
+
         elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             selected_proj = comparison_config.get('selected_projects', [''])[0]
             page_project_name_for_chart = selected_proj
-            chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
             if len(comparison_config.get('years', [])) == 1 and len(comparison_config.get('months', [])) > 0:
                 chart_title = f"Tổng giờ dự án {selected_proj} qua các tháng trong năm {comparison_config['years'][0]}"
                 x_label = "Tháng"
@@ -814,7 +701,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             chart_title, x_label, y_label,
             chart_path, comparison_config
         )
-            
+
         if chart_created:
             charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
         else:
@@ -831,10 +718,10 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
         print(f"[DEBUG] PDF message: {msg}")
         print(f"[DEBUG] PDF path checked: {pdf_file_path}")
         return success, msg
-        
+
     except Exception as e:
         return False, f"❌ Exception: {e}"
-        
+
     finally:
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
