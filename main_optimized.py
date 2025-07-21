@@ -673,19 +673,39 @@ with tab_comparison_report_main:
 
 
             comparison_config = {
-                'selected_years': comp_years,
-                'selected_months': comp_months,
+                'years': comp_years,
+                'months': comp_months,
                 'selected_projects': comp_projects,
                 # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
                 # nó đã được xử lý trong logic trên
             }
-            
+            print("✅ DEBUG - comparison_config:", comparison_config)
             # Print the final config before calling the function
+            comparison_output_folder = "outputs/comparison"
+            comparison_path_dict = path_dict.copy()  # path_dict được định nghĩa trước đó ở đầu chương trình
+            # Thêm các key cho báo cáo so sánh
+            comparison_path_dict.update({
+                "comparison_output_excel": os.path.join(comparison_output_folder, "comparison_result.xlsx"),
+                "comparison_output_file": os.path.join(comparison_output_folder, "comparison_export.xlsx"),
+                "comparison_pdf_output": os.path.join(comparison_output_folder, "comparison_chart.png"),
+                "comparison_pdf_report": os.path.join(comparison_output_folder, "comparison_report.pdf"),
+                "logo": path_dict["logo_path"]  # ✅ đảm bảo tồn tại
+            })
             print(f"DEBUG: Final comparison_config sent to filter: {comparison_config}")
-
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(df_raw, comparison_config, comparison_mode)
+            print(f"DEBUG: comparison_path_dict = {comparison_path_dict}")
+            # ✅ Thêm dòng này sau khi path_dict đã tạo
+            # Áp dụng filter
+            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
+                df_raw, comparison_config, comparison_mode
+            )
 
             if df_filtered_comparison.empty:
+                # Đảm bảo thư mục chứa file output tồn tại
+                for key in ["comparison_output_excel", "comparison_pdf_output", "comparison_output_file", "comparison_pdf_report"]:
+                    folder = os.path.dirname(comparison_path_dict[key])
+                    if folder:
+                        os.makedirs(folder, exist_ok=True)
+
                 st.warning(get_text('no_data_after_filter_comparison').format(comparison_filter_message))
             else:
                 st.success(get_text('data_filtered_success'))
@@ -695,33 +715,67 @@ with tab_comparison_report_main:
                 report_generated_comp = False
                 if export_excel_comp:
                     with st.spinner(get_text('generating_comparison_excel')):
-                        excel_success_comp = export_comparison_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_output_file'])
+                        try:
+                            excel_success_comp = export_comparison_report(
+                                df_filtered_comparison,
+                                comparison_config,
+                                comparison_mode,
+                                comparison_path_dict['comparison_output_file']
+                                )
+                        except Exception as e:
+                            excel_success_comp = False
+                            st.error(f"❌ Lỗi khi xuất Excel: {e}")
                     if excel_success_comp:
-                        st.success(get_text('comparison_excel_generated').format(os.path.basename(path_dict['comparison_output_file'])))
+                        st.success(get_text('comparison_excel_generated').format(os.path.basename(comparison_path_dict['comparison_output_file'])))
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_excel'))
 
                 if export_pdf_comp:
                     with st.spinner(get_text('generating_comparison_pdf')):
-                        pdf_success_comp = export_comparison_pdf_report(df_filtered_comparison, comparison_config, comparison_mode, path_dict['comparison_pdf_report'], path_dict['logo_path'])
+                        try:
+                            pdf_success_comp = export_comparison_pdf_report(
+                                df_filtered_comparison,
+                                comparison_config,
+                                comparison_path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
+                                comparison_mode,
+                                comparison_path_dict['logo']                    # ✅ thêm logo_path
+                            )
+                        except Exception as e:
+                            pdf_success_comp = False
+                            st.error(f"❌ Lỗi khi xuất PDF: {e}")
                     if pdf_success_comp:
-                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(path_dict['comparison_pdf_report'])))
+                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(comparison_path_dict['comparison_pdf_report'])))
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
+                        st.code(debug_msg, language='text')
                 
                 if report_generated_comp:
-                    if export_excel_comp and os.path.exists(path_dict['comparison_output_file']):
-                        with open(path_dict['comparison_output_file'], "rb") as f:
-                            st.download_button(get_text("download_comparison_excel"), data=f, file_name=os.path.basename(path_dict['comparison_output_file']), use_container_width=True, key='download_excel_comp_btn')
-                    if export_pdf_comp and os.path.exists(path_dict['comparison_pdf_report']):
-                        with open(path_dict['comparison_pdf_report'], "rb") as f:
-                            st.download_button(get_text("download_comparison_pdf"), data=f, file_name=os.path.basename(path_dict['comparison_pdf_report']), use_container_width=True, key='download_pdf_comp_btn')
+                # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
+                    with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
+                        if export_excel_comp and os.path.exists(comparison_path_dict["comparison_output_file"]):
+                            with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
+                                st.download_button(
+                                    label="📄 Tải Excel So sánh",
+                                    data=excel_bytes,
+                                    file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True,
+                                    key="exp_excel_comp_btn"
+                                )
+                        if export_pdf_comp and os.path.exists(comparison_path_dict["comparison_pdf_report"]):
+                            with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
+                                st.download_button(
+                                    label="🖨️ Tải PDF So sánh",
+                                    data=pdf_bytes,
+                                    file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
+                                    mime="application/pdf",
+                                    use_container_width=True,
+                                    key="exp_pdf_comp_btn"        
+                                )
                 else:
-                    st.error(get_text('error_generating_report'))
-
-
+                    st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
 # DATA PREVIEW TAB
 # =========================================================================

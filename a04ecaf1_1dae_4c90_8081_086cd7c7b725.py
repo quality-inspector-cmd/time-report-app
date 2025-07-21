@@ -247,16 +247,42 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
                 pdf.cell(0, 10, "Months:", ln=True, align='L')
                 pdf.set_font("helvetica", '', 11)
                 months = value.split(', ')
-                for i, m in enumerate(months, start=1):
-                    pdf.cell(0, 7, f"{i}. {m}", ln=True, align='L')
+                col_width = 60
+                cols = 3
+                row_height = 7
+                x_start = pdf.get_x()
+                y_start = pdf.get_y()
+
+                for i, m in enumerate(months):
+                    col = i % cols
+                    row = i // cols
+                    x = x_start + col * col_width
+                    y = y_start + row * row_height
+                    pdf.set_xy(x, y)
+                    pdf.cell(col_width, row_height, f"{i + 1}. {m}", ln=0)
+                pdf.ln((len(months) // cols + 1) * row_height + 2)
+                
             elif key == "Projects Included" and value != "No projects selected or found":
                 pdf.ln(5)
                 pdf.set_font("helvetica", 'B', 11)
                 pdf.cell(0, 10, "Projects:", ln=True, align='L')
                 pdf.set_font("helvetica", '', 11)
                 projects = value.split(', ')
-                for i, p in enumerate(projects, start=1):
-                    pdf.cell(0, 7, f"{i}. {p}", ln=True, align='L')
+                col_width = 60  # Width per column
+                cols = 3        # Number of columns
+                row_height = 7
+                x_start = pdf.get_x()
+                y_start = pdf.get_y()
+
+                for i, p in enumerate(projects):
+                    col = i % cols
+                    row = i // cols
+                    x = x_start + col * col_width
+                    y = y_start + row * row_height
+                    pdf.set_xy(x, y)
+                    pdf.cell(col_width, row_height, f"{i + 1}. {p}", ln=0)
+
+                pdf.ln((len(projects) // cols + 1) * row_height + 2)  # Move cursor below the block
             else:
                 pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -356,6 +382,8 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
 def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     print("DEBUG: apply_comparison_filters called with:")
+    if not isinstance(df_raw, pd.DataFrame):
+        return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ."    
     print(f"  df_raw type: {type(df_raw)}")
     print(f"  comparison_config type: {type(comparison_config)}")
     print(f"  comparison_mode type: {type(comparison_mode)} value: {comparison_mode}")
@@ -363,8 +391,21 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     years = comparison_config.get('years', [])
     months = comparison_config.get('months', [])
     selected_projects = comparison_config.get('selected_projects', [])
-
+    # Ép kiểu đảm bảo chắc chắn là list
+    years = list(years) if isinstance(years, (list, tuple, pd.Series)) else [years] if years else []
+    months = list(months) if isinstance(months, (list, tuple, pd.Series)) else [months] if months else []
+    selected_projects = list(selected_projects) if isinstance(selected_projects, (list, tuple, pd.Series)) else [selected_projects] if selected_projects else []
+    # ✅ In debug bổ sung
+    print("✅ Sau khi ép kiểu từ comparison_config:")
+    print(f"   - Years: {years} (type: {type(years)})")
+    print(f"   - Months: {months} (type: {type(months)})")
+    print(f"   - Selected Projects: {selected_projects} (type: {type(selected_projects)})")
+    # In ra log để debug
+    print("DEBUG | years:", years, type(years))
+    print("DEBUG | months:", months, type(months))
+    print("DEBUG | selected_projects:", selected_projects, type(selected_projects))
     df_filtered = df_raw.copy()
+    df_filtered['Hours'] = pd.to_numeric(df_filtered['Hours'], errors='coerce').fillna(0)
 
     if years:
         df_filtered = df_filtered[df_filtered['Year'].isin(years)]
@@ -536,16 +577,15 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         return True
                     
                     # Thêm từng series dữ liệu cho mỗi dự án
-                    for r_idx, project_name in enumerate(df_chart_data['Project Name']):
+                    for r_idx, project_name in enumerate(df_chart_data['Project name']):
                         series_ref = Reference(ws, min_col=min_col_month, 
                                                min_row=data_start_row + r_idx, 
                                                max_col=max_col_month, 
                                                max_row=data_start_row + r_idx)
-                        title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, 
+                        title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, 
                                               min_row=data_start_row + r_idx, 
                                               max_row=data_start_row + r_idx)
-                        chart.add_data(series_ref, titles_from_data=True)
-                        chart.series[r_idx].title = title_ref
+                        chart.series[r_idx].title = project_name  # chuỗi str
                     
                     chart.set_categories(cats_ref)
 
@@ -592,6 +632,21 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
 
 def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path):
     """Xuất báo cáo PDF so sánh với biểu đồ."""
+
+    print("=== [DEBUG] GỌI export_comparison_pdf_report ===")
+    print(f"  pdf_file_path: {pdf_file_path}")
+    print(f"  comparison_mode: {comparison_mode}")
+    print(f"  logo_path: {logo_path}")
+    print(f"  df_comparison.shape: {df_comparison.shape}")
+    print(f"  comparison_config: {comparison_config}")
+    
+    if df_comparison.empty:
+        print("WARNING: df_comparison is empty. Skipping PDF report export.")
+        return False
+    if not logo_path or not os.path.exists(logo_path):
+        print(f"ERROR: Logo file missing or invalid: {logo_path}")
+        return False  # hoặc raise Exception("Missing logo_path")
+        
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
@@ -626,7 +681,14 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
-        print(f"DEBUG: PDF report generated at {output_path}")
+
+        if os.path.exists(output_path):
+            print(f"DEBUG: PDF report generated at {output_path}")
+            return True, f"✅ PDF report created at {output_path}"
+        else:
+            return False, f"❌ PDF file was not created at {output_path}"
+    except Exception as e:
+        return False, f"❌ Exception while generating PDF: {e}"
 
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
         fig, ax = plt.subplots(figsize=(12, 7))  
@@ -634,8 +696,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         df_plot = df.copy()  
         
         # Loại bỏ hàng 'Total' nếu có để không ảnh hưởng đến biểu đồ
-        if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project Name'].values:
-            df_plot = df_plot[df_plot['Project Name'] != 'Total']
+        if 'Project Name' in df_plot.columns and 'Total' in df_plot['Project name'].values:
+            df_plot = df_plot[df_plot['Project name'] != 'Total']
         elif 'Year' in df_plot.columns and 'Total' in df_plot['Year'].values:
             df_plot = df_plot[df_plot['Year'] != 'Total']
         
@@ -646,8 +708,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 
         ax.set_ylim(bottom=0)
         
-        plt.rcParams['font.family'] = 'sans-serif'
-        plt.rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'Liberation Sans']
+        plt.rcParams['font.family'] = 'DejaVu Sans'  # font mặc định luôn có trong matplotlib
         plt.rcParams['axes.unicode_minus'] = False 
 
         if mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
@@ -664,13 +725,13 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 return None
 
             # Chuyển đổi từ wide sang long format để vẽ line chart dễ hơn với seaborn/matplotlib
-            df_plot_long = df_plot.melt(id_vars=['Project Name'], value_vars=existing_months, var_name='Month', value_name='Hours')
+            df_plot_long = df_plot.melt(id_vars=['Project name'], value_vars=existing_months, var_name='Month', value_name='Hours')
             
             # Sắp xếp tháng để đường biểu đồ đúng thứ tự
             df_plot_long['Month'] = pd.Categorical(df_plot_long['Month'], categories=month_order, ordered=True)
             df_plot_long = df_plot_long.sort_values('Month')
 
-            for project_name, data in df_plot_long.groupby('Project Name'):
+            for project_name, data in df_plot_long.groupby('Project name'):
                 ax.plot(data['Month'], data['Hours'], marker='o', label=project_name)
             ax.legend(title='Dự án')
             ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
@@ -679,7 +740,10 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             selected_project_name = comparison_config_inner.get('selected_projects', ['Dự án không xác định'])[0]
             
             if 'MonthName' in df_plot.columns: # So sánh theo tháng trong một năm
-                df_plot.plot(kind='bar', x='MonthName', y=f'Total Hours for {selected_project_name}', ax=ax, color='purple')
+                y_col = f'Total Hours for {selected_project_name}'
+                if y_col not in df_plot.columns:
+                    raise ValueError(f"Không tìm thấy cột '{y_col}' trong bảng dữ liệu để vẽ biểu đồ.")    
+                df_plot.plot(kind='bar', x='MonthName', y=y_col, ax=ax, color='purple')
                 ax.tick_params(axis='x', rotation=45) # Xoay nhãn tháng nếu cần
             elif 'Year' in df_plot.columns: # So sánh theo năm
                 df_plot.plot(kind='line', x='Year', y=f'Total Hours for {selected_project_name}', ax=ax, marker='o', color='red')
@@ -699,6 +763,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         plt.tight_layout()
         fig.savefig(img_path, dpi=200)
         plt.close(fig)
+        print(f"[DEBUG] Chart saved at {img_path}, exists? {os.path.exists(img_path)}")
         return img_path
 
     try:
@@ -766,8 +831,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             pdf.output(pdf_file_path, "F")
             return True
 
-        create_pdf_from_charts_comp(charts_for_pdf, pdf_file_path, "TRIAC TIME REPORT - COMPARISON", pdf_config_info, logo_path)
-        return True
+        success, msg = create_pdf_from_charts_comp(charts_for_pdf, pdf_file_path, "TRIAC TIME REPORT - COMPARISON", pdf_config_info, logo_path)
+        return success, msg
 
     except Exception as e:
         print(f"Lỗi khi tạo báo cáo PDF so sánh: {e}")
