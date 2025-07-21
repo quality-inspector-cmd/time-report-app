@@ -758,7 +758,7 @@ with tab_comparison_report_main:
                             with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
                                 st.download_button(
                                     label="📄 Tải Excel So sánh",
-                                    data=excel_bytes,
+                                    data=excel_data,
                                     file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                     use_container_width=True,
@@ -768,7 +768,7 @@ with tab_comparison_report_main:
                             with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
                                 st.download_button(
                                     label="🖨️ Tải PDF So sánh",
-                                    data=pdf_bytes,
+                                    data=pdf_data,
                                     file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
                                     mime="application/pdf",
                                     use_container_width=True,
