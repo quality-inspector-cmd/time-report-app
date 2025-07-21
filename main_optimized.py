@@ -719,8 +719,8 @@ with tab_comparison_report_main:
                             excel_success_comp = export_comparison_report(
                                 df_filtered_comparison,
                                 comparison_config,
-                                comparison_mode,
                                 comparison_path_dict['comparison_output_file']
+                                comparison_mode,
                                 )
                         except Exception as e:
                             excel_success_comp = False
