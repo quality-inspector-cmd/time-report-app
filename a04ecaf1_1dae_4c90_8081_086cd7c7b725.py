@@ -660,7 +660,6 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             pdf_file_path=pdf_file_path,
             logo_path=logo_path
         )
-        return success, msg
     except Exception as e:
         return False, f"❌ Lỗi khi tạo PDF: {e}" 
     charts_for_pdf = []
