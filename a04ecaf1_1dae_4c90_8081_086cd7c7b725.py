@@ -804,7 +804,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 chart_path = os.path.join(tmp_dir, f"{selected_proj}_years_chart.png")
             else:
                 return False, "⚠️ Cấu hình không hợp lệ"
-        else:
+    else:
             return False, "⚠️ Không nhận diện được chế độ so sánh"
 
             chart_created = create_comparison_chart(
@@ -828,9 +828,9 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             return success, msg
         except Exception as e:
             return False, f"❌ Exception: {e}"
-        finally:
-            if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
+    finally:
+        if os.path.exists(tmp_dir):
+        shutil.rmtree(tmp_dir)
 
 # Phần main của chương trình (có thể lấy từ main_optimized.py của bạn)
 # Ví dụ cấu trúc main, bạn sẽ cần thay thế bằng nội dung thực tế của main_optimized.py
