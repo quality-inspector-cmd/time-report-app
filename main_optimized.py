@@ -756,6 +756,7 @@ with tab_comparison_report_main:
                     with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
                         if export_excel_comp and os.path.exists(comparison_path_dict["comparison_output_file"]):
                             with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
+                                excel_data = f_excel.read()  # ✅ đọc nội dung
                                 st.download_button(
                                     label="📄 Tải Excel So sánh",
                                     data=excel_data,
@@ -766,6 +767,7 @@ with tab_comparison_report_main:
                                 )
                         if export_pdf_comp and os.path.exists(comparison_path_dict["comparison_pdf_report"]):
                             with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
+                                pdf_data = f_pdf.read()  # ✅ đọc nội dung
                                 st.download_button(
                                     label="🖨️ Tải PDF So sánh",
                                     data=pdf_data,
