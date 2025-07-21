@@ -648,7 +648,19 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     if not logo_path or not os.path.exists(logo_path):
         print(f"ERROR: Logo file missing or invalid: {logo_path}")
         return False,"Thiếu file logo"
-        
+    if not comparison_mode:
+        return False, "❌ Thiếu chế độ so sánh (comparison_mode)"
+    try:
+        success, msg = generate_comparison_pdf_report(
+           df_comparison=df_comparison,
+            comparison_mode=comparison_mode,
+            comparison_config=comparison_config,
+            pdf_file_path=pdf_file_path,
+            logo_path=logo_path
+        )
+        return success, msg
+    except Exception as e:
+        return False, f"❌ Lỗi khi tạo PDF: {e}" 
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
@@ -708,17 +720,17 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             return False, "⚠️ Không tạo được biểu đồ"
 
         success, msg = create_pdf_from_charts_comp(
-            charts_for_pdf,
-            pdf_file_path,
-            "TRIAC TIME REPORT - COMPARISON",
-            pdf_config_info,
-            logo_path
+            charts_for_pdf=charts_for_pdf,
+            pdf_file_path=pdf_file_path,
+            title="TRIAC TIME REPORT - COMPARISON",
+            pdf_config_info=pdf_config_info,
+            logo_path=logo_path
         )
         print(f"[DEBUG] PDF success: {success}")
         print(f"[DEBUG] PDF message: {msg}")
         print(f"[DEBUG] PDF path checked: {pdf_file_path}")
         return success, msg
-
+        
     except Exception as e:
         return False, f"❌ Exception: {e}"
 
