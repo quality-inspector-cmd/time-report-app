@@ -644,22 +644,21 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     
     if df_comparison.empty:
         print("WARNING: df_comparison is empty. Skipping PDF report export.")
-        return False
+        return False, "Dữ liệu rỗng"
     if not logo_path or not os.path.exists(logo_path):
         print(f"ERROR: Logo file missing or invalid: {logo_path}")
-        return False  # hoặc raise Exception("Missing logo_path")
+        return False,, "Thiếu file logo"
         
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
     def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
         pdf = FPDF()
-        pdf.add_font("Unicode", "", "DejaVuSans.ttf", uni=True)  # ⬅️ phải có dòng này
-        pdf.set_auto_page_break(auto=True, margin=15)
-        # ✅ Thêm font Unicode (DejaVuSans.ttf nằm trong thư mục "fonts")
         font_path = "fonts/DejaVuSans.ttf"
-        pdf.add_font("Unicode", fname=font_path, uni=True)
+        pdf.add_font("Unicode", "", font_path, uni=True)
+        pdf.set_auto_page_break(auto=True, margin=15)
         pdf.set_font("Unicode", size=14)
+        # ✅ Thêm font Unicode (DejaVuSans.ttf nằm trong thư mục "fonts")
         
         pdf.add_page()
         if os.path.exists(logo_path_inner):
@@ -688,17 +687,15 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
+        return os.path.exists(output_path)
 
         if os.path.exists(output_path):
             return True, f"✅ PDF đã tạo tại: {output_path}"
-        else:
-            return False, f"❌ Không tạo được file PDF tại: {output_path}"
     except Exception as e:
         return False, f"❌ Lỗi khi xuất PDF: {e}"
 
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
         fig, ax = plt.subplots(figsize=(12, 7))  
-        
         df_plot = df.copy()  
         
         # Loại bỏ hàng 'Total' nếu có để không ảnh hưởng đến biểu đồ
@@ -713,7 +710,6 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             return None  
 
         ax.set_ylim(bottom=0)
-        
         plt.rcParams['font.family'] = 'DejaVu Sans'  # font mặc định luôn có trong matplotlib
         plt.rcParams['axes.unicode_minus'] = False 
 
@@ -780,7 +776,6 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             "Dự án được chọn": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
         }
 
-        main_chart_path = None
         chart_title = ""
         x_label = ""
         y_label = "Giờ"
@@ -789,62 +784,52 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
         if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             chart_title = f"So sánh giờ giữa các dự án trong {comparison_config['months'][0]}, năm {comparison_config['years'][0]}"
             x_label = "Dự án"
-            main_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title, x_label, y_label, 
-                                                     os.path.join(tmp_dir, "comparison_chart_month.png"), comparison_config)
-            charts_for_pdf.append((main_chart_path, chart_title, None))
-
+            chart_path = os.path.join(tmp_dir, "comparison_chart_month.png")
         elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             chart_title = f"So sánh giờ giữa các dự án trong năm {comparison_config['years'][0]} (theo tháng)"
             x_label = "Tháng"
-            main_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title, x_label, y_label, 
-                                                     os.path.join(tmp_dir, "comparison_chart_year.png"), comparison_config)
-            charts_for_pdf.append((main_chart_path, chart_title, None))
+            
             
         elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
             selected_proj = comparison_config.get('selected_projects', [''])[0]
             page_project_name_for_chart = selected_proj
-
+            chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
             if len(comparison_config.get('years', [])) == 1 and len(comparison_config.get('months', [])) > 0:
                 chart_title = f"Tổng giờ dự án {selected_proj} qua các tháng trong năm {comparison_config['years'][0]}"
                 x_label = "Tháng"
-                main_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title, x_label, y_label,
-                                                         os.path.join(tmp_dir, f"{sanitize_filename(selected_proj)}_months_chart.png"), comparison_config)
+                chart_path = os.path.join(tmp_dir, f"{selected_proj}_months_chart.png")
             elif len(comparison_config.get('years', [])) > 1 and not comparison_config.get('months', []):
                 chart_title = f"Tổng giờ dự án {selected_proj} qua các năm"
                 x_label = "Năm"
-                main_chart_path = create_comparison_chart(df_comparison, comparison_mode, chart_title, x_label, y_label,
-                                                         os.path.join(tmp_dir, f"{sanitize_filename(selected_proj)}_years_chart.png"), comparison_config)
+                chart_path = os.path.join(tmp_dir, f"{selected_proj}_years_chart.png")
             else:
-                print("Cảnh báo: Cấu hình so sánh qua thời gian không hợp lệ để tạo biểu đồ PDF.")
-                main_chart_path = None
+                return False, "⚠️ Cấu hình không hợp lệ"
+        else:
+            return False, "⚠️ Không nhận diện được chế độ so sánh"
+
+            chart_created = create_comparison_chart(
+                df_comparison, comparison_mode,
+                chart_title, x_label, y_label,
+                chart_path, comparison_config
+            )
             
-            if main_chart_path:
-                charts_for_pdf.append((main_chart_path, chart_title, page_project_name_for_chart))
+            if chart_created:
+                charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
+            else:
+                return False, "⚠️ Không tạo được biểu đồ"
 
-        if not charts_for_pdf:
-            print("Cảnh báo: Không có biểu đồ nào được tạo để đưa vào PDF báo cáo so sánh. PDF có thể trống.")
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font('helvetica', 'B', 16)
-            pdf.cell(0, 10, "TRIAC TIME REPORT - COMPARISON", ln=True, align='C')
-            pdf.set_font("helvetica", '', 12)
-            pdf.cell(0, 10, f"Generated on: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
-            pdf.ln(10)
-            pdf.set_font("helvetica", '', 11)
-            for key, value in pdf_config_info.items():
-                pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
-            pdf.cell(0, 10, "No charts generated for this comparison report.", ln=True, align='C')
-            pdf.output(pdf_file_path, "F")
-            return True
-
-        success, msg = create_pdf_from_charts_comp(charts_for_pdf, pdf_file_path, "TRIAC TIME REPORT - COMPARISON", pdf_config_info, logo_path)
-        return success, msg
-
-    except Exception as e:
-        print(f"Lỗi khi tạo báo cáo PDF so sánh: {e}")
-        return False
-    finally:
-        if os.path.exists(tmp_dir):
+            success, msg = create_pdf_from_charts_comp(
+                charts_for_pdf,
+                pdf_file_path,
+                "TRIAC TIME REPORT - COMPARISON",
+                pdf_config_info,
+                logo_path
+            )
+            return success, msg
+        except Exception as e:
+            return False, f"❌ Exception: {e}"
+        finally:
+            if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
 
 # Phần main của chương trình (có thể lấy từ main_optimized.py của bạn)
