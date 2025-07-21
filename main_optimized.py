@@ -745,7 +745,7 @@ with tab_comparison_report_main:
                             pdf_success_comp = False
                             st.error(f"❌ Lỗi khi xuất PDF: {e}")
                     if pdf_success_comp:
-                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(comparison_patch_dict['comparison_pdf_report'])))
+                        st.success(get_text('comparison_pdf_generated').format(os.path.basename(comparison_path_dict['comparison_pdf_report'])))
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
@@ -757,7 +757,7 @@ with tab_comparison_report_main:
                             with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
                                 st.download_button(
                                     label="📄 Tải Excel So sánh",
-                                    data=f_excel,
+                                    data=excel_bytes,
                                     file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                     use_container_width=True,
@@ -767,7 +767,7 @@ with tab_comparison_report_main:
                             with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
                                 st.download_button(
                                     label="🖨️ Tải PDF So sánh",
-                                    data=f_pdf,
+                                    data=pdf_bytes,
                                     file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
                                     mime="application/pdf",
                                     use_container_width=True,
