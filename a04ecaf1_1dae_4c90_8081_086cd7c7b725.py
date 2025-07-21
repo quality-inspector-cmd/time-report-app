@@ -218,11 +218,58 @@ def export_report(df, config, output_file_path):
         print(f"Lỗi khi xuất báo cáo tiêu chuẩn: {e}")
         return False
 
+
 def export_pdf_report(df, config, pdf_report_path, logo_path):
     """Xuất báo cáo PDF tiêu chuẩn với các biểu đồ."""
     today_str = datetime.datetime.today().strftime("%Y-%m-%d")
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
+
+    try:
+        # Tạo biểu đồ tổng số giờ theo tháng
+        summary_chart = df.groupby('MonthName')['Hours'].sum().reset_index()
+        summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.bar(summary_chart['MonthName'], summary_chart['Hours'], color='skyblue')
+        ax.set_title("Tổng giờ theo tháng")
+        ax.set_xlabel("Tháng")
+        ax.set_ylabel("Giờ")
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        chart_path = os.path.join(tmp_dir, "standard_month_chart.png")
+        fig.savefig(chart_path, dpi=150)
+        plt.close(fig)
+
+        charts_for_pdf.append((chart_path, "Tổng giờ theo tháng", None))
+
+        pdf_config_info = {
+            "Chế độ": config.get('mode', 'N/A').capitalize(),
+            "Năm": str(config.get('year', '')),
+            "Tháng": ', '.join(config.get('months', [])) if config.get('months') else "Tất cả",
+            "Dự án": ', '.join(
+                config['project_filter_df'][
+                    config['project_filter_df']['Include'] == 'yes'
+                ]['Project Name'].tolist()
+            ) if 'project_filter_df' in config and not config['project_filter_df'].empty else "Không có"
+        }
+
+        success, msg = create_pdf_from_charts_comp(
+            charts_for_pdf,
+            pdf_report_path,
+            "TRIAC TIME REPORT - STANDARD",
+            pdf_config_info,
+            logo_path
+        )
+        print(f"[DEBUG] PDF export success: {success}, message: {msg}")
+        return success
+    except Exception as e:
+        print(f"❌ Lỗi khi tạo báo cáo PDF tiêu chuẩn: {e}")
+        return False
+    finally:
+        if os.path.exists(tmp_dir):
+            shutil.rmtree(tmp_dir)
+
 
 def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
     today_str = datetime.datetime.today().strftime("%Y-%m-%d")
