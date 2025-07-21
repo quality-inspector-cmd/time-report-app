@@ -826,8 +826,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 logo_path
             )
             return success, msg
-        except Exception as e:
-            return False, f"❌ Exception: {e}"
+    except Exception as e:
+        return False, f"❌ Exception: {e}"
     finally:
         if os.path.exists(tmp_dir):
         shutil.rmtree(tmp_dir)
