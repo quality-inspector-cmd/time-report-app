@@ -827,6 +827,9 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             pdf_config_info,
             logo_path
         )
+        print(f"[DEBUG] PDF success: {success}")
+        print(f"[DEBUG] PDF message: {msg}")
+        print(f"[DEBUG] PDF path checked: {pdf_file_path}")
         return success, msg
         
     except Exception as e:
