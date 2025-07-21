@@ -725,6 +725,14 @@ with tab_comparison_report_main:
                         except Exception as e:
                             excel_success_comp = False
                             st.error(f"❌ Lỗi khi xuất Excel: {e}")
+                    # ✅ Kiểm tra file có thực sự được tạo ra không
+                    if os.path.exists(comparison_path_dict['comparison_output_file']):
+                        st.success("✅ File Excel đã được tạo đúng tại: " + comparison_path_dict['comparison_output_file'])
+                        report_generated_comp = True
+                    else:
+                        st.error("❌ File Excel KHÔNG được tạo ra: " + comparison_path_dict['comparison_output_file'])
+                        st.code("Current working directory: " + os.getcwd(), language="text")
+                        st.code("Expected path: " + os.path.abspath(comparison_path_dict['comparison_output_file']), language="text")
                     if excel_success_comp:
                         st.success(get_text('comparison_excel_generated').format(os.path.basename(comparison_path_dict['comparison_output_file'])))
                         report_generated_comp = True
