@@ -653,6 +653,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     charts_for_pdf = []
 
     def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
+       try:
         pdf = FPDF()
         font_path = "fonts/DejaVuSans.ttf"
         pdf.add_font("Unicode", "", font_path, uni=True)
@@ -673,7 +674,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
          
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
-    try:
+            
         for img_path, chart_title, page_project_name in charts_data:
             if img_path and os.path.exists(img_path):
                 pdf.add_page()
