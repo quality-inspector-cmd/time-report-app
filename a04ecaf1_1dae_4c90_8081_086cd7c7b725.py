@@ -652,8 +652,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
-    def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
-       try:
+def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
+    try:
         pdf = FPDF()
         font_path = "fonts/DejaVuSans.ttf"
         pdf.add_font("Unicode", "", font_path, uni=True)
@@ -688,10 +688,11 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
-        return os.path.exists(output_path)
-
+        
         if os.path.exists(output_path):
             return True, f"✅ PDF đã tạo tại: {output_path}"
+        else:
+            return False, f"⚠️ File PDF không tồn tại: {output_path}"
     except Exception as e:
         return False, f"❌ Lỗi khi xuất PDF: {e}"
 
