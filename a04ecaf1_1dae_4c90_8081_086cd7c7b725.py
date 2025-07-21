@@ -804,33 +804,35 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 chart_path = os.path.join(tmp_dir, f"{selected_proj}_years_chart.png")
             else:
                 return False, "⚠️ Cấu hình không hợp lệ"
-    else:
+        else:
             return False, "⚠️ Không nhận diện được chế độ so sánh"
 
-            chart_created = create_comparison_chart(
-                df_comparison, comparison_mode,
-                chart_title, x_label, y_label,
-                chart_path, comparison_config
-            )
+        chart_created = create_comparison_chart(
+            df_comparison, comparison_mode,
+            chart_title, x_label, y_label,
+            chart_path, comparison_config
+        )
             
-            if chart_created:
-                charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
-            else:
-                return False, "⚠️ Không tạo được biểu đồ"
+        if chart_created:
+            charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
+        else:
+            return False, "⚠️ Không tạo được biểu đồ"
 
-            success, msg = create_pdf_from_charts_comp(
-                charts_for_pdf,
-                pdf_file_path,
-                "TRIAC TIME REPORT - COMPARISON",
-                pdf_config_info,
-                logo_path
-            )
-            return success, msg
+        success, msg = create_pdf_from_charts_comp(
+            charts_for_pdf,
+            pdf_file_path,
+            "TRIAC TIME REPORT - COMPARISON",
+            pdf_config_info,
+            logo_path
+        )
+        return success, msg
+        
     except Exception as e:
         return False, f"❌ Exception: {e}"
+        
     finally:
         if os.path.exists(tmp_dir):
-        shutil.rmtree(tmp_dir)
+            shutil.rmtree(tmp_dir)
 
 # Phần main của chương trình (có thể lấy từ main_optimized.py của bạn)
 # Ví dụ cấu trúc main, bạn sẽ cần thay thế bằng nội dung thực tế của main_optimized.py
