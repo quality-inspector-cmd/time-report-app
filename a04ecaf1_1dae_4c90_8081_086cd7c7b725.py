@@ -653,18 +653,22 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
         pdf = FPDF()
         pdf.set_auto_page_break(auto=True, margin=15)
-        pdf.set_font('helvetica', 'B', 16) 
-
+        # ✅ Thêm font Unicode (DejaVuSans.ttf nằm trong thư mục "fonts")
+        font_path = "fonts/DejaVuSans.ttf"
+        pdf.add_font("Unicode", fname=font_path, uni=True)
+        pdf.set_font("Unicode", size=14)
+        
         pdf.add_page()
         if os.path.exists(logo_path_inner):
             pdf.image(logo_path_inner, x=10, y=10, w=30)
         pdf.ln(40)
         pdf.cell(0, 10, title, ln=True, align='C')
-        pdf.set_font("helvetica", '', 12) 
+        
+        pdf.set_font("Unicode", size=12) 
         pdf.ln(5)
-        pdf.cell(0, 10, f"Generated on: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
+        pdf.cell(0, 10, f"Ngày tạo: {datetime.datetime.today().strftime('%Y-%m-%d')}", ln=True, align='C')
         pdf.ln(10)
-        pdf.set_font("helvetica", '', 11) 
+         
         for key, value in config_info.items():
             pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
 
@@ -672,23 +676,22 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             if img_path and os.path.exists(img_path):
                 pdf.add_page()
                 if os.path.exists(logo_path_inner):
-                    pdf.image(logo_path_inner, x=10, y=8, w=25)
-                pdf.set_font("helvetica", 'B', 11) 
+                    pdf.image(logo_path_inner, x=10, y=8, w=25) 
                 pdf.set_y(35)
+                pdf.set_font("Unicode", size=12)
                 if page_project_name:
-                    pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
+                    pdf.cell(0, 10, f"Dự án: {page_project_name}", ln=True, align='C')
                 pdf.cell(0, 10, chart_title, ln=True, align='C')
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
 
         if os.path.exists(output_path):
-            print(f"DEBUG: PDF report generated at {output_path}")
-            return True, f"✅ PDF report created at {output_path}"
+            return True, f"✅ PDF đã tạo tại: {output_path}"
         else:
-            return False, f"❌ PDF file was not created at {output_path}"
+            return False, f"❌ Không tạo được file PDF tại: {output_path}"
     except Exception as e:
-        return False, f"❌ Exception while generating PDF: {e}"
+        return False, f"❌ Lỗi khi xuất PDF: {e}"
 
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
         fig, ax = plt.subplots(figsize=(12, 7))  
