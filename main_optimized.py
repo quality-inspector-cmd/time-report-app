@@ -742,22 +742,27 @@ with tab_comparison_report_main:
                 if export_pdf_comp:
                     with st.spinner(get_text('generating_comparison_pdf')):
                         try:
+                            pdf_path = comparison_path_dict['comparison_pdf_report']
+                            print("▶️ Gọi export_comparison_pdf_report...")
                             pdf_success_comp = export_comparison_pdf_report(
                                 df_filtered_comparison,
                                 comparison_config,
-                                comparison_path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
+                                pdf_path,
                                 comparison_mode,
                                 comparison_path_dict['logo']                    # ✅ thêm logo_path
                             )
+                            print("✅ PDF Success?", pdf_success_comp)
+                            print("📁 File tồn tại?", os.path.exists(pdf_path))
                         except Exception as e:
                             pdf_success_comp = False
                             st.error(f"❌ Lỗi khi xuất PDF: {e}")
+                            print("❌ Exception khi xuất PDF:", e)
                     if pdf_success_comp:
                         st.success(get_text('comparison_pdf_generated').format(os.path.basename(comparison_path_dict['comparison_pdf_report'])))
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
-                        st.code(debug_msg, language='text')
+                        st.warning(f"⚠️ PDF không được tạo tại: {pdf_path}")
                 
                 if report_generated_comp:
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
