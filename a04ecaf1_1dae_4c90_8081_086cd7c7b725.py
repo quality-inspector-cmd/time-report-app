@@ -681,7 +681,14 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
                 pdf.image(img_path, x=10, y=45, w=190)
 
         pdf.output(output_path, "F")
-        print(f"DEBUG: PDF report generated at {output_path}")
+
+        if os.path.exists(output_path):
+            print(f"DEBUG: PDF report generated at {output_path}")
+            return True, f"✅ PDF report created at {output_path}"
+        else:
+            return False, f"❌ PDF file was not created at {output_path}"
+    except Exception as e:
+        return False, f"❌ Exception while generating PDF: {e}"
 
     def create_comparison_chart(df, mode, title, x_label, y_label, img_path, comparison_config_inner):
         fig, ax = plt.subplots(figsize=(12, 7))  
@@ -824,8 +831,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             pdf.output(pdf_file_path, "F")
             return True
 
-        create_pdf_from_charts_comp(charts_for_pdf, pdf_file_path, "TRIAC TIME REPORT - COMPARISON", pdf_config_info, logo_path)
-        return True
+        success, msg = create_pdf_from_charts_comp(charts_for_pdf, pdf_file_path, "TRIAC TIME REPORT - COMPARISON", pdf_config_info, logo_path)
+        return success, msg
 
     except Exception as e:
         print(f"Lỗi khi tạo báo cáo PDF so sánh: {e}")
