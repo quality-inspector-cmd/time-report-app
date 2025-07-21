@@ -749,6 +749,7 @@ with tab_comparison_report_main:
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
+                        st.code(debug_msg, language='text')
                 
                 if report_generated_comp:
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
