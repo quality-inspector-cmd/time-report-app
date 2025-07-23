@@ -696,38 +696,6 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
         print(f"Lỗi khi xuất báo cáo so sánh ra Excel: {e}")
         return False
 
-def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path):
-    """Xuất báo cáo PDF so sánh với biểu đồ."""
-
-    print("=== [DEBUG] GỌI export_comparison_pdf_report ===")
-    print(f"  pdf_file_path: {pdf_file_path}")
-    print(f"  comparison_mode: {comparison_mode}")
-    print(f"  logo_path: {logo_path}")
-    print(f"  df_comparison.shape: {df_comparison.shape}")
-    print(f"  comparison_config: {comparison_config}")
-    
-    if df_comparison.empty:
-        print("WARNING: df_comparison is empty. Skipping PDF report export.")
-        return False, "Dữ liệu rỗng"
-    if not logo_path or not os.path.exists(logo_path):
-        print(f"ERROR: Logo file missing or invalid: {logo_path}")
-        return False,"Thiếu file logo"
-    if not comparison_mode:
-        return False, "❌ Thiếu chế độ so sánh (comparison_mode)"
-        
-    tmp_dir = tempfile.mkdtemp()
-    try:
-        success, msg = generate_comparison_pdf_report(
-           df_comparison=df_comparison,
-            comparison_mode=comparison_mode,
-            comparison_config=comparison_config,
-            pdf_file_path=pdf_file_path,
-            logo_path=logo_path
-        )
-    except Exception as e:
-        return False, f"❌ Lỗi khi tạo PDF: {e}" 
-    charts_for_pdf = []
-
 def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_config, pdf_file_path, logo_path):
     tmp_dir = "tmp_comparison"
     os.makedirs(tmp_dir, exist_ok=True)
