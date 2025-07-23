@@ -913,19 +913,42 @@ if __name__ == '__main__':
                 'selected_projects': [all_projects_in_raw_data[0]] # Chọn dự án đầu tiên
             }
             print(f"\nChế độ: So Sánh Một Dự Án Qua Các Năm (dự án: {comparison_config_single_proj_years_example['selected_projects'][0]})")
-            df_comp_single_proj_years, msg_single_proj_years = apply_comparison_filters(raw_df, comparison_config_single_proj_years_example, "So Sánh Một Dự Án Qua Các Tháng/Năm")
+            df_comp_single_proj_years, msg_single_proj_years = apply_comparison_filters(
+                raw_df,
+                comparison_config_single_proj_years_example,
+                comparison_mode
+            )
             if not df_comp_single_proj_years.empty:
-                export_success_excel_comp_single_proj_years = export_comparison_report(df_comp_single_proj_years, comparison_config_single_proj_years_example, paths['comparison_output_file'].replace(".xlsx", "_SingleProjYears.xlsx"), "So Sánh Một Dự Án Qua Các Tháng/Năm")
-                if export_success_excel_comp_single_proj_years:
-                    print(f"Báo cáo so sánh Excel (một dự án qua các năm) đã được tạo thành công tại: {paths['comparison_output_file'].replace('.xlsx', '_SingleProjYears.xlsx')}")
-                    export_success_pdf_comp_single_proj_years = export_comparison_pdf_report(df_comp_single_proj_years, comparison_config_single_proj_years_example, paths['comparison_pdf_report'].replace(".pdf", "_SingleProjYears.pdf"), "So Sánh Một Dự Án Qua Các Tháng/Năm", logo_path)
-                    if export_success_pdf_comp_single_proj_years:
-                        print(f"Báo cáo so sánh PDF (một dự án qua các năm) đã được tạo thành công tại: {paths['comparison_pdf_report'].replace('.pdf', '_SingleProjYears.pdf')}")
+                excel_path = get_comparison_output_path(comparison_mode, paths["comparison_output_file"])
+                pdf_path = get_comparison_pdf_path(comparison_mode, paths["comparison_pdf_report"])
+
+                comparison_path_dict["comparison_output_file"] = excel_pat
+                comparison_path_dict["comparison_pdf_report"] = pdf_path
+                
+                export_success_excel = export_comparison_report(
+                    df_comp_single_proj_years,
+                    comparison_config_single_proj_years_example,
+                    excel_path,
+                    comparison_mode
+                )
+                if export_success_excel:
+                    print(f"✅ Báo cáo Excel đã tạo: {excel_path}")
+
+                    export_success_pdf = export_comparison_pdf_report(
+                        df_comp_single_proj_years,
+                        comparison_config_single_proj_years_example,
+                        pdf_path,
+                        comparison_mode,
+                        logo_path
+                    )
+
+                    if export_success_pdf:
+                        print(f"✅ Báo cáo PDF đã tạo: {pdf_path}")
                     else:
-                        print("Có lỗi khi tạo báo cáo so sánh PDF (một dự án qua các năm).")
+                        print("❌ Có lỗi khi tạo báo cáo PDF (một dự án qua các năm).")
                 else:
-                    print("Có lỗi khi tạo báo cáo so sánh Excel (một dự án qua các năm).")
+                    print("❌ Có lỗi khi tạo báo cáo Excel (một dự án qua các năm).")
             else:
-                print(f"Không có dữ liệu cho chế độ so sánh 'So Sánh Một Dự Án Qua Các Tháng/Năm' (theo năm): {msg_single_proj_years}")
+                print(f"⚠️ Không có dữ liệu cho '{comparison_mode}': {msg_single_proj_years}")
         else:
-            print("Không đủ năm trong dữ liệu để thực hiện so sánh một dự án qua các năm.")
+            print("⚠️ Không đủ năm trong dữ liệu để thực hiện so sánh một dự án qua các năm.")
