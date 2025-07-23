@@ -520,6 +520,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         
         df_comparison = df_filtered.groupby('Project name')['Hours'].sum().reset_index()
         df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
+        df_comparison.rename(columns={'Total Hours': 'Hours'}, inplace=True)
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
         return df_comparison, title
 
