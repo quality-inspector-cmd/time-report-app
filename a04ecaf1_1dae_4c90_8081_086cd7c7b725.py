@@ -295,12 +295,12 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     pdf.ln(40)
     pdf.cell(0, 10, title, ln=True, align='C')
     
-    pdf.set_font("helvetica", '', 12)
+    pdf.set_font("DejaVu", '', 11)
     pdf.ln(5)
     
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("helvetica", '', 11)
+    pdf.set_font("DejaVu", '', 11)
 
     for key, value in config_info.items():
         pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
