@@ -905,6 +905,9 @@ if __name__ == '__main__':
 
         # Cấu hình để so sánh một dự án qua các năm (cần ít nhất 2 năm trong dữ liệu thô)
         # Để test phần này, raw_df cần chứa dữ liệu của nhiều năm.
+        # Đảm bảo có biến path_dict để lưu các file cuối cùng
+        comparison_path_dict = {}
+        # Đoạn so sánh theo năm
         available_years = raw_df['Year'].unique().tolist()
         if len(available_years) >= 2:
             comparison_config_single_proj_years_example = {
@@ -919,17 +922,17 @@ if __name__ == '__main__':
                 comparison_mode
             )
             if not df_comp_single_proj_years.empty:
-                excel_path = get_comparison_output_path(comparison_mode, paths["comparison_output_file"])
-                pdf_path = get_comparison_pdf_path(comparison_mode, paths["comparison_pdf_report"])
+                excel_path = get_comparison_excel_path("So Sánh Dự Án Trong Một Tháng", paths["comparison_output_file"])
+                pdf_path = get_comparison_pdf_path("So Sánh Dự Án Trong Một Tháng", paths["comparison_pdf_report"])
 
-                comparison_path_dict["comparison_output_file"] = excel_pat
+                comparison_path_dict["comparison_output_file"] = excel_path
                 comparison_path_dict["comparison_pdf_report"] = pdf_path
                 
                 export_success_excel = export_comparison_report(
                     df_comp_single_proj_years,
                     comparison_config_single_proj_years_example,
                     excel_path,
-                    comparison_mode
+                    comparison_mode = "So Sánh Một Dự Án Qua Các Tháng/Năm"
                 )
                 if export_success_excel:
                     print(f"✅ Báo cáo Excel đã tạo: {excel_path}")
