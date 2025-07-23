@@ -861,12 +861,12 @@ if __name__ == '__main__':
             print(f"\nChế độ: So Sánh Dự Án Trong Một Tháng (năm {comparison_config_month_example['years'][0]}, tháng {comparison_config_month_example['months'][0]})")
             df_comp_month, msg_month = apply_comparison_filters(raw_df, comparison_config_month_example, "So Sánh Dự Án Trong Một Tháng")
             if not df_comp_month.empty:
-                export_success_excel_comp_month = export_comparison_report(df_comp_month, comparison_config_month_example, paths['comparison_output_file'].replace(".xlsx", "_Month.xlsx"), "So Sánh Dự Án Trong Một Tháng")
+                export_success_excel_comp_month = export_comparison_report(df_comp_month, comparison_config_month_example, get_comparison_excel_path("So Sánh Dự Án Trong Một Tháng", paths['comparison_output_file']), "So Sánh Dự Án Trong Một Tháng")
                 if export_success_excel_comp_month:
-                    print(f"Báo cáo so sánh Excel (theo tháng) đã được tạo thành công tại: {paths['comparison_output_file'].replace('.xlsx', '_Month.xlsx')}")
-                    export_success_pdf_comp_month = export_comparison_pdf_report(df_comp_month, comparison_config_month_example, paths['comparison_pdf_report'].replace(".pdf", "_Month.pdf"), "So Sánh Dự Án Trong Một Tháng", logo_path)
+                    print(f"Báo cáo so sánh Excel (theo tháng) đã được tạo thành công tại: {get_comparison_excel_path('So Sánh Dự Án Trong Một Tháng', paths['comparison_output_file'])}")
+                    export_success_pdf_comp_month = export_comparison_pdf_report(df_comp_month, comparison_config_month_example, get_comparison_pdf_path("So Sánh Dự Án Trong Một Tháng", paths['comparison_pdf_report']), "So Sánh Dự Án Trong Một Tháng", logo_path)
                     if export_success_pdf_comp_month:
-                        print(f"Báo cáo so sánh PDF (theo tháng) đã được tạo thành công tại: {paths['comparison_pdf_report'].replace('.pdf', '_Month.pdf')}")
+                        print(f"Báo cáo so sánh PDF (theo tháng) đã được tạo thành công tại: {get_comparison_pdf_path('So Sánh Dự Án Trong Một Tháng', paths['comparison_pdf_report'])}")
                     else:
                         print("Có lỗi khi tạo báo cáo so sánh PDF (theo tháng).")
                 else:
