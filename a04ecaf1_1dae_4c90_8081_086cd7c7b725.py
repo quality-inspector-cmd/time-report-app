@@ -30,6 +30,15 @@ def setup_paths():
         'comparison_pdf_report': f"Time_report_Comparison_{today}.pdf",
         'logo_path': "triac_logo.png" # Thêm đường dẫn logo
     }
+def get_comparison_pdf_path(comparison_mode, base_path):
+    if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
+        return base_path.replace(".pdf", "_Month.pdf")
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
+        return base_path.replace(".pdf", "_SingleProjMonths.pdf")
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Năm"]:
+        return base_path.replace(".pdf", "_SingleProjYears.pdf")
+    else:
+        return base_path
 
 def read_configs(template_file):
     """Đọc cấu hình từ file template Excel."""
