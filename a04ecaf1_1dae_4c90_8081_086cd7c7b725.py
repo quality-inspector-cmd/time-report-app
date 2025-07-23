@@ -356,7 +356,14 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     print(f"  logo_path: {logo_path}")
     print(f"  df_comparison.shape: {df_comparison.shape}")
     print(f"  comparison_config: {comparison_config}")
+    print("DEBUG: df_comparison.columns =", df_comparison.columns.tolist())
+    print("DEBUG: df_comparison sample:\n", df_comparison.head())
+       
+    if 'Hours' not in df_comparison.columns:
+        raise ValueError("❌ Column 'Hours' is missing in df_comparison.")
 
+    chart_paths = create_charts_for_pdf(df_comparison, comparison_mode, comparison_config)
+    
     if df_comparison.empty:
         print("WARNING: df_comparison is empty. Skipping PDF report export.")
         return False, "Dữ liệu rỗng"
