@@ -532,9 +532,13 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
         
         df_comparison['Total Hours'] = df_comparison[existing_months].sum(axis=1)
-
-        df_comparison.loc['Total'] = df_comparison[existing_months + ['Total Hours']].sum()
-        df_comparison.loc['Total', 'Project Name'] = 'Total'
+        # ✅ Tạo dòng tổng hợp an toàn
+        df_total_row = pd.DataFrame([{
+            'Project Name': 'Total',
+            **{col: df_comparison[col].sum() for col in existing_months + ['Total Hours']}
+        }])
+        # ✅ Ghép lại cuối DataFram
+        df_comparison = pd.concat([df_comparison, df_total_row], ignore_index=True)
 
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         return df_comparison, title
@@ -575,6 +579,14 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             df_comparison['Project Name'] = selected_project_name
 
             df_comparison['Hours'] = df_comparison[f'Total Hours for {selected_project_name}']
+            # Sau khi tính df_comparison['Hours'] xong
+            total_row = pd.DataFrame([{
+                'Year': 'Total',
+                'Project Name': selected_project_name,
+                f'Total Hours for {selected_project_name}': df_comparison[f'Total Hours for {selected_project_name}'].sum(),
+                'Hours': df_comparison['Hours'].sum()
+            }])
+            df_comparison = pd.concat([df_comparison, total_row], ignore_index=True)
             title = f"Tổng giờ dự án {selected_project_name} qua các năm"
             return df_comparison, title
 
