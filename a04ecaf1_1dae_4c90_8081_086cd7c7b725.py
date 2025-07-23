@@ -324,6 +324,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
     try:
         fig, ax = plt.subplots(figsize=(10, 6))
         df_for_chart = df.copy()
+        total_col = [col for col in df.columns if 'Total Hours' in col]
         if 'Total Hours' in df.columns:
             df_for_chart.plot(kind='bar', x=df.columns[0], y='Total Hours', ax=ax, color='skyblue')
         else:
