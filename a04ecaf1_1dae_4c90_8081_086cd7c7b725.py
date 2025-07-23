@@ -287,7 +287,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 
     # ✅ Đăng ký và sử dụng font Unicode
     pdf.add_font('DejaVu', '', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf', uni=True)
-    pdf.set_font('helvetica', '', 16)  # Dùng Unicode font thay vì Helvetica
+    pdf.add_font('DejaVu', 'B', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans-Bold.ttf', uni=True)
     pdf.add_page()
     
     if os.path.exists(logo_path_inner):
