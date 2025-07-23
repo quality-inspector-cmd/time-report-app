@@ -607,13 +607,14 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                 data_start_row = 2 
                 
                 df_chart_data = df_comparison.copy()
-                if 'Project Name' in df_chart_data.columns and 'Total' in df_chart_data['Project Name'].values:
-                    df_chart_data = df_chart_data[df_chart_data['Project Name'] != 'Total']
+                if 'Project name' in df_chart_data.columns and 'Total' in df_chart_data['Project name'].values:
+                    df_chart_data = df_chart_data[df_chart_data['Project name'] != 'Total']
                 elif 'Year' in df_chart_data.columns and 'Total' in df_chart_data['Year'].values:
                     df_chart_data = df_chart_data[df_chart_data['Year'] != 'Total']
                 
                 if df_chart_data.empty: 
                     print("Không có đủ dữ liệu để vẽ biểu đồ so sánh sau khi loại bỏ hàng tổng.")
+                    print(f"[INFO] Bỏ qua biểu đồ vì dữ liệu rỗng sau lọc (mode: {comparison_mode})")
                     wb.save(output_file_path)
                     return True
 
@@ -710,80 +711,6 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
     except Exception as e:
         print(f"Lỗi khi xuất báo cáo so sánh ra Excel: {e}")
         return False
-
-def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_config, pdf_file_path, logo_path):
-    tmp_dir = "tmp_comparison"
-    os.makedirs(tmp_dir, exist_ok=True)
-    charts_for_pdf = []
-
-    try:
-        pdf_config_info = {
-            "Chế độ so sánh": comparison_mode,
-            "Năm": ', '.join(map(str, comparison_config.get('years', []))) if comparison_config.get('years') else "N/A",
-            "Tháng": ', '.join(comparison_config.get('months', [])) if comparison_config.get('months') else "Tất cả",
-            "Dự án được chọn": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
-        }
-
-        chart_title = ""
-        x_label = ""
-        y_label = "Giờ"
-        page_project_name_for_chart = None
-
-        if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-            chart_title = f"So sánh giờ giữa các dự án trong {comparison_config['months'][0]}, năm {comparison_config['years'][0]}"
-            x_label = "Dự án"
-            chart_path = os.path.join(tmp_dir, "comparison_chart_month.png")
-
-        elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-            chart_title = f"So sánh giờ giữa các dự án trong năm {comparison_config['years'][0]} (theo tháng)"
-            x_label = "Tháng"
-            chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
-
-        elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            selected_proj = comparison_config.get('selected_projects', [''])[0]
-            page_project_name_for_chart = selected_proj
-            if len(comparison_config.get('years', [])) == 1 and len(comparison_config.get('months', [])) > 0:
-                chart_title = f"Tổng giờ dự án {selected_proj} qua các tháng trong năm {comparison_config['years'][0]}"
-                x_label = "Tháng"
-                chart_path = os.path.join(tmp_dir, f"{selected_proj}_months_chart.png")
-            elif len(comparison_config.get('years', [])) > 1 and not comparison_config.get('months', []):
-                chart_title = f"Tổng giờ dự án {selected_proj} qua các năm"
-                x_label = "Năm"
-                chart_path = os.path.join(tmp_dir, f"{selected_proj}_years_chart.png")
-            else:
-                return False, "⚠️ Cấu hình không hợp lệ"
-        else:
-            return False, "⚠️ Không nhận diện được chế độ so sánh"
-
-        chart_created = create_comparison_chart(
-            df_comparison, comparison_mode,
-            chart_title, x_label, y_label,
-            chart_path, comparison_config
-        )
-
-        if chart_created:
-            charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
-        else:
-            return False, "⚠️ Không tạo được biểu đồ"
-
-        success, msg = create_pdf_from_charts_comp(
-            charts_for_pdf,
-            pdf_file_path,
-            "TRIAC TIME REPORT - COMPARISON",
-            pdf_config_info,
-            logo_path
-        )
-        print(f"[DEBUG] PDF success: {success}")
-        print(f"[DEBUG] PDF message: {msg}")
-        print(f"[DEBUG] PDF path checked: {pdf_file_path}")
-        return success, msg
-        
-    except Exception as e:
-        return False, f"❌ Exception: {e}"
-
-    finally:
-        if os.path.exists(tmp_dir):
-            shutil.rmtree(tmp_dir)
 
 # Phần main của chương trình (có thể lấy từ main_optimized.py của bạn)
 # Ví dụ cấu trúc main, bạn sẽ cần thay thế bằng nội dung thực tế của main_optimized.py
