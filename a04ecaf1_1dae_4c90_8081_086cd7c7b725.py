@@ -302,6 +302,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
             pdf.cell(0, 10, chart_title, ln=True, align='C')
             pdf.image(img_path, x=10, y=45, w=190)
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     pdf.output(output_path, "F")
     return True, "✅ PDF created"
