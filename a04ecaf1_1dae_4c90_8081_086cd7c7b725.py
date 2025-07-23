@@ -362,7 +362,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
     if 'Hours' not in df_comparison.columns:
         raise ValueError("❌ Column 'Hours' is missing in df_comparison.")
 
-    chart_paths = create_charts_for_pdf(df_comparison, comparison_mode, comparison_config)
+    chart_paths = create_charts_for_pdf_comp(df_comparison, comparison_mode, comparison_config)
     
     if df_comparison.empty:
         print("WARNING: df_comparison is empty. Skipping PDF report export.")
