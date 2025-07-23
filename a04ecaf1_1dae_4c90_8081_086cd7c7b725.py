@@ -532,6 +532,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
         
         df_comparison['Total Hours'] = df_comparison[existing_months].sum(axis=1)
+        df_comparison['Hours'] = df_comparison['Total Hours']
         # ✅ Tạo dòng tổng hợp an toàn
         df_total_row = pd.DataFrame([{
             'Project Name': 'Total',
