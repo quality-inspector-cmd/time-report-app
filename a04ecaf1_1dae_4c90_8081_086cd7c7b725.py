@@ -396,10 +396,6 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
     charts_for_pdf = []
 
     try:
-        # ✅ Bổ sung bước lọc đúng cách
-        df_filtered, msg = apply_comparison_filters(df_comparison, comparison_config, comparison_mode)
-        if df_filtered.empty:
-            return False, f"⚠️ Dữ liệu sau lọc rỗng: {msg}"
         pdf_config_info = {
             "Chế độ so sánh": comparison_mode,
             "Năm": ', '.join(map(str, comparison_config.get('years', []))) if comparison_config.get('years') else "N/A",
