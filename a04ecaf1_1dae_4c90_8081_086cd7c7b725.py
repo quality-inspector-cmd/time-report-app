@@ -288,6 +288,8 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     # ✅ Đăng ký và sử dụng font Unicode
     pdf.add_font('DejaVu', '', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans-Bold.ttf', uni=True)
+    
+    pdf.set_font('DejaVu', 'B', 16)  # ⬅️ Đảm bảo gọi font trước khi viết gì
     pdf.add_page()
     
     if os.path.exists(logo_path_inner):
@@ -310,7 +312,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             pdf.add_page()
             if os.path.exists(logo_path_inner):
                 pdf.image(logo_path_inner, x=10, y=8, w=25)
-            pdf.set_font("helvetica", 'B', 11)
+            pdf.set_font("DejaVu", 'B', 11)
             pdf.set_y(35)
             if page_project_name:
                 pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
@@ -558,6 +560,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             
             # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
             df_comparison['Project Name'] = selected_project_name
+            # ✅ THÊM DÒNG NÀY để biểu đồ dùng được cột 'Hours'
+            df_comparison['Hours'] = df_comparison[f'Total Hours for {selected_project_name}']
             title = f"Tổng giờ dự án {selected_project_name} qua các tháng trong năm {years[0]}"
             return df_comparison, title
 
@@ -569,6 +573,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             
             # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
             df_comparison['Project Name'] = selected_project_name
+
+            df_comparison['Hours'] = df_comparison[f'Total Hours for {selected_project_name}']
             title = f"Tổng giờ dự án {selected_project_name} qua các năm"
             return df_comparison, title
 
