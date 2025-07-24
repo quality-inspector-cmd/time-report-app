@@ -294,7 +294,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
 
 def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
-    today = datetime.today().strftime('%Y%m%d')
+    today_str = datetime.today().strftime('%Y-%m-%d')  # ✅ Thêm dòng này để tránh lỗi
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
