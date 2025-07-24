@@ -232,6 +232,8 @@ def export_report(df, config, output_file_path):
 
 def export_pdf_report(df, config, pdf_report_path, logo_path):
     """Xuất báo cáo PDF tiêu chuẩn với các biểu đồ."""
+    if not pdf_report_path:
+        raise ValueError("❌ pdf_report_path is empty. Please check where it's defined.")
     today_str = datetime.datetime.today().strftime("%Y-%m-%d")
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
@@ -325,8 +327,9 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
             pdf.cell(0, 10, chart_title, ln=True, align='C')
             pdf.image(img_path, x=10, y=45, w=190)
+    # ✅ Đảm bảo thư mục tồn tại trước khi ghi file
     output_dir = os.path.dirname(os.path.abspath(output_path))
-    if output_dir and not os.path.exists(output_dir)
+    if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
         print(f"[DEBUG] Saving PDF to: {output_path}")
         
