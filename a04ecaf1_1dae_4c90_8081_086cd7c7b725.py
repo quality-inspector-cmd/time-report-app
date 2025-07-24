@@ -237,6 +237,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
     try:
         # Tạo biểu đồ tổng số giờ theo tháng
+        print(f"[DEBUG] Cột của df: {df.columns.tolist()}")
         summary_chart = df.groupby('MonthName')['Hours'].sum().reset_index()
         summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
 
@@ -275,6 +276,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         return success
     except Exception as e:
         print(f"❌ Lỗi khi tạo báo cáo PDF tiêu chuẩn: {e}")
+        traceback.print_exc()  # in ra full stacktrace
         return False
     finally:
         if os.path.exists(tmp_dir):
