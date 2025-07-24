@@ -450,6 +450,24 @@ with tab_standard_report_main:
             }
 
             df_filtered_standard = apply_filters(df_raw, standard_report_config)
+            # Tự động loại bỏ dự án không có dữ liệu sau khi lọc
+            project_col = 'Project name'  # <-- Đúng tên cột trong df_raw, sửa nếu cần
+            valid_projects_in_filtered = df_filtered_standard[project_col].unique().tolist()
+
+            # Giữ lại các dự án có dữ liệu
+            standard_project_selection = [p for p in standard_project_selection if p in valid_projects_in_filtered]
+
+            # Nếu không còn dự án nào hợp lệ, cảnh báo và dừng
+            if not standard_project_selection:
+                st.warning("Không có dự án nào có dữ liệu trong năm và tháng đã chọn.")
+                st.stop()
+
+            # Cập nhật lại config và project_filter_df
+            temp_project_filter_df_standard = pd.DataFrame({
+                'Project Name': standard_project_selection,
+                'Include': ['yes'] * len(standard_project_selection)
+            })
+            standard_report_config['project_filter_df'] = temp_project_filter_df_standard
             if 'Date' in df_filtered_standard.columns:
                 df_filtered_standard['MonthName'] = pd.to_datetime(df_filtered_standard['Date']).dt.strftime('%B')
             if df_filtered_standard.empty:
