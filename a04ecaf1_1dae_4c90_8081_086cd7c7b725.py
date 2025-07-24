@@ -23,7 +23,7 @@ def sanitize_filename(name):
 
 def setup_paths():
     """Thiết lập các đường dẫn file đầu vào và đầu ra."""
-    today = datetime.datetime.today().strftime('%Y%m%d')
+    today = datetime.today().strftime('%Y%m%d')
     return {
         'template_file': "Time_report.xlsm",
         'output_file': f"Time_report_Standard_{today}.xlsx",
