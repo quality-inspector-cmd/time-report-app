@@ -333,16 +333,17 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
         df_for_chart = df.copy()
         total_col = [col for col in df.columns if 'Total Hours' in col]
         if 'Total Hours' in df.columns:
-            df_for_chart.plot(kind='bar', x=df.columns[0], y='Total Hours', ax=ax, color='skyblue')
+        # Vẽ biểu đồ và lưu lại bar container
+            bars = ax.bar(df_for_chart[df.columns[0]], df_for_chart['Total Hours'], color='skyblue')
         # ✅ Thêm số giờ trên mỗi cột
-        for bar in bars.patches:
-            height = bar.get_height()
-            if height > 0:
-                ax.annotate(f'{height:.0f}',
-                            xy=(bar.get_x() + bar.get_width() / 2, height),
-                            xytext=(0, 3),
-                            textcoords="offset points",
-                            ha='center', va='bottom', fontsize=9)
+            for bar in bars.patches:
+                height = bar.get_height()
+                if height > 0:
+                    ax.annotate(f'{height:.0f}',
+                                xy=(bar.get_x() + bar.get_width() / 2, height),
+                                xytext=(0, 3),
+                                textcoords="offset points",
+                                ha='center', va='bottom', fontsize=9)
         else:
             return None
         ax.set_title(title)
