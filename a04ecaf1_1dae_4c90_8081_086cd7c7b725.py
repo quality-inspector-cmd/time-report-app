@@ -264,42 +264,42 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
         charts_for_pdf.append((chart_path, "Total hour by month", None))
         # 🟩 Thêm biểu đồ Workcentre & Task theo từng dự án
-    if 'Project name' in df.columns:
-        for project in df['Project name'].dropna().unique():
-            safe_project = sanitize_filename(project)
-            df_proj = df[df['Project name'] == project]
+        if 'Project name' in df.columns:
+            for project in df['Project name'].dropna().unique():
+                safe_project = sanitize_filename(project)
+                df_proj = df[df['Project name'] == project]
             # Workcentre
-            if 'Workcentre' in df_proj.columns and not df_proj['Workcentre'].empty:
-                wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().sort_values(ascending=False)
-                if not wc_summary.empty and wc_summary.sum() > 0:
-                    fig, ax = plt.subplots(figsize=(10, 5))
-                    bars = ax.barh(wc_summary.index, wc_summary.values, color='skyblue')
-                    ax.bar_label(bars, labels=[f"{v:.1f}" for v in wc_summary.values], padding=3)
-                    ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
-                    ax.tick_params(axis='y', labelsize=8)
-                    ax.set_xlabel("Hours")
-                    ax.set_ylabel("Workcentre")
-                    wc_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
-                    plt.tight_layout()
-                    fig.savefig(wc_path, dpi=150)
-                    plt.close(fig)
-                    charts_for_pdf.append((wc_path, f"{project} - Hours by Workcentre", project))
-            # Task
-            if 'Task' in df_proj.columns and not df_proj['Task'].empty:
-                task_summary = df_proj.groupby('Task')['Hours'].sum().sort_values(ascending=False)
-                if not task_summary.empty and task_summary.sum() > 0:
-                    fig, ax = plt.subplots(figsize=(10, 6))
-                    bars = ax.barh(task_summary.index, task_summary.values, color='lightgreen')
-                    ax.bar_label(bars, labels=[f"{v:.1f}" for v in task_summary.values], padding=3)
-                    ax.set_title(f"{project} - Hours by Task", fontsize=10)
-                    ax.tick_params(axis='y', labelsize=8)
-                    ax.set_xlabel("Hours")
-                    ax.set_ylabel("Task")
-                    task_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
-                    plt.tight_layout()
-                    fig.savefig(task_path, dpi=150)
-                    plt.close(fig)
-                    charts_for_pdf.append((task_path, f"{project} - Hours by Task", project))
+                if 'Workcentre' in df_proj.columns and not df_proj['Workcentre'].empty:
+                    wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().sort_values(ascending=False)
+                    if not wc_summary.empty and wc_summary.sum() > 0:
+                        fig, ax = plt.subplots(figsize=(10, 5))
+                        bars = ax.barh(wc_summary.index, wc_summary.values, color='skyblue')
+                        ax.bar_label(bars, labels=[f"{v:.1f}" for v in wc_summary.values], padding=3)
+                        ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
+                        ax.tick_params(axis='y', labelsize=8)
+                        ax.set_xlabel("Hours")
+                        ax.set_ylabel("Workcentre")
+                        wc_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
+                        plt.tight_layout()
+                        fig.savefig(wc_path, dpi=150)
+                        plt.close(fig)
+                        charts_for_pdf.append((wc_path, f"{project} - Hours by Workcentre", project))
+                # Task
+                if 'Task' in df_proj.columns and not df_proj['Task'].empty:
+                    task_summary = df_proj.groupby('Task')['Hours'].sum().sort_values(ascending=False)
+                    if not task_summary.empty and task_summary.sum() > 0:
+                        fig, ax = plt.subplots(figsize=(10, 6))
+                        bars = ax.barh(task_summary.index, task_summary.values, color='lightgreen')
+                        ax.bar_label(bars, labels=[f"{v:.1f}" for v in task_summary.values], padding=3)
+                        ax.set_title(f"{project} - Hours by Task", fontsize=10)
+                        ax.tick_params(axis='y', labelsize=8)
+                        ax.set_xlabel("Hours")
+                        ax.set_ylabel("Task")
+                        task_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
+                        plt.tight_layout()
+                        fig.savefig(task_path, dpi=150)
+                        plt.close(fig)
+                        charts_for_pdf.append((task_path, f"{project} - Hours by Task", project))
         pdf_config_info = {
             "Mode": config.get('mode', 'N/A').capitalize(),
             "Year": str(config.get('year', '')),
