@@ -249,7 +249,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
 
         fig, ax = plt.subplots(figsize=(10, 6))
-        ax.bar(summary_chart['MonthName'], summary_chart['Hours'], color='skyblue')
+        bars = ax.bar(summary_chart['MonthName'], summary_chart['Hours'], color='skyblue')  # <- gán vào biến bars
         ax.set_title("Tổng giờ theo tháng")
         ax.set_xlabel("Tháng")
         ax.set_ylabel("Giờ")
