@@ -461,6 +461,7 @@ with tab_standard_report_main:
                         st.error(get_text('failed_to_generate_excel'))
 
                 if export_pdf:
+                    print(f"[DEBUG] path_dict['pdf_report'] = {path_dict['pdf_report']}")
                     with st.spinner(get_text('generating_pdf_report')):
                         pdf_success = export_pdf_report(df_filtered_standard, standard_report_config, path_dict['pdf_report'], path_dict['logo_path'])
                     if pdf_success:
