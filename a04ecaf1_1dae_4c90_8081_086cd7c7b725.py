@@ -9,6 +9,7 @@ from matplotlib import pyplot as plt
 import tempfile
 import re
 import shutil
+from pandas import Series
 
 # Hàm hỗ trợ làm sạch tên file/sheet
 def sanitize_filename(name):
@@ -305,7 +306,8 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     pdf.set_font("DejaVu", '', 11)
 
     for key, value in config_info.items():
-        pdf.cell(0, 7, f"{key}: {value}", ln=True, align='C')
+        value_str = "N/A" if pd.isna(value) else str(value)
+        pdf.cell(0, 7, f"{str(key)}: {value_str}", ln=True, align='C')
 
     for img_path, chart_title, page_project_name in charts_data:
         if img_path and os.path.exists(img_path):
