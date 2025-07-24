@@ -262,13 +262,13 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         fig.savefig(chart_path, dpi=150)
         plt.close(fig)
 
-        charts_for_pdf.append((chart_path, "Tổng giờ theo tháng", None))
+        charts_for_pdf.append((chart_path, "Total hour by month", None))
 
         pdf_config_info = {
-            "Chế độ": config.get('mode', 'N/A').capitalize(),
-            "Năm": str(config.get('year', '')),
-            "Tháng": ', '.join(config.get('months', [])) if config.get('months') else "Tất cả",
-            "Dự án": ', '.join(
+            "Mode": config.get('mode', 'N/A').capitalize(),
+            "Year": str(config.get('year', '')),
+            "Months": ', '.join(config.get('months', [])) if config.get('months') else "Tất cả",
+            "Project": ', '.join(
                 config['project_filter_df'][
                     config['project_filter_df']['Include'] == 'yes'
                 ]['Project Name'].tolist()
