@@ -404,21 +404,26 @@ with tab_standard_report_main:
         if not default_standard_projects and all_projects:
             default_standard_projects = all_projects # Default to all if config is empty
         st.session_state.standard_selected_projects = default_standard_projects
-    
-    # Ensure default value for multiselect is valid
-    current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
-    if not current_std_projects_default and all_projects: # Fallback if selected projects are no longer valid or empty
-        current_std_projects_default = all_projects
 
-    standard_project_selection = st.multiselect(
-        get_text('standard_project_selection_text'),
-        options=all_projects,
-        default=current_std_projects_default,
-        key='standard_project_selection_tab'
-    )
+# 🟩 Hỗ trợ chọn tất cả dự án
+    select_all_std_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_std_projects_checkbox")
+
+    if select_all_std_projects:
+        standard_project_selection = all_projects
+    else:
+        current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
+        if not current_std_projects_default and all_projects:
+            current_std_projects_default = all_projects
+        # ✅ Chèn dòng hiển thị số lượng đang chọn
+        st.caption(f"Đang chọn {len(current_std_projects_default)} dự án")
+        
+        standard_project_selection = st.multiselect(
+            get_text('standard_project_selection_text'),
+            options=all_projects,
+            default=current_std_projects_default,
+            key='standard_project_selection_tab'
+        )
     st.session_state.standard_selected_projects = standard_project_selection # Update state
-
-
     st.markdown("---")
     st.subheader(get_text("export_options"))
     export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
