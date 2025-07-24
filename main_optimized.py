@@ -552,12 +552,16 @@ with tab_comparison_report_main:
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
 
-    comp_projects = st.multiselect(
-        get_text('select_projects_comp'),
-        options=all_projects,
-        default=[p for p in st.session_state.comparison_selected_projects if p in all_projects], # Ensure default is valid
-        key='comp_projects_select_tab_common'
-    )
+    select_all_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_projects_checkbox")
+    if select_all_projects:
+        comp_projects = all_projects
+    else:
+        comp_projects = st.multiselect(
+            get_text('select_projects_comp'),
+            options=all_projects,
+            default=[p for p in st.session_state.comparison_selected_projects if p in all_projects],
+            key='comp_projects_select_tab_common'
+        )
     st.session_state.comparison_selected_projects = comp_projects # Update state
 
 
