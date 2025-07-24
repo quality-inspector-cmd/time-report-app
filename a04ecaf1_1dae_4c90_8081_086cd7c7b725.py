@@ -331,7 +331,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
     try:
         fig, ax = plt.subplots(figsize=(10, 6))
         df_for_chart = df.copy()
-        total_col = [col for col in df.columns if 'Total Hours' in col]
+        
         if 'Total Hours' in df.columns:
         # Vẽ biểu đồ và lưu lại bar container
             bars = ax.bar(df_for_chart[df.columns[0]], df_for_chart['Total Hours'], color='skyblue')
@@ -690,15 +690,15 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         min_col_month = min_col_month_index + 1 
                         max_col_month = max_col_month_index + 1
                         cats_ref = Reference(ws, min_col=min_col_month, min_row=1, max_col=max_col_month)
-                        from openpyxl.chart.series import Series
                         for r_idx, project_name in enumerate(df_chart_data['Project name']):
                             series_ref = Reference(ws,
                                                    min_col=min_col_month,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            series = Series(series_ref, title=project_name)
                             chart.series.append(series)
+                            chart.series[-1].title = project_name  # Gán sau
+                            
                         chart.set_categories(cats_ref)      
                     else:
                         print("Không tìm thấy cột tháng để tạo biểu đồ.")
