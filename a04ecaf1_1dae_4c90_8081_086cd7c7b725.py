@@ -715,7 +715,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            series = Series(values_ref)
+                            series = Series(series_ref)
                             series.title = str(project_name)  # ⚠️ Quan trọng: ép kiểu thành str
                             chart.series.append(series)
 
