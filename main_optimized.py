@@ -461,6 +461,7 @@ with tab_standard_report_main:
                     else:
                         st.error(get_text('failed_to_generate_excel'))
                 if export_pdf:
+                    pdf_report_path = path_dict['pdf_report']  # ✅ thêm dòng này trước khi dùng biến
                     # ✅ Kiểm tra trước khi gọi
                     if not pdf_report_path:
                         raise ValueError("❌ pdf_report_path is empty. Please check where it's defined.")
