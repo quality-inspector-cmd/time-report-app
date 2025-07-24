@@ -1,5 +1,5 @@
 import pandas as pd
-import datetime
+from datetime import datetime
 import os
 from openpyxl import load_workbook
 from openpyxl.chart import BarChart, Reference, LineChart
@@ -291,7 +291,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
 
 def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
-    today_str = datetime.datetime.today().strftime("%Y-%m-%d")
+    today = datetime.today().strftime('%Y%m%d')
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
