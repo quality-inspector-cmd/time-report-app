@@ -301,7 +301,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     # ✅ Đăng ký và sử dụng font Unicode
     pdf.add_font('DejaVu', '', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans-Bold.ttf', uni=True)
-    
+     # ✅ Logo và tiêu đề
     pdf.set_font('DejaVu', 'B', 16)  # ⬅️ Đảm bảo gọi font trước khi viết gì
     pdf.add_page()
     
@@ -314,17 +314,38 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     pdf.ln(5)
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
-     # ✅ Hiển thị bảng config căn trái gọn gàng
-    col_width = 40  # đủ cho key
-    value_width = 140  # phần còn lại
+     # ✅ Bảng thông tin gọn, có tự động xuống dòng nếu quá dài
+    pdf.set_font("DejaVu", '', 11)
+    label_width = 40
+    value_width = 150
     line_height = 8
 
+    pdf.set_x(10)
+    pdf.set_fill_color(240, 240, 240)
+    
     for key, value in config_info.items():
         value_str = "N/A" if pd.isna(value) else str(value)
-        pdf.cell(0, 7, f"{str(key)}: {value_str}", ln=True, align='C')
-        pdf.cell(col_width, line_height, f"{key}:", border=0)
+
+        # Tính chiều cao dòng cần thiết cho ô phải
+        value_lines = pdf.multi_cell(value_width, line_height, value_str, border=0, split_only=True)
+        row_height = line_height * len(value_lines)
+        
+        x = pdf.get_x()
+        y = pdf.get_y()
+        
+        # Ô trái (nhãn)
+        pdf.set_font("DejaVu", 'B', 11)
+        pdf.multi_cell(label_width, row_height, key, border=1, fill=True)
+        
+        # Trả lại vị trí để in ô phải
+        pdf.set_xy(x + label_width, y)
+        
+        # Ô phải (giá trị)
         pdf.set_font("DejaVu", '', 11)
-        pdf.multi_cell(value_width, line_height, value_str, border=0)
+        pdf.multi_cell(value_width, line_height, value_str, border=1)
+        
+        # Xuống dòng cho dòng kế tiếp
+        pdf.set_x(10)
  # Chèn biểu đồ
     for img_path, chart_title, page_project_name in charts_data:
         if img_path and os.path.exists(img_path):
