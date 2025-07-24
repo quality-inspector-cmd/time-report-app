@@ -334,6 +334,15 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
         total_col = [col for col in df.columns if 'Total Hours' in col]
         if 'Total Hours' in df.columns:
             df_for_chart.plot(kind='bar', x=df.columns[0], y='Total Hours', ax=ax, color='skyblue')
+        # ✅ Thêm số giờ trên mỗi cột
+        for bar in bars.patches:
+            height = bar.get_height()
+            if height > 0:
+                ax.annotate(f'{height:.0f}',
+                            xy=(bar.get_x() + bar.get_width() / 2, height),
+                            xytext=(0, 3),
+                            textcoords="offset points",
+                            ha='center', va='bottom', fontsize=9)
         else:
             return None
         ax.set_title(title)
@@ -680,23 +689,20 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         min_col_month = min_col_month_index + 1 
                         max_col_month = max_col_month_index + 1
                         cats_ref = Reference(ws, min_col=min_col_month, min_row=1, max_col=max_col_month)
+                        from openpyxl.chart.series import Series
+                        for r_idx, project_name in enumerate(df_chart_data['Project name']):
+                            series_ref = Reference(ws,
+                                                   min_col=min_col_month,
+                                                   max_col=max_col_month,
+                                                   min_row=data_start_row + r_idx,
+                                                   max_row=data_start_row + r_idx)
+                            series = Series(series_ref, title=project_name)
+                            chart.series.append(series)
+                        chart.set_categories(cats_ref)      
                     else:
                         print("Không tìm thấy cột tháng để tạo biểu đồ.")
                         wb.save(output_file_path)
                         return True
-                    
-                    # Thêm từng series dữ liệu cho mỗi dự án
-                    for r_idx, project_name in enumerate(df_chart_data['Project name']):
-                        series_ref = Reference(ws, min_col=min_col_month, 
-                                               min_row=data_start_row + r_idx, 
-                                               max_col=max_col_month, 
-                                               max_row=data_start_row + r_idx)
-                        title_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, 
-                                              min_row=data_start_row + r_idx, 
-                                              max_row=data_start_row + r_idx)
-                        chart.series[r_idx].title = project_name  # chuỗi str
-                    
-                    chart.set_categories(cats_ref)
 
                 elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
                     # Lấy tên cột chứa tổng giờ cho biểu đồ
