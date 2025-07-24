@@ -538,6 +538,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             'Project Name': 'Total',
             **{col: df_comparison[col].sum() for col in existing_months + ['Total Hours']}
         }])
+        # ➕ Thêm dòng này:
+        df_total_row['Hours'] = df_total_row['Total Hours']
         # ✅ Ghép lại cuối DataFram
         df_comparison = pd.concat([df_comparison, df_total_row], ignore_index=True)
 
