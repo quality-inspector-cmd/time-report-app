@@ -450,6 +450,12 @@ with tab_standard_report_main:
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
+                today_str = datetime.datetime.today().strftime("%Y-%m-%d")
+                path_dict = {
+                    'output_file': f'outputs/standard/Time_report_Standard_{today_str}.xlsx',
+                    'pdf_report': f'outputs/standard/Time_report_Standard_{today_str}.pdf',
+                    'logo_path': 'triac_logo.png'
+                    }
                 report_generated = False
                 if export_excel:
                     with st.spinner(get_text('generating_excel_report')):
@@ -461,8 +467,8 @@ with tab_standard_report_main:
                         st.error(get_text('failed_to_generate_excel'))
 
                 if export_pdf:
-                    print(f"[DEBUG] path_dict['pdf_report'] = {path_dict['pdf_report']}")
                     with st.spinner(get_text('generating_pdf_report')):
+                        print(f"[DEBUG] path_dict['pdf_report'] = {path_dict['pdf_report']}")
                         pdf_success = export_pdf_report(df_filtered_standard, standard_report_config, path_dict['pdf_report'], path_dict['logo_path'])
                     if pdf_success:
                         st.success(get_text('pdf_report_generated').format(os.path.basename(path_dict['pdf_report'])))
