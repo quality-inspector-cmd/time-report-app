@@ -702,9 +702,9 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            chart.series.append(series_ref)
-                            chart.series[-1].title = project_name  # Gán sau
-                            
+                            series = Series(series_ref, title=project_name)
+                            chart.series.append(series)
+
                         chart.set_categories(cats_ref)      
                     else:
                         print("Không tìm thấy cột tháng để tạo biểu đồ.")
