@@ -325,8 +325,11 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
             pdf.cell(0, 10, chart_title, ln=True, align='C')
             pdf.image(img_path, x=10, y=45, w=190)
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
+    output_dir = os.path.dirname(os.path.abspath(output_path))
+    if output_dir and not os.path.exists(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
+        print(f"[DEBUG] Saving PDF to: {output_path}")
+        
     pdf.output(output_path, "F")
     return True, "✅ PDF created"
 
