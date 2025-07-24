@@ -253,6 +253,9 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         ax.set_title("Tổng giờ theo tháng")
         ax.set_xlabel("Tháng")
         ax.set_ylabel("Giờ")
+        # ✅ Thêm nhãn số giờ trên đầu mỗi cột
+        ax.bar_label(bars, labels=[f"{v:.1f}" for v in summary_chart['Hours']], padding=3)
+        
         plt.xticks(rotation=45)
         plt.tight_layout()
         chart_path = os.path.join(tmp_dir, "standard_month_chart.png")
@@ -304,20 +307,25 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
     
     if os.path.exists(logo_path_inner):
         pdf.image(logo_path_inner, x=10, y=10, w=30)
-    pdf.ln(40)
+    pdf.ln(35)
     pdf.cell(0, 10, title, ln=True, align='C')
-    
+    # Ngày tạo
     pdf.set_font("DejaVu", '', 11)
     pdf.ln(5)
-    
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
-    pdf.set_font("DejaVu", '', 11)
+     # ✅ Hiển thị bảng config căn trái gọn gàng
+    col_width = 40  # đủ cho key
+    value_width = 140  # phần còn lại
+    line_height = 8
 
     for key, value in config_info.items():
         value_str = "N/A" if pd.isna(value) else str(value)
         pdf.cell(0, 7, f"{str(key)}: {value_str}", ln=True, align='C')
-
+        pdf.cell(col_width, line_height, f"{key}:", border=0)
+        pdf.set_font("DejaVu", '', 11)
+        pdf.multi_cell(value_width, line_height, value_str, border=0)
+ # Chèn biểu đồ
     for img_path, chart_title, page_project_name in charts_data:
         if img_path and os.path.exists(img_path):
             pdf.add_page()
