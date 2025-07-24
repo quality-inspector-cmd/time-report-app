@@ -357,11 +357,18 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
         else:
             print("⚠️ Không có cột 'Total Hours' trong dataframe.")
             return None
-            
+        # ✅ Cài đặt trục và bố cục 
         ax.set_title(title)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
-        plt.tight_layout()
+        # ✅ Fix chồng lấn chữ ở trục X
+        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        # ✅ Tùy chọn giảm kích thước font nếu quá nhiều dự án
+        if len(df_for_chart) > 10:
+            ax.tick_params(axis='x', labelsize=8)
+            
+        plt.tight_layout(pad=2.0)  # Tăng padding một chút để tránh tràn
+        
         fig.savefig(path, dpi=150)
         plt.close(fig)
         return path
