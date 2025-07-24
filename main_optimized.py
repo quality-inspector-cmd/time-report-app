@@ -445,7 +445,8 @@ with tab_standard_report_main:
             }
 
             df_filtered_standard = apply_filters(df_raw, standard_report_config)
-
+            if 'Date' in df_filtered_standard.columns:
+                df_filtered_standard['MonthName'] = pd.to_datetime(df_filtered_standard['Date']).dt.strftime('%B')
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
