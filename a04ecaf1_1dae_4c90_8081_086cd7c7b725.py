@@ -333,7 +333,11 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
     try:
         fig, ax = plt.subplots(figsize=(10, 6))
         df_for_chart = df.copy()
-
+        
+# ✅ Loại bỏ dòng nếu giá trị trục X là NaN (thường là dòng tổng)
+        x_col = df_for_chart.columns[0]
+        df_for_chart = df_for_chart[df_for_chart[x_col].notna()]
+        
         if 'Total Hours' in df_for_chart.columns:
             bars = ax.bar(
                 df_for_chart[df_for_chart.columns[0]], 
@@ -704,7 +708,8 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            series = Series(values)
+                            series = Series(values_ref)
+                            series.title = str(project_name)  # ⚠️ Quan trọng: ép kiểu thành str
                             chart.series.append(series)
 
                         chart.set_categories(cats_ref)      
