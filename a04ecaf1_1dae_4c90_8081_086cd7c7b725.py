@@ -263,7 +263,43 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
         plt.close(fig)
 
         charts_for_pdf.append((chart_path, "Total hour by month", None))
-
+        # 🟩 Thêm biểu đồ Workcentre & Task theo từng dự án
+    if 'Project name' in df.columns:
+        for project in df['Project name'].dropna().unique():
+            safe_project = sanitize_filename(project)
+            df_proj = df[df['Project name'] == project]
+            # Workcentre
+            if 'Workcentre' in df_proj.columns and not df_proj['Workcentre'].empty:
+                wc_summary = df_proj.groupby('Workcentre')['Hours'].sum().sort_values(ascending=False)
+                if not wc_summary.empty and wc_summary.sum() > 0:
+                    fig, ax = plt.subplots(figsize=(10, 5))
+                    bars = ax.barh(wc_summary.index, wc_summary.values, color='skyblue')
+                    ax.bar_label(bars, labels=[f"{v:.1f}" for v in wc_summary.values], padding=3)
+                    ax.set_title(f"{project} - Hours by Workcentre", fontsize=10)
+                    ax.tick_params(axis='y', labelsize=8)
+                    ax.set_xlabel("Hours")
+                    ax.set_ylabel("Workcentre")
+                    wc_path = os.path.join(tmp_dir, f"{safe_project}_wc.png")
+                    plt.tight_layout()
+                    fig.savefig(wc_path, dpi=150)
+                    plt.close(fig)
+                    charts_for_pdf.append((wc_path, f"{project} - Hours by Workcentre", project))
+            # Task
+            if 'Task' in df_proj.columns and not df_proj['Task'].empty:
+                task_summary = df_proj.groupby('Task')['Hours'].sum().sort_values(ascending=False)
+                if not task_summary.empty and task_summary.sum() > 0:
+                    fig, ax = plt.subplots(figsize=(10, 6))
+                    bars = ax.barh(task_summary.index, task_summary.values, color='lightgreen')
+                    ax.bar_label(bars, labels=[f"{v:.1f}" for v in task_summary.values], padding=3)
+                    ax.set_title(f"{project} - Hours by Task", fontsize=10)
+                    ax.tick_params(axis='y', labelsize=8)
+                    ax.set_xlabel("Hours")
+                    ax.set_ylabel("Task")
+                    task_path = os.path.join(tmp_dir, f"{safe_project}_task.png")
+                    plt.tight_layout()
+                    fig.savefig(task_path, dpi=150)
+                    plt.close(fig)
+                    charts_for_pdf.append((task_path, f"{project} - Hours by Task", project))
         pdf_config_info = {
             "Mode": config.get('mode', 'N/A').capitalize(),
             "Year": str(config.get('year', '')),
@@ -346,18 +382,33 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
         
         # Xuống dòng cho dòng kế tiếp
         pdf.set_x(10)
+# 🟩 Gom biểu đồ theo project
+    from collections import defaultdict
+    project_charts = defaultdict(list)
+    for img_path, chart_title, project_name in charts_data:
+        project_charts[project_name].append((img_path, chart_title))
+# 🟩 Mỗi project 1 trang
+    for project_name, charts in project_charts.items():
+        pdf.add_page()
+        if os.path.exists(logo_path_inner):
+            pdf.image(logo_path_inner, x=10, y=8, w=25)
+
+        pdf.set_font("DejaVu", 'B', 12)
+        pdf.set_y(35)
+        if project_name:
+            pdf.cell(0, 10, f"Project: {project_name}", ln=True, align='C')
+        else:
+            pdf.cell(0, 10, "Summary Charts", ln=True, align='C')
  # Chèn biểu đồ
-    for img_path, chart_title, page_project_name in charts_data:
-        if img_path and os.path.exists(img_path):
-            pdf.add_page()
-            if os.path.exists(logo_path_inner):
-                pdf.image(logo_path_inner, x=10, y=8, w=25)
-            pdf.set_font("DejaVu", 'B', 11)
-            pdf.set_y(35)
-            if page_project_name:
-                pdf.cell(0, 10, f"Project: {page_project_name}", ln=True, align='C')
-            pdf.cell(0, 10, chart_title, ln=True, align='C')
-            pdf.image(img_path, x=10, y=45, w=190)
+        for img_path, chart_title in charts:
+            if os.path.exists(img_path):
+                pdf.ln(5)
+                pdf.set_font("DejaVu", '', 11)
+                pdf.cell(0, 10, chart_title, ln=True, align='C')
+                y_img = pdf.get_y() + 2
+                pdf.image(img_path, x=10, y=y_img, w=190)
+                pdf.ln(100)  # khoảng cách tránh đè ảnh kế tiếp
+
     # ✅ Đảm bảo thư mục tồn tại trước khi ghi file
     output_dir = os.path.dirname(os.path.abspath(output_path))
     if output_dir and not os.path.exists(output_dir):
