@@ -470,10 +470,10 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
 
     try:
         pdf_config_info = {
-            "Chế độ so sánh": comparison_mode,
-            "Năm": ', '.join(map(str, comparison_config.get('years', []))) if comparison_config.get('years') else "N/A",
-            "Tháng": ', '.join(comparison_config.get('months', [])) if comparison_config.get('months') else "Tất cả",
-            "Dự án được chọn": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
+            "Mode": comparison_mode,
+            "Year": ', '.join(map(str, comparison_config.get('years', []))) if comparison_config.get('years') else "N/A",
+            "Months": ', '.join(comparison_config.get('months', [])) if comparison_config.get('months') else "All",
+            "Projects": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
         }
 
         chart_title = ""
