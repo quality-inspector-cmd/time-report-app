@@ -238,6 +238,8 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
     try:
         # Tạo biểu đồ tổng số giờ theo tháng
         print(f"[DEBUG] Cột của df: {df.columns.tolist()}")
+        if 'MonthName' not in df.columns or 'Hours' not in df.columns:
+            raise ValueError("⚠️ Thiếu cột 'MonthName' hoặc 'Hours' trong dữ liệu. Không thể tạo biểu đồ.")
         summary_chart = df.groupby('MonthName')['Hours'].sum().reset_index()
         summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
 
