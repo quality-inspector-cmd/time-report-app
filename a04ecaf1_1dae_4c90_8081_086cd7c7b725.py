@@ -234,15 +234,17 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
     """Xuất báo cáo PDF tiêu chuẩn với các biểu đồ."""
     if not pdf_report_path:
         raise ValueError("❌ pdf_report_path is empty. Please check where it's defined.")
-    today_str = datetime.datetime.today().strftime("%Y-%m-%d")
+        
     tmp_dir = tempfile.mkdtemp()
     charts_for_pdf = []
 
     try:
+        print(f"[DEBUG] Đường dẫn PDF sẽ ghi: {pdf_report_path}")
         # Tạo biểu đồ tổng số giờ theo tháng
         print(f"[DEBUG] Cột của df: {df.columns.tolist()}")
         if 'MonthName' not in df.columns or 'Hours' not in df.columns:
             raise ValueError("⚠️ Thiếu cột 'MonthName' hoặc 'Hours' trong dữ liệu. Không thể tạo biểu đồ.")
+            
         summary_chart = df.groupby('MonthName')['Hours'].sum().reset_index()
         summary_chart = summary_chart.sort_values('MonthName', key=lambda x: pd.to_datetime(x, format='%B'))
 
