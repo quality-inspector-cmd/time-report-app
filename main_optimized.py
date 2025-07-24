@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import os
-import datetime
+from datetime import datetime
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
@@ -450,7 +450,12 @@ with tab_standard_report_main:
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
-                
+                today_str = datetime.today().strftime("%Y-%m-%d")  # ✅ Đúng cú pháp
+                path_dict = {                                        # ✅ Bổ sung cần thiết
+                'output_file': f'outputs/standard/Time_report_Standard_{today_str}.xlsx',
+                'pdf_report': f'outputs/standard/Time_report_Standard_{today_str}.pdf',
+                'logo_path': 'triac_logo.png'
+                } 
                 report_generated = False
                 if export_excel:
                     with st.spinner(get_text('generating_excel_report')):
