@@ -362,7 +362,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
         # ✅ Fix chồng lấn chữ ở trục X
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
         # ✅ Tùy chọn giảm kích thước font nếu quá nhiều dự án
         if len(df_for_chart) > 10:
             ax.tick_params(axis='x', labelsize=8)
