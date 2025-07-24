@@ -10,6 +10,7 @@ import tempfile
 import re
 import shutil
 from pandas import Series
+import traceback
 
 # Hàm hỗ trợ làm sạch tên file/sheet
 def sanitize_filename(name):
