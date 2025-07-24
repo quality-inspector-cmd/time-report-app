@@ -704,7 +704,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            series = Series(series_ref, title=project_name)
+                            series = Series(values)
                             chart.series.append(series)
 
                         chart.set_categories(cats_ref)      
