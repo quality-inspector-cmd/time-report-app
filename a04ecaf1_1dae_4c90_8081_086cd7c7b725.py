@@ -331,12 +331,16 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
     try:
         fig, ax = plt.subplots(figsize=(10, 6))
         df_for_chart = df.copy()
-        
-        if 'Total Hours' in df.columns:
-        # Vẽ biểu đồ và lưu lại bar container
-            bars = ax.bar(df_for_chart[df.columns[0]], df_for_chart['Total Hours'], color='skyblue')
-        # ✅ Thêm số giờ trên mỗi cột
-            for bar in bars.patches:
+
+        if 'Total Hours' in df_for_chart.columns:
+            bars = ax.bar(
+                df_for_chart[df_for_chart.columns[0]], 
+                df_for_chart['Total Hours'], 
+                color='skyblue'
+            )
+
+            # ✅ Gắn số giờ trên từng cột
+            for bar in bars:
                 height = bar.get_height()
                 if height > 0:
                     ax.annotate(f'{height:.0f}',
@@ -345,7 +349,9 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
                                 textcoords="offset points",
                                 ha='center', va='bottom', fontsize=9)
         else:
+            print("⚠️ Không có cột 'Total Hours' trong dataframe.")
             return None
+            
         ax.set_title(title)
         ax.set_xlabel(x_label)
         ax.set_ylabel(y_label)
@@ -696,7 +702,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                                                    max_col=max_col_month,
                                                    min_row=data_start_row + r_idx,
                                                    max_row=data_start_row + r_idx)
-                            chart.series.append(series)
+                            chart.series.append(series_ref)
                             chart.series[-1].title = project_name  # Gán sau
                             
                         chart.set_categories(cats_ref)      
