@@ -406,7 +406,7 @@ with tab_standard_report_main:
         st.session_state.standard_selected_projects = default_standard_projects
 
 # 🟩 Hỗ trợ chọn tất cả dự án
-    select_all_std_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_std_projects_checkbox")
+    select_all_std_projects = st.checkbox("Chọn tất cả dự án","Select all project", value=True, key="select_all_std_projects_checkbox")
 
     if select_all_std_projects:
         standard_project_selection = all_projects
