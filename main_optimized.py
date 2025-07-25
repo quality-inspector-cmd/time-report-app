@@ -182,7 +182,7 @@ TEXTS = {
         'warning_select_export_format': "Please select at least one report export format (Excel or PDF).",
         'error_generating_report': "An error occurred while generating the report. Please try again.",
         # Add new messages for "Compare One Project Over Time" mode
-        'select_single_project_warning': "Please select ONLY ONE project for this mode.",
+        'select_at_least_two_projects_warning': "Please select at least two projects for comparison.",
         'select_years_for_over_time_months': "Select the year(s) for comparison:",
         'select_months_for_single_year': "Select month(s) within the chosen year:",
         'comparison_over_years_note': "Note: You have selected multiple years. The report will compare the project's data across the selected years. Month selection will be ignored.",
@@ -254,8 +254,8 @@ TEXTS = {
         'download_pdf': "Tải PDF",
         'warning_select_export_format': "Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).",
         'error_generating_report': "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
-        # Thêm các tin nhắn mới cho mode "So Sánh Một Dự Án Qua Các Tháng/Năm"
-        'select_single_project_warning': "Vui lòng chọn CHỈ MỘT dự án cho chế độ này.",
+        # Thêm các tin nhắn mới cho mode "So Sánh Các Dự Án Qua Các Tháng/Năm"
+        'select_at_least_two_projects_warning': "Vui lòng chọn ít nhất hai dự án để so sánh.",
         'select_years_for_over_time_months': "Chọn năm (hoặc các năm) bạn muốn so sánh:",
         'select_months_for_single_year': "Chọn tháng(các tháng) trong năm đã chọn:",
         'comparison_over_years_note': "Lưu ý: Bạn đã chọn nhiều năm. Báo cáo sẽ so sánh dữ liệu của dự án qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.",
