@@ -117,7 +117,6 @@ st.markdown("""
 # =====================================
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
-    TEXTS = {
     'en': {
         'app_title': "📊 Time Report Generator",
         'lang_select': "Select language:",
