@@ -714,7 +714,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         title = "So sánh nhiều dự án qua các năm và tháng"
         return df_comparison, title
 
-    return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ.
+    return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
 
 def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode):
     """Xuất báo cáo so sánh ra file Excel."""
