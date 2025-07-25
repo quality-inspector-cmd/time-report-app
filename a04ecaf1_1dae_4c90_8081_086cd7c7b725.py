@@ -423,6 +423,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 # =======================================
 
 def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
+    output_dir = "tmp_comparison"
     try:
         os.makedirs(output_dir, exist_ok=True)
         charts = {}
@@ -487,6 +488,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["workcentre"] = chart_path
+            
+        return charts  # ✅ Thêm dòng này
 
     except Exception as e:
         print(f"Chart error: {e}")
@@ -572,7 +575,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             chart_path = os.path.join(tmp_dir, "multi_projects_time_chart.png")
             page_project_name_for_chart = "Tổng hợp nhiều dự án"
 # ✅ Vẽ biểu đồ
-        chart_created = create_comparison_chart(
+        charts_dict = create_comparison_chart(
             df_comparison, comparison_mode,
             chart_title, x_label, y_label,
             chart_path, comparison_config
