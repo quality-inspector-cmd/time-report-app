@@ -23,6 +23,9 @@ path_dict = setup_paths()
 # ==============================================================================
 # KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
 # ==============================================================================
+if 'comparison_mode_select_tab_main' not in st.session_state:
+    st.session_state.comparison_mode_select_tab_main = "Compare Projects in a Month"  # hoặc giá trị phù hợp với `display_options`
+    
 if 'comparison_mode' not in st.session_state:
     st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
 
@@ -47,6 +50,7 @@ if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cá
 # Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
 if 'selected_language' not in st.session_state:
     st.session_state.selected_language = "English"
+    
 
 # ---------------------------
 # PHẦN XÁC THỰC TRUY CẬP
