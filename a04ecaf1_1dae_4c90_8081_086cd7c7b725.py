@@ -621,40 +621,32 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     print("DEBUG: apply_comparison_filters called with:")
     if not isinstance(df_raw, pd.DataFrame):
         return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ."    
+
     print(f"  df_raw type: {type(df_raw)}")
     print(f"  comparison_config type: {type(comparison_config)}")
     print(f"  comparison_mode type: {type(comparison_mode)} value: {comparison_mode}")
-    """Áp dụng bộ lọc và tạo DataFrame tóm tắt cho báo cáo so sánh."""
-    years = comparison_config.get('years', [])
-    months = comparison_config.get('months', [])
-    selected_projects = comparison_config.get('selected_projects', [])
-    # Ép kiểu đảm bảo chắc chắn là list
-    years = list(years) if isinstance(years, (list, tuple, pd.Series)) else [years] if years else []
-    months = list(months) if isinstance(months, (list, tuple, pd.Series)) else [months] if months else []
-    selected_projects = list(selected_projects) if isinstance(selected_projects, (list, tuple, pd.Series)) else [selected_projects] if selected_projects else []
-    # ✅ In debug bổ sung
+
+    years = list(comparison_config.get('years', []))
+    months = list(comparison_config.get('months', []))
+    selected_projects = list(comparison_config.get('selected_projects', []))
+
     print("✅ Sau khi ép kiểu từ comparison_config:")
-    print(f"   - Years: {years} (type: {type(years)})")
-    print(f"   - Months: {months} (type: {type(months)})")
-    print(f"   - Selected Projects: {selected_projects} (type: {type(selected_projects)})")
-    # In ra log để debug
-    print("DEBUG | years:", years, type(years))
-    print("DEBUG | months:", months, type(months))
-    print("DEBUG | selected_projects:", selected_projects, type(selected_projects))
+    print(f"   - Years: {years}")
+    print(f"   - Months: {months}")
+    print(f"   - Selected Projects: {selected_projects}")
+
     df_filtered = df_raw.copy()
     df_filtered['Hours'] = pd.to_numeric(df_filtered['Hours'], errors='coerce').fillna(0)
 
     if years:
         df_filtered = df_filtered[df_filtered['Year'].isin(years)]
-    
     if months:
         df_filtered = df_filtered[df_filtered['MonthName'].isin(months)]
-    
     if selected_projects:
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_projects)]
-    else: 
+    else:
         return pd.DataFrame(), "Vui lòng chọn ít nhất một dự án để so sánh."
-
+    
     if df_filtered.empty:
         return pd.DataFrame(), f"Không tìm thấy dữ liệu cho chế độ so sánh: {comparison_mode} với các lựa chọn hiện tại."
 
@@ -665,63 +657,64 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             return pd.DataFrame(), "Vui lòng chọn MỘT năm, MỘT tháng và ít nhất HAI dự án cho chế độ này."
         
         df_comparison = df_filtered.groupby('Project name')['Hours'].sum().reset_index()
-        df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-        df_comparison['Hours'] = df_comparison['Total Hours']  # 👈 thêm cột 'Hours' riêng cho PDF
+        df_comparison.rename(columns={'Hours': 'Total Hours', 'Project name': 'Project Name'}, inplace=True)
+        df_comparison['Hours'] = df_comparison['Total Hours']
+        df_comparison['Task'] = 'All'
+        df_comparison['Workcentre'] = 'All'
+
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         if len(years) != 1 or len(selected_projects) < 2:
             return pd.DataFrame(), "Vui lòng chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
-        
-        df_comparison = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
-        
-        month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-        existing_months = [m for m in month_order if m in df_comparison.columns]
-        df_comparison = df_comparison[existing_months]
 
-        df_comparison = df_comparison.reset_index().rename(columns={'index': 'Project Name'})
+        df_pivot = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
+        month_order = ['January', 'February', 'March', 'April', 'May', 'June',
+                       'July', 'August', 'September', 'October', 'November', 'December']
+        existing_months = [m for m in month_order if m in df_pivot.columns]
+        df_pivot = df_pivot[existing_months]
         
+        df_comparison = df_pivot.reset_index()
         df_comparison['Total Hours'] = df_comparison[existing_months].sum(axis=1)
+        df_comparison.rename(columns={'Project name': 'Project Name'}, inplace=True)
         df_comparison['Hours'] = df_comparison['Total Hours']
-        # ✅ Tạo dòng tổng hợp an toàn
+        df_comparison['Task'] = 'All'
+        df_comparison['Workcentre'] = 'All'
+
+        # ➕ Dòng tổng hợp
         df_total_row = pd.DataFrame([{
             'Project Name': 'Total',
             **{col: df_comparison[col].sum() for col in existing_months + ['Total Hours']}
         }])
-        # ➕ Thêm dòng này:
         df_total_row['Hours'] = df_total_row['Total Hours']
-        # ✅ Ghép lại cuối DataFram
+        df_total_row['Task'] = 'All'
+        df_total_row['Workcentre'] = 'All'
+
         df_comparison = pd.concat([df_comparison, df_total_row], ignore_index=True)
 
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
-        if len(selected_projects) == 0 or not years:
+        if not selected_projects or not years:
             return pd.DataFrame(), "Vui lòng chọn ít nhất MỘT dự án và ít nhất MỘT năm."
 
-        df_comparison = df_filtered[
-            df_filtered['Project name'].isin(selected_projects) &
-            df_filtered['Year'].isin(years)
-        ]
-
         if months:
-            df_comparison = df_comparison[df_comparison['MonthName'].isin(months)]
+            df_filtered = df_filtered[df_filtered['MonthName'].isin(months)]
 
-        if df_comparison.empty:
-            return pd.DataFrame(), "Không có dữ liệu phù hợp với bộ lọc."
+        df_comparison = df_filtered.copy()
+        df_comparison.rename(columns={'Project name': 'Project Name'}, inplace=True)
+        df_comparison['Total Hours'] = df_comparison['Hours']
+        if 'Task' not in df_comparison.columns:
+            df_comparison['Task'] = 'All'
+        if 'Workcentre' not in df_comparison.columns:
+            df_comparison['Workcentre'] = 'All'
 
-        # Tổng hợp giờ theo Project - Year - Month
-        df_grouped = df_comparison.groupby(['Project name', 'Year', 'MonthName'])['Hours'].sum().reset_index()
-        df_grouped.rename(columns={
-            'Project name': 'Project Name',
-            'Hours': 'Total Hours'
-        }, inplace=True)
-
-        df_grouped['Hours'] = df_grouped['Total Hours']  # dùng chung format với các hàm vẽ
         title = "So sánh nhiều dự án qua các năm và tháng"
-        return df_grouped, title
+        return df_comparison, title
+
+    return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ.
 
 def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode):
     """Xuất báo cáo so sánh ra file Excel."""
