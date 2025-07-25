@@ -444,6 +444,12 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             for project in df_sorted['Project Name'].unique():
                 df_proj = df_sorted[df_sorted['Project Name'] == project]
                 ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
+                
+                for x, y in zip(df_proj['YearMonth'], df_proj['Total Hours']):
+                        ax.annotate(f"{y:.0f}", xy=(x, y), xytext=(0, 5), textcoords="offset points",
+                                    ha='center', fontsize=8)
+                    
+            plt.xticks(rotation=45, ha='right')
             ax.set_title(f"{title} - Over Time")
             ax.set_xlabel("Year-Month")
             ax.set_ylabel("Total Hours")
@@ -461,7 +467,15 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            df_pivot.plot(kind='bar', ax=ax)
+            bars = df_pivot.plot(kind='bar', ax=ax)
+            for container in bars.containers:
+                for bar in container:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                                    xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
             ax.set_title(f"{title} - By Task")
             ax.set_xlabel("Task")
             ax.set_ylabel("Total Hours")
@@ -478,7 +492,14 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
 
             fig, ax = plt.subplots(figsize=(10, 6))
-            df_pivot.plot(kind='bar', ax=ax)
+            bars = df_pivot.plot(kind='bar', ax=ax)
+            for container in bars.containers:
+                for bar in container:
+                    height = bar.get_height()
+                    if height > 0:
+                        ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
             ax.set_title(f"{title} - By Workcentre")
             ax.set_xlabel("Workcentre")
             ax.set_ylabel("Total Hours")
