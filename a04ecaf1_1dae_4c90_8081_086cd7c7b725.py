@@ -690,7 +690,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
             df_comparison['Project Name'] = selected_project_name
             # ✅ THÊM DÒNG NÀY để biểu đồ dùng được cột 'Hours'
-            df_comparison['Hours'] = df_comparison[f'Total Hours for {selected_project_name}']
+            df_comparison['Hours'] = df_comparison['Total Hours']
             title = f"Tổng giờ dự án {selected_project_name} qua các tháng trong năm {years[0]}"
             return df_comparison, title
 
@@ -703,12 +703,12 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
             # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
             df_comparison['Project Name'] = selected_project_name
 
-            df_comparison['Hours'] = df_comparison[f'Total Hours for {selected_project_name}']
+            df_comparison['Hours'] = df_comparison['Total Hours']
             # Sau khi tính df_comparison['Hours'] xong
             total_row = pd.DataFrame([{
                 'Year': 'Total',
                 'Project Name': selected_project_name,
-                f'Total Hours for {selected_project_name}': df_comparison[f'Total Hours for {selected_project_name}'].sum(),
+                'Total Hours': df_comparison['Total Hours'].sum(),
                 'Hours': df_comparison['Hours'].sum()
             }])
             df_comparison = pd.concat([df_comparison, total_row], ignore_index=True)
