@@ -429,7 +429,10 @@ with tab_standard_report_main:
             default=current_std_projects_default,
             key='standard_project_selection_tab'
         )
-    st.session_state.standard_selected_projects = standard_project_selection # Update state
+        # ✅ CHỈ cập nhật nếu có thay đổi → tránh Streamlit reload vô ích
+    if st.session_state.standard_selected_projects != standard_project_selection:
+        st.session_state.standard_selected_projects = standard_project_selection
+        
     st.markdown("---")
     st.subheader(get_text("export_options"))
     export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
@@ -566,6 +569,14 @@ with tab_comparison_report_main:
         index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
         key='comparison_mode_select_tab_main'
     )
+    # ✅ Lấy key tương ứng với lựa chọn hiện tại
+    new_selected_key = display_to_key_map[selected_comparison_display]
+    if st.session_state.get('selected_comparison_mode_key') != new_selected_key:
+        st.session_state.selected_comparison_mode_key = new_selected_key
+
+# ✅ CHỈ cập nhật nếu thay đổi (tránh gây reload)
+if st.session_state.get('selected_comparison_mode_key') != new_selected_key:
+    st.session_state.selected_comparison_mode_key = new_selected_key
     
     # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
     current_selected_key = display_to_key_map[selected_comparison_display]
