@@ -424,57 +424,70 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 
 def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
     try:
-        fig, ax = plt.subplots(figsize=(10, 6))
-        df_for_chart = df.copy()
-        
-# ✅ Loại bỏ dòng nếu giá trị trục X là NaN (thường là dòng tổng)
-        x_col = df_for_chart.columns[0]
-        df_for_chart = df_for_chart[df_for_chart[x_col].notna()]
-        
-        if mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
-            df_for_chart['YearMonth'] = df_for_chart['Year'].astype(str) + "-" + df_for_chart['MonthName']
+        os.makedirs(output_dir, exist_ok=True)
+        charts = {}
+
+        # ✅ Xử lý chuẩn hóa
+        df = df.copy()
+        if 'MonthName' in df.columns:
             month_order = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December']
-            df_for_chart['MonthName'] = pd.Categorical(df_for_chart['MonthName'], categories=month_order, ordered=True)
-            df_for_chart = df_for_chart.sort_values(['Year', 'MonthName'])
+            df['MonthName'] = pd.Categorical(df['MonthName'], categories=month_order, ordered=True)
 
-            for project in df_for_chart['Project Name'].unique():
-                df_proj = df_for_chart[df_for_chart['Project Name'] == project]
-                x = df_proj['YearMonth']
-                y = df_proj['Total Hours']
-                ax.plot(x, y, marker='o', label=project)
+        # ✅ Biểu đồ theo thời gian (Year-Month)
+        if 'Year' in df.columns and 'MonthName' in df.columns:
+            df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
+            df_sorted = df.sort_values(['Year', 'MonthName'])
 
+            fig, ax = plt.subplots(figsize=(10, 6))
+            for project in df_sorted['Project Name'].unique():
+                df_proj = df_sorted[df_sorted['Project Name'] == project]
+                ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
+            ax.set_title(f"{base_title} - Over Time")
+            ax.set_xlabel("Year-Month")
+            ax.set_ylabel("Total Hours")
+            plt.xticks(rotation=45)
             ax.legend()
+            plt.tight_layout()
+            chart_path = os.path.join(output_dir, "chart_time.png")
+            fig.savefig(chart_path, dpi=150)
+            plt.close(fig)
+            charts["time"] = chart_path
 
-        elif 'Total Hours' in df_for_chart.columns:
-            bars = ax.bar(df_for_chart[x_col], df_for_chart['Total Hours'], color='skyblue')
-            # ✅ Gắn số giờ trên từng cột
-            for bar in bars:
-                height = bar.get_height()
-                if height > 0:
-                    ax.annotate(f'{height:.0f}',
-                                xy=(bar.get_x() + bar.get_width() / 2, height),
-                                xytext=(0, 3),
-                                textcoords="offset points",
-                                ha='center', va='bottom', fontsize=9)
-        else:
-            print("⚠️ Không có cột 'Total Hours' trong dataframe.")
-            return None
-        # ✅ Cài đặt trục và bố cục 
-        ax.set_title(title)
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        # ✅ Fix chồng lấn chữ ở trục X
-        plt.setp(ax.get_xticklabels(), rotation=45, ha='right')
-        # ✅ Tùy chọn giảm kích thước font nếu quá nhiều dự án
-        if len(df_for_chart) > 10:
-            ax.tick_params(axis='x', labelsize=8)
-            
-        plt.tight_layout(pad=2.0)  # Tăng padding một chút để tránh tràn
-        
-        fig.savefig(path, dpi=150)
-        plt.close(fig)
-        return path
+        # ✅ Biểu đồ theo Task
+        if 'Task' in df.columns:
+            df_task = df.groupby(['Task', 'Project Name'], as_index=False)['Total Hours'].sum()
+            df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            df_pivot.plot(kind='bar', ax=ax)
+            ax.set_title(f"{base_title} - By Task")
+            ax.set_xlabel("Task")
+            ax.set_ylabel("Total Hours")
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            chart_path = os.path.join(output_dir, "chart_task.png")
+            fig.savefig(chart_path, dpi=150)
+            plt.close(fig)
+            charts["task"] = chart_path
+
+        # ✅ Biểu đồ theo Workcentre
+        if 'Workcentre' in df.columns:
+            df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
+            df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            df_pivot.plot(kind='bar', ax=ax)
+            ax.set_title(f"{base_title} - By Workcentre")
+            ax.set_xlabel("Workcentre")
+            ax.set_ylabel("Total Hours")
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+            chart_path = os.path.join(output_dir, "chart_workcentre.png")
+            fig.savefig(chart_path, dpi=150)
+            plt.close(fig)
+            charts["workcentre"] = chart_path
+
     except Exception as e:
         print(f"Chart error: {e}")
         return None
@@ -564,9 +577,15 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             chart_title, x_label, y_label,
             chart_path, comparison_config
         )
-
-        if chart_created:
-            charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
+        if charts_dict:
+            for key, chart_path in charts_dict.items():
+                if os.path.exists(chart_path):
+                    chart_title_map = {
+                        "time": "So sánh giờ theo thời gian",
+                        "task": "So sánh giờ theo Task giữa các dự án",
+                        "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
+                    }
+                    charts_for_pdf.append((chart_path, chart_title_map.get(key, key), "Tổng hợp nhiều dự án"))
         else:
             return False, "⚠️ Không tạo được biểu đồ"
 # ✅ Xuất PDF
