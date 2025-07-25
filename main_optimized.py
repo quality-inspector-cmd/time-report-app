@@ -150,7 +150,7 @@ TEXTS = {
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
         'compare_projects_year': "Compare Projects in a Year",
-        'compare_projects_over_time': "Compare Projects Over Time (Month/Year)"
+        'compare_projects_over_time': "Compare Projects Over Time"
     },
     'vi': {
         'app_title': "📊 Công cụ tạo báo cáo thời gian",
