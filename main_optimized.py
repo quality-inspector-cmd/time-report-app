@@ -117,6 +117,7 @@ st.markdown("""
 # =====================================
 # Từ điển cho các chuỗi văn bản
 TEXTS = {
+    TEXTS = {
     'en': {
         'app_title': "📊 Time Report Generator",
         'lang_select': "Select language:",
@@ -150,7 +151,45 @@ TEXTS = {
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
         'compare_projects_year': "Compare Projects in a Year",
-        'compare_projects_over_time': "Compare Projects Over Time"
+        'compare_projects_over_time': "Compare Projects Over Time (Months/Years)",
+        'filter_data_for_comparison': "Filter Data for Comparison",
+        'select_years': "Select Year(s):",
+        'select_months_comp': "Select Month(s):",
+        'select_projects_comp': "Select Project(s):",
+        'generate_comparison_report_btn': "🚀 Generate Comparison Report",
+        'no_data_after_filter_comparison': "⚠️ {}",
+        'data_filtered_success': "✅ Data filtered successfully for comparison.",
+        'comparison_data_preview': "Comparison Data Preview",
+        'generating_comparison_excel': "Generating Comparison Excel Report...",
+        'comparison_excel_generated': "✅ Comparison Excel Report generated: {}",
+        'download_comparison_excel': "📥 Download Comparison Excel",
+        'generating_comparison_pdf': "Generating Comparison PDF Report...",
+        'comparison_pdf_generated': "✅ PDF Report generated: {}",
+        'download_comparison_pdf': "📥 Download Comparison PDF",
+        'failed_to_generate_comparison_excel': "❌ Failed to generate Comparison Excel report.",
+        'failed_to_generate_comparison_pdf': "❌ Failed to generate Comparison PDF report.",
+        'raw_data_preview_header': "Raw Input Data (First 100 rows)",
+        'no_raw_data': "No raw data loaded.",
+        'no_year_in_data': "No years in data to select.",
+        'user_guide': "User Guide",
+        'export_options': "Export Options",
+        'export_excel_option': "Export as Excel (.xlsx)",
+        'export_pdf_option': "Export as PDF (.pdf)",
+        'report_button': "Generate report",
+        'no_data': "No data after filtering",
+        'report_done': "Report created successfully",
+        'download_excel': "Download Excel",
+        'download_pdf': "Download PDF",
+        'warning_select_export_format': "Please select at least one report export format (Excel or PDF).",
+        'error_generating_report': "An error occurred while generating the report. Please try again.",
+        # Add new messages for "Compare One Project Over Time" mode
+        'select_at_least_two_projects_warning': "Please select at least two projects for comparison.",
+        'select_years_for_over_time_months': "Select the year(s) for comparison:",
+        'select_months_for_single_year': "Select month(s) within the chosen year:",
+        'comparison_over_years_note': "Note: You have selected multiple years. The report will compare the project's data across the selected years. Month selection will be ignored.",
+        'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
+        'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
+        'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year."
     },
     'vi': {
         'app_title': "📊 Công cụ tạo báo cáo thời gian",
