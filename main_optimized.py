@@ -560,11 +560,6 @@ with tab_comparison_report_main:
     )
     # Ánh xạ ngược lại key gốc
     selected_key = display_to_key_map[selected_display]
-    st.session_state.selected_comparison_mode_key = selected_key
-
-    # Lấy chuỗi nội bộ xử lý backend (tùy theo ngôn ngữ)
-    comparison_mode = internal_comparison_modes_map[selected_key][0 if st.session_state.lang == 'vi' else 1]
-
     # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
     vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
