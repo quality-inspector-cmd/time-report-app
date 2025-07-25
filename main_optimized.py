@@ -150,7 +150,7 @@ TEXTS = {
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
         'compare_projects_year': "Compare Projects in a Year",
-        'compare_one_project_over_time': "Compare One Project Over Time (Months/Years)",
+        'compare_projects_over_time': "Compare Projects Over Time (Months/Years)",
         'filter_data_for_comparison': "Filter Data for Comparison",
         'select_years': "Select Year(s):",
         'select_months_comp': "Select Month(s):",
@@ -223,7 +223,7 @@ TEXTS = {
         'select_comparison_mode': "Chọn chế độ so sánh:",
         'compare_projects_month': "So Sánh Dự Án Trong Một Tháng",
         'compare_projects_year': "So Sánh Dự Án Trong Một Năm",
-        'compare_one_project_over_time': "So Sánh Một Dự Án Qua Các Tháng/Năm",
+        'compare_projects_over_time': "So Sánh Nhiều Dự Án Qua Các Tháng/Năm",
         'filter_data_for_comparison': "Lọc dữ liệu để so sánh",
         'select_years': "Chọn năm(các năm):", # Dùng chung cho các mode
         'select_months_comp': "Chọn tháng(các tháng):", # Dùng chung cho các mode
