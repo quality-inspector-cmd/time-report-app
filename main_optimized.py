@@ -562,7 +562,7 @@ with tab_comparison_report_main:
 
 
     if comparison_mode == "So Sánh Nhiều Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare Projects Over Time (Months/Years)":
-        if len(comp_projects) !< 1:
+        if len(comp_projects) < 1:
             st.warning(get_text('select_at_least_two_projects_warning'))
             validation_error = True
 
