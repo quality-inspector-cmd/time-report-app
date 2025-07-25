@@ -556,13 +556,14 @@ with tab_comparison_report_main:
         get_text('select_comparison_mode'),
         options=display_options,
         index=current_index,
-        key='selected_comparison_mode_key'  # Sử dụng chính key này để giữ sync
+        key='selected_comparison_display_key'  # 👈 đổi key khác
     )
     # Ánh xạ ngược lại key gốc
     selected_key = display_to_key_map[selected_display]
+    st.session_state.selected_comparison_mode_key = selected_key
     # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
-    vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
+    vi_val, en_val = internal_comparison_modes_map[selected_key]
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
