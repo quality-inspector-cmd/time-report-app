@@ -563,7 +563,7 @@ with tab_comparison_report_main:
 
     if comparison_mode == "So Sánh Nhiều Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare Projects Over Time (Months/Years)":
         if len(comp_projects) < 1:
-            st.warning(get_text('select_at_least_two_projects_warning'))
+            st.warning(get_text('no_project_selected_warning_standard'))  # ✅ dùng lại warning cũ
             validation_error = True
 
         # State management for selected years in "Over Time" mode
