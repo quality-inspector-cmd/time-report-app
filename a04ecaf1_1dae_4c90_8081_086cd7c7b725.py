@@ -444,7 +444,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             for project in df_sorted['Project Name'].unique():
                 df_proj = df_sorted[df_sorted['Project Name'] == project]
                 ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
-            ax.set_title(f"{base_title} - Over Time")
+            ax.set_title(f"{title} - Over Time")
             ax.set_xlabel("Year-Month")
             ax.set_ylabel("Total Hours")
             plt.xticks(rotation=45)
@@ -462,7 +462,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
 
             fig, ax = plt.subplots(figsize=(10, 6))
             df_pivot.plot(kind='bar', ax=ax)
-            ax.set_title(f"{base_title} - By Task")
+            ax.set_title(f"{title} - By Task")
             ax.set_xlabel("Task")
             ax.set_ylabel("Total Hours")
             plt.xticks(rotation=45)
@@ -479,7 +479,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
 
             fig, ax = plt.subplots(figsize=(10, 6))
             df_pivot.plot(kind='bar', ax=ax)
-            ax.set_title(f"{base_title} - By Workcentre")
+            ax.set_title(f"{title} - By Workcentre")
             ax.set_xlabel("Workcentre")
             ax.set_ylabel("Total Hours")
             plt.xticks(rotation=45)
