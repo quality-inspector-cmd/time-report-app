@@ -553,45 +553,51 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             "Projects": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
         }
 
-        chart_title = ""
-        x_label = ""
-        y_label = "Giờ"
-        page_project_name_for_chart = None
-
+        # ✅ Cấu hình tiêu đề biểu đồ chung
         if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
             chart_title = f"So sánh giờ giữa các dự án trong {comparison_config['months'][0]}, năm {comparison_config['years'][0]}"
             x_label = "Dự án"
-            chart_path = os.path.join(tmp_dir, "comparison_chart_month.png")
 
         elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
             chart_title = f"So sánh giờ giữa các dự án trong năm {comparison_config['years'][0]} (theo tháng)"
             x_label = "Tháng"
-            chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
 
         elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
             chart_title = "So sánh giờ theo nhiều dự án qua các tháng và năm"
             x_label = "Năm-Tháng"
-            y_label = "Giờ"
-            chart_path = os.path.join(tmp_dir, "multi_projects_time_chart.png")
-            page_project_name_for_chart = "Tổng hợp nhiều dự án"
-# ✅ Vẽ biểu đồ
-        charts_dict = create_comparison_chart(
-            df_comparison, comparison_mode,
-            chart_title, x_label, y_label,
-            chart_path, comparison_config
-        )
-        if charts_dict:
-            for key, chart_path in charts_dict.items():
-                if os.path.exists(chart_path):
-                    chart_title_map = {
-                        "time": "So sánh giờ theo thời gian",
-                        "task": "So sánh giờ theo Task giữa các dự án",
-                        "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
-                    }
-                    charts_for_pdf.append((chart_path, chart_title_map.get(key, key), "Tổng hợp nhiều dự án"))
         else:
-            return False, "⚠️ Không tạo được biểu đồ"
-# ✅ Xuất PDF
+            chart_title = "Biểu đồ so sánh giờ"
+            x_label = ""
+
+        y_label = "Giờ"
+        page_project_name_for_chart = "Tổng hợp nhiều dự án"
+
+        # ✅ Gọi tạo biểu đồ tập trung (dù là mode nào cũng dùng chung)
+        chart_path_placeholder = os.path.join(tmp_dir, "unused.png")  # chỉ để phù hợp với hàm gọi
+        charts_dict = create_comparison_chart(
+            df_comparison,
+            comparison_mode,
+            chart_title,
+            x_label,
+            y_label,
+            chart_path_placeholder,
+            comparison_config
+        )
+
+        if charts_dict:
+            chart_title_map = {
+                "time": "So sánh giờ theo thời gian",
+                "task": "So sánh giờ theo Task giữa các dự án",
+                "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
+            }
+            for key in ["time", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
+                chart_path = charts_dict.get(key)
+                if chart_path and os.path.exists(chart_path):
+                    charts_for_pdf.append((chart_path, chart_title_map.get(key, key), page_project_name_for_chart))
+        else:
+            return False, "⚠️ Không tạo được biểu đồ nào để hiển thị"
+
+        # ✅ Xuất PDF
         success, msg = create_pdf_from_charts_comp(
             charts_for_pdf,
             pdf_file_path,
