@@ -524,7 +524,7 @@ with tab_comparison_report_main:
     internal_comparison_modes_map = {
         'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
         'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
-        'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
+        'Compare Projects Over Time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
     }
 
     # Khởi tạo giá trị mặc định nếu chưa có trong session_state
@@ -599,9 +599,9 @@ with tab_comparison_report_main:
     st.session_state.comparison_selected_projects = comp_projects # Update state
 
 
-    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
+    if comparison_mode == "So Sánh Nhiều Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare Projects Over Time (Months/Years)":
         if len(comp_projects) != 1:
-            st.warning(get_text('select_single_project_warning'))
+            st.warning(get_text('select_at_least_two_projects_warning'))
             validation_error = True
 
         # State management for selected years in "Over Time" mode
