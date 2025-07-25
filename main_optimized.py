@@ -404,21 +404,26 @@ with tab_standard_report_main:
         if not default_standard_projects and all_projects:
             default_standard_projects = all_projects # Default to all if config is empty
         st.session_state.standard_selected_projects = default_standard_projects
-    
-    # Ensure default value for multiselect is valid
-    current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
-    if not current_std_projects_default and all_projects: # Fallback if selected projects are no longer valid or empty
-        current_std_projects_default = all_projects
 
-    standard_project_selection = st.multiselect(
-        get_text('standard_project_selection_text'),
-        options=all_projects,
-        default=current_std_projects_default,
-        key='standard_project_selection_tab'
-    )
+# 🟩 Hỗ trợ chọn tất cả dự án
+    select_all_std_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_std_projects_checkbox")
+
+    if select_all_std_projects:
+        standard_project_selection = all_projects
+    else:
+        current_std_projects_default = [p for p in st.session_state.standard_selected_projects if p in all_projects]
+        if not current_std_projects_default and all_projects:
+            current_std_projects_default = all_projects
+        # ✅ Chèn dòng hiển thị số lượng đang chọn
+        st.caption(f"Đang chọn {len(current_std_projects_default)} dự án")
+        
+        standard_project_selection = st.multiselect(
+            get_text('standard_project_selection_text'),
+            options=all_projects,
+            default=current_std_projects_default,
+            key='standard_project_selection_tab'
+        )
     st.session_state.standard_selected_projects = standard_project_selection # Update state
-
-
     st.markdown("---")
     st.subheader(get_text("export_options"))
     export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
@@ -445,10 +450,35 @@ with tab_standard_report_main:
             }
 
             df_filtered_standard = apply_filters(df_raw, standard_report_config)
+            # Tự động loại bỏ dự án không có dữ liệu sau khi lọc
+            project_col = 'Project name'  # <-- Đúng tên cột trong df_raw, sửa nếu cần
+            valid_projects_in_filtered = df_filtered_standard[project_col].unique().tolist()
 
+            # Giữ lại các dự án có dữ liệu
+            standard_project_selection = [p for p in standard_project_selection if p in valid_projects_in_filtered]
+
+            # Nếu không còn dự án nào hợp lệ, cảnh báo và dừng
+            if not standard_project_selection:
+                st.warning("Không có dự án nào có dữ liệu trong năm và tháng đã chọn.")
+                st.stop()
+
+            # Cập nhật lại config và project_filter_df
+            temp_project_filter_df_standard = pd.DataFrame({
+                'Project Name': standard_project_selection,
+                'Include': ['yes'] * len(standard_project_selection)
+            })
+            standard_report_config['project_filter_df'] = temp_project_filter_df_standard
+            if 'Date' in df_filtered_standard.columns:
+                df_filtered_standard['MonthName'] = pd.to_datetime(df_filtered_standard['Date']).dt.strftime('%B')
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
+                today_str = datetime.today().strftime("%Y-%m-%d")  # ✅ Đúng cú pháp
+                path_dict = {                                        # ✅ Bổ sung cần thiết
+                'output_file': f'outputs/standard/Time_report_Standard_{today_str}.xlsx',
+                'pdf_report': f'outputs/standard/Time_report_Standard_{today_str}.pdf',
+                'logo_path': 'triac_logo.png'
+                } 
                 report_generated = False
                 if export_excel:
                     with st.spinner(get_text('generating_excel_report')):
@@ -458,9 +488,13 @@ with tab_standard_report_main:
                         report_generated = True
                     else:
                         st.error(get_text('failed_to_generate_excel'))
-
                 if export_pdf:
+                    pdf_report_path = path_dict['pdf_report']  # ✅ thêm dòng này trước khi dùng biến
+                    # ✅ Kiểm tra trước khi gọi
+                    if not pdf_report_path:
+                        raise ValueError("❌ pdf_report_path is empty. Please check where it's defined.")
                     with st.spinner(get_text('generating_pdf_report')):
+                        print(f"[DEBUG] path_dict['pdf_report'] = {path_dict['pdf_report']}")
                         pdf_success = export_pdf_report(df_filtered_standard, standard_report_config, path_dict['pdf_report'], path_dict['logo_path'])
                     if pdf_success:
                         st.success(get_text('pdf_report_generated').format(os.path.basename(path_dict['pdf_report'])))
@@ -552,12 +586,16 @@ with tab_comparison_report_main:
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
 
-    comp_projects = st.multiselect(
-        get_text('select_projects_comp'),
-        options=all_projects,
-        default=[p for p in st.session_state.comparison_selected_projects if p in all_projects], # Ensure default is valid
-        key='comp_projects_select_tab_common'
-    )
+    select_all_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_projects_checkbox")
+    if select_all_projects:
+        comp_projects = all_projects
+    else:
+        comp_projects = st.multiselect(
+            get_text('select_projects_comp'),
+            options=all_projects,
+            default=[p for p in st.session_state.comparison_selected_projects if p in all_projects],
+            key='comp_projects_select_tab_common'
+        )
     st.session_state.comparison_selected_projects = comp_projects # Update state
 
 
@@ -719,12 +757,20 @@ with tab_comparison_report_main:
                             excel_success_comp = export_comparison_report(
                                 df_filtered_comparison,
                                 comparison_config,
+                                comparison_path_dict['comparison_output_file'],
                                 comparison_mode,
-                                comparison_path_dict['comparison_output_file']
                                 )
                         except Exception as e:
                             excel_success_comp = False
                             st.error(f"❌ Lỗi khi xuất Excel: {e}")
+                    # ✅ Kiểm tra file có thực sự được tạo ra không
+                    if os.path.exists(comparison_path_dict['comparison_output_file']):
+                        st.success("✅ File Excel đã được tạo đúng tại: " + comparison_path_dict['comparison_output_file'])
+                        report_generated_comp = True
+                    else:
+                        st.error("❌ File Excel KHÔNG được tạo ra: " + comparison_path_dict['comparison_output_file'])
+                        st.code("Current working directory: " + os.getcwd(), language="text")
+                        st.code("Expected path: " + os.path.abspath(comparison_path_dict['comparison_output_file']), language="text")
                     if excel_success_comp:
                         st.success(get_text('comparison_excel_generated').format(os.path.basename(comparison_path_dict['comparison_output_file'])))
                         report_generated_comp = True
@@ -734,46 +780,63 @@ with tab_comparison_report_main:
                 if export_pdf_comp:
                     with st.spinner(get_text('generating_comparison_pdf')):
                         try:
+                            pdf_path = comparison_path_dict['comparison_pdf_report']
+                            print("▶️ Gọi export_comparison_pdf_report...")
                             pdf_success_comp = export_comparison_pdf_report(
                                 df_filtered_comparison,
                                 comparison_config,
-                                comparison_path_dict['comparison_pdf_report'],  # đúng vị trí pdf path
+                                pdf_path,
                                 comparison_mode,
                                 comparison_path_dict['logo']                    # ✅ thêm logo_path
                             )
+                            print("✅ PDF Success?", pdf_success_comp)
+                            print("📁 File tồn tại?", os.path.exists(pdf_path))
                         except Exception as e:
                             pdf_success_comp = False
                             st.error(f"❌ Lỗi khi xuất PDF: {e}")
+                            print("❌ Exception khi xuất PDF:", e)
                     if pdf_success_comp:
                         st.success(get_text('comparison_pdf_generated').format(os.path.basename(comparison_path_dict['comparison_pdf_report'])))
                         report_generated_comp = True
                     else:
                         st.error(get_text('failed_to_generate_comparison_pdf'))
-                        st.code(debug_msg, language='text')
+                        st.warning(f"⚠️ PDF không được tạo tại: {pdf_path}")
                 
                 if report_generated_comp:
                 # ======= HIỆN NÚT TẢI PDF/EXCEL SAU KHI XUẤT =========
                     with st.expander("📥 Tải báo cáo PDF/Excel so sánh"):
-                        if export_excel_comp and os.path.exists(comparison_path_dict["comparison_output_file"]):
-                            with open(comparison_path_dict["comparison_output_file"], "rb") as f_excel:
-                                st.download_button(
-                                    label="📄 Tải Excel So sánh",
-                                    data=excel_bytes,
-                                    file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    use_container_width=True,
-                                    key="exp_excel_comp_btn"
-                                )
-                        if export_pdf_comp and os.path.exists(comparison_path_dict["comparison_pdf_report"]):
-                            with open(comparison_path_dict["comparison_pdf_report"], "rb") as f_pdf:
-                                st.download_button(
-                                    label="🖨️ Tải PDF So sánh",
-                                    data=pdf_bytes,
-                                    file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
-                                    mime="application/pdf",
-                                    use_container_width=True,
-                                    key="exp_pdf_comp_btn"        
-                                )
+                        st.write("🪵 DEBUG path dict:", comparison_path_dict)
+
+                        excel_path = comparison_path_dict.get("comparison_output_file")
+                        pdf_path = comparison_path_dict.get("comparison_pdf_report")
+                        # ⬇️ Tải Excel
+                        if export_excel_comp and excel_path and os.path.exists(excel_path):
+                            with open(excel_path, "rb") as f_excel:
+                                excel_data = f_excel.read()  # ✅ đọc nội dung
+                            st.download_button(
+                                label="📄 Tải Excel So sánh",
+                                data=excel_data,
+                                file_name=os.path.basename(comparison_path_dict["comparison_output_file"]),
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True,
+                                key="exp_excel_comp_btn"
+                            )
+                        else:
+                            st.warning(f"⚠️ File Excel không tồn tại: {excel_path}")
+                        # ⬇️ Tải PDF
+                        if export_pdf_comp and pdf_path and os.path.exists(pdf_path):
+                            with open(pdf_path, "rb") as f_pdf:
+                                pdf_data = f_pdf.read()  # ✅ đọc nội dung
+                            st.download_button(
+                                label="🖨️ Tải PDF So sánh",
+                                data=pdf_data,
+                                file_name=os.path.basename(comparison_path_dict["comparison_pdf_report"]),
+                                mime="application/pdf",
+                                use_container_width=True,
+                                key="exp_pdf_comp_btn"        
+                            )
+                        else:
+                            st.warning(f"⚠️ File PDF không tồn tại: {pdf_path}")
                 else:
                     st.error(get_text("⚠️ error_generating_report"))
 # =========================================================================
