@@ -670,8 +670,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         return df_comparison, title
 
     elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
-        if len(selected_projects) < 2 or not years:
-            return pd.DataFrame(), "Vui lòng chọn ít nhất HAI dự án và ít nhất MỘT năm."
+        if len(selected_projects) == 0 or not years:
+            return pd.DataFrame(), "Vui lòng chọn ít nhất MỘT dự án và ít nhất MỘT năm."
 
         df_comparison = df_filtered[
             df_filtered['Project name'].isin(selected_projects) &
