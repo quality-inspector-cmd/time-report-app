@@ -680,7 +680,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         if len(years) == 1 and len(months) > 0:
             # So sánh một dự án qua CÁC THÁNG trong MỘT năm
             df_comparison = df_filtered.groupby('MonthName')['Hours'].sum().reset_index()
-            df_comparison.rename(columns={'Hours': f'Total Hours for {selected_project_name}'}, inplace=True)
+            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
             
             # Đảm bảo thứ tự tháng đúng cho biểu đồ
             month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
@@ -697,7 +697,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         elif len(years) > 1 and not months:
             # So sánh một dự án qua CÁC NĂM
             df_comparison = df_filtered.groupby('Year')['Hours'].sum().reset_index()
-            df_comparison.rename(columns={'Hours': f'Total Hours for {selected_project_name}'}, inplace=True)
+            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
             df_comparison['Year'] = df_comparison['Year'].astype(str) # Chuyển năm thành chuỗi cho trục X nếu cần
             
             # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
