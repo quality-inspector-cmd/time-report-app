@@ -431,13 +431,23 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
         x_col = df_for_chart.columns[0]
         df_for_chart = df_for_chart[df_for_chart[x_col].notna()]
         
-        if 'Total Hours' in df_for_chart.columns:
-            bars = ax.bar(
-                df_for_chart[df_for_chart.columns[0]], 
-                df_for_chart['Total Hours'], 
-                color='skyblue'
-            )
+        if mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
+            df_for_chart['YearMonth'] = df_for_chart['Year'].astype(str) + "-" + df_for_chart['MonthName']
+            month_order = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December']
+            df_for_chart['MonthName'] = pd.Categorical(df_for_chart['MonthName'], categories=month_order, ordered=True)
+            df_for_chart = df_for_chart.sort_values(['Year', 'MonthName'])
 
+            for project in df_for_chart['Project Name'].unique():
+                df_proj = df_for_chart[df_for_chart['Project Name'] == project]
+                x = df_proj['YearMonth']
+                y = df_proj['Total Hours']
+                ax.plot(x, y, marker='o', label=project)
+
+            ax.legend()
+
+        elif 'Total Hours' in df_for_chart.columns:
+            bars = ax.bar(df_for_chart[x_col], df_for_chart['Total Hours'], color='skyblue')
             # ✅ Gắn số giờ trên từng cột
             for bar in bars:
                 height = bar.get_height()
@@ -542,22 +552,13 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             x_label = "Tháng"
             chart_path = os.path.join(tmp_dir, "comparison_chart_year.png")
 
-        elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-            selected_proj = comparison_config.get('selected_projects', [''])[0]
-            page_project_name_for_chart = selected_proj
-            if len(comparison_config.get('years', [])) == 1 and len(comparison_config.get('months', [])) > 0:
-                chart_title = f"Tổng giờ dự án {selected_proj} qua các tháng trong năm {comparison_config['years'][0]}"
-                x_label = "Tháng"
-                chart_path = os.path.join(tmp_dir, f"{selected_proj}_months_chart.png")
-            elif len(comparison_config.get('years', [])) > 1 and not comparison_config.get('months', []):
-                chart_title = f"Tổng giờ dự án {selected_proj} qua các năm"
-                x_label = "Năm"
-                chart_path = os.path.join(tmp_dir, f"{selected_proj}_years_chart.png")
-            else:
-                return False, "⚠️ Cấu hình không hợp lệ"
-        else:
-            return False, "⚠️ Không nhận diện được chế độ so sánh"
-
+        elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
+            chart_title = "So sánh giờ theo nhiều dự án qua các tháng và năm"
+            x_label = "Năm-Tháng"
+            y_label = "Giờ"
+            chart_path = os.path.join(tmp_dir, "multi_projects_time_chart.png")
+            page_project_name_for_chart = "Tổng hợp nhiều dự án"
+# ✅ Vẽ biểu đồ
         chart_created = create_comparison_chart(
             df_comparison, comparison_mode,
             chart_title, x_label, y_label,
@@ -568,7 +569,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             charts_for_pdf.append((chart_created, chart_title, page_project_name_for_chart))
         else:
             return False, "⚠️ Không tạo được biểu đồ"
-
+# ✅ Xuất PDF
         success, msg = create_pdf_from_charts_comp(
             charts_for_pdf,
             pdf_file_path,
@@ -668,57 +669,31 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         return df_comparison, title
 
-    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-        # Đã xác thực rằng selected_projects chỉ có 1 trong main_optimized.py
-        # Kiểm tra điều kiện số lượng năm và tháng để xác định loại biểu đồ
-        
-        if len(selected_projects) != 1:
-            return pd.DataFrame(), "Lỗi: Internal - Vui lòng chọn CHỈ MỘT dự án cho chế độ này."
+    elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
+        if len(selected_projects) < 2 or not years:
+            return pd.DataFrame(), "Vui lòng chọn ít nhất HAI dự án và ít nhất MỘT năm."
 
-        selected_project_name = selected_projects[0]
+        df_comparison = df_filtered[
+            df_filtered['Project name'].isin(selected_projects) &
+            df_filtered['Year'].isin(years)
+        ]
 
-        if len(years) == 1 and len(months) > 0:
-            # So sánh một dự án qua CÁC THÁNG trong MỘT năm
-            df_comparison = df_filtered.groupby('MonthName')['Hours'].sum().reset_index()
-            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-            
-            # Đảm bảo thứ tự tháng đúng cho biểu đồ
-            month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
-            df_comparison['MonthName'] = pd.Categorical(df_comparison['MonthName'], categories=month_order, ordered=True)
-            df_comparison = df_comparison.sort_values('MonthName').reset_index(drop=True)
-            
-            # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
-            df_comparison['Project Name'] = selected_project_name
-            # ✅ THÊM DÒNG NÀY để biểu đồ dùng được cột 'Hours'
-            df_comparison['Hours'] = df_comparison['Total Hours']
-            title = f"Tổng giờ dự án {selected_project_name} qua các tháng trong năm {years[0]}"
-            return df_comparison, title
+        if months:
+            df_comparison = df_comparison[df_comparison['MonthName'].isin(months)]
 
-        elif len(years) > 1 and not months:
-            # So sánh một dự án qua CÁC NĂM
-            df_comparison = df_filtered.groupby('Year')['Hours'].sum().reset_index()
-            df_comparison.rename(columns={'Hours': 'Total Hours'}, inplace=True)
-            df_comparison['Year'] = df_comparison['Year'].astype(str) # Chuyển năm thành chuỗi cho trục X nếu cần
-            
-            # Thêm cột Project Name để các hàm export sau này có thể dùng nếu cần
-            df_comparison['Project Name'] = selected_project_name
+        if df_comparison.empty:
+            return pd.DataFrame(), "Không có dữ liệu phù hợp với bộ lọc."
 
-            df_comparison['Hours'] = df_comparison['Total Hours']
-            # Sau khi tính df_comparison['Hours'] xong
-            total_row = pd.DataFrame([{
-                'Year': 'Total',
-                'Project Name': selected_project_name,
-                'Total Hours': df_comparison['Total Hours'].sum(),
-                'Hours': df_comparison['Hours'].sum()
-            }])
-            df_comparison = pd.concat([df_comparison, total_row], ignore_index=True)
-            title = f"Tổng giờ dự án {selected_project_name} qua các năm"
-            return df_comparison, title
+        # Tổng hợp giờ theo Project - Year - Month
+        df_grouped = df_comparison.groupby(['Project name', 'Year', 'MonthName'])['Hours'].sum().reset_index()
+        df_grouped.rename(columns={
+            'Project name': 'Project Name',
+            'Hours': 'Total Hours'
+        }, inplace=True)
 
-        else:
-            return pd.DataFrame(), "Cấu hình so sánh dự án qua thời gian không hợp lệ. Vui lòng chọn một năm với nhiều tháng, HOẶC nhiều năm."
-        
-    return pd.DataFrame(), "Chế độ so sánh không hợp lệ."
+        df_grouped['Hours'] = df_grouped['Total Hours']  # dùng chung format với các hàm vẽ
+        title = "So sánh nhiều dự án qua các năm và tháng"
+        return df_grouped, title
 
 def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode):
     """Xuất báo cáo so sánh ra file Excel."""
