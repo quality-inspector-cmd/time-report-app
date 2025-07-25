@@ -189,6 +189,7 @@ TEXTS = {
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year."
+        'select_all_projects_checkbox': "Select all projects",
     },
     'vi': {
         'app_title': "📊 Công cụ tạo báo cáo thời gian",
@@ -261,7 +262,8 @@ TEXTS = {
         'comparison_over_years_note': "Lưu ý: Bạn đã chọn nhiều năm. Báo cáo sẽ so sánh dữ liệu của dự án qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.",
         'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
-        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể."
+        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
+        'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
 }
 
@@ -406,7 +408,7 @@ with tab_standard_report_main:
         st.session_state.standard_selected_projects = default_standard_projects
 
 # 🟩 Hỗ trợ chọn tất cả dự án
-    select_all_std_projects = st.checkbox("Chọn tất cả dự án","Select all project", value=True, key="select_all_std_projects_checkbox")
+    select_all_std_projects = st.checkbox(get_text("select_all_projects_checkbox"), value=True, key="select_all_std_projects_checkbox")
 
     if select_all_std_projects:
         standard_project_selection = all_projects
