@@ -543,16 +543,18 @@ with tab_comparison_report_main:
 
     # Tạo list các options để hiển thị trong selectbox
     # và một map để tìm key từ display text
-    display_options = []
-    display_to_key_map = {}
-    for key in internal_comparison_modes_map.keys():
-        display_text = get_text(key)
-        display_options.append(display_text)
-        display_to_key_map[display_text] = key
-
-    # Lấy giá trị hiển thị mặc định dựa trên key đã lưu
-    default_display_value = get_text(st.session_state.selected_comparison_mode_key)
-    
+    # Tạo danh sách hiển thị và map từ display_text -> key
+    display_options = [get_text(k) for k in internal_comparison_modes_map]
+    display_to_key_map = {get_text(k): k for k in internal_comparison_modes_map}
+    # Lấy key mặc định từ session_state (nếu có), nếu không thì dùng key đầu tiên
+    default_key = st.session_state.get(
+        "selected_comparison_mode_key",
+        list(internal_comparison_modes_map.keys())[0]
+    )
+    default_display_value = get_text(default_key)
+    # Đảm bảo default_display_value hợp lệ
+    if default_display_value not in display_options:
+        default_display_value = display_options[0]
     # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
     # Nếu không tìm thấy, fallback về mục đầu tiên và cập nhật session_state
     try:
@@ -566,11 +568,15 @@ with tab_comparison_report_main:
     selected_comparison_display = st.selectbox(
         get_text('select_comparison_mode'),
         options=display_options,
-        index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
-        key='comparison_mode_select_tab_main'
+        index=current_index,
+        key='selected_comparison_mode_key'  # Sử dụng chính key này để giữ sync
     )
-    # ✅ Lấy key tương ứng với lựa chọn hiện tại
-    new_selected_key = display_to_key_map[selected_comparison_display]
+
+    # Lấy key tương ứng từ display để dùng tiếp
+    selected_comparison_key = display_to_key_map[selected_comparison_display]
+    comparison_mode = internal_comparison_modes_map[selected_comparison_key][0 if st.session_state.lang == 'vi' else 1]
+    )
+
     # ✅ CHỈ cập nhật nếu thay đổi (tránh gây reload)
     if st.session_state.get('selected_comparison_mode_key') != new_selected_key:
         st.session_state.selected_comparison_mode_key = new_selected_key
