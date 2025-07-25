@@ -150,7 +150,7 @@ TEXTS = {
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
         'compare_projects_year': "Compare Projects in a Year",
-        'compare_projects_over_time': "TEXTS = {
+        'compare_projects_over_time': "Compare Projects Over Time"
     'en': {
         'app_title': "📊 Time Report Generator",
         'lang_select': "Select language:",
