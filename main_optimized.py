@@ -571,27 +571,15 @@ with tab_comparison_report_main:
     )
     # ✅ Lấy key tương ứng với lựa chọn hiện tại
     new_selected_key = display_to_key_map[selected_comparison_display]
+    # ✅ CHỈ cập nhật nếu thay đổi (tránh gây reload)
     if st.session_state.get('selected_comparison_mode_key') != new_selected_key:
         st.session_state.selected_comparison_mode_key = new_selected_key
-
-# ✅ CHỈ cập nhật nếu thay đổi (tránh gây reload)
-if st.session_state.get('selected_comparison_mode_key') != new_selected_key:
-    st.session_state.selected_comparison_mode_key = new_selected_key
-    
-    # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
-    current_selected_key = display_to_key_map[selected_comparison_display]
-    if st.session_state.selected_comparison_mode_key != current_selected_key:
-        st.session_state.selected_comparison_mode_key = current_selected_key
-
 
     # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
     vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
-    if st.session_state.lang == 'vi':
-        comparison_mode = vi_val
-    else: # 'en'
-        comparison_mode = en_val
-
+    comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
+    
     st.subheader(get_text('filter_data_for_comparison'))
 
     comp_years = []
