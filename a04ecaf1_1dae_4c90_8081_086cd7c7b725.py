@@ -793,36 +793,37 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         wb.save(output_file_path)
                         return True
 
-                elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
+                elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
+
                     # Lấy tên cột chứa tổng giờ cho biểu đồ
-                    total_hours_col_name = [col for col in df_comparison.columns if 'Total Hours' in col][0] if [col for col in df_comparison.columns if 'Total Hours' in col] else 'Total Hours'
+                    total_hours_col_name = [col for col in df_comparison.columns if 'Total Hours' in col]
+                    total_hours_col_name = total_hours_col_name[0] if total_hours_col_name else 'Total Hours'
+                    # Tên biểu đồ tổng hợp
+                    project_list = ", ".join(comparison_config.get("selected_projects", []))
                     
                     if 'MonthName' in df_comparison.columns and len(comparison_config['years']) == 1:
-                        # Biểu đồ cột/đường cho Tổng giờ theo Tháng (trong một năm)
-                        chart = BarChart() # Sử dụng BarChart cho từng tháng, hoặc LineChart nếu muốn thể hiện xu hướng
-                        chart.title = f"Tổng giờ dự án {comparison_config['selected_projects'][0]} năm {comparison_config['years'][0]} theo tháng"
+                    # Biểu đồ cột theo tháng
+                        chart = BarChart()
+                        chart.title = f"Tổng giờ các dự án ({project_list}) năm {comparison_config['years'][0]} theo tháng"
                         chart.x_axis.title = "Tháng"
                         chart.y_axis.title = "Giờ"
-                        
                         data_ref = Reference(ws, min_col=df_comparison.columns.get_loc(total_hours_col_name) + 1, min_row=data_start_row, max_row=max_row_chart)
                         cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('MonthName') + 1, min_row=data_start_row, max_row=max_row_chart)
-                        
-                        chart.add_data(data_ref, titles_from_data=False) 
+                        chart.add_data(data_ref, titles_from_data=False)
                         chart.set_categories(cats_ref)
+
                     elif 'Year' in df_comparison.columns and not comparison_config['months'] and len(comparison_config['years']) > 1:
-                        # Biểu đồ đường/cột cho Tổng giờ theo Năm (qua nhiều năm)
-                        chart = LineChart() # LineChart phù hợp hơn cho xu hướng qua các năm
-                        chart.title = f"Tổng giờ dự án {comparison_config['selected_projects'][0]} qua các năm"
+                        # Biểu đồ đường theo năm
+                        chart = LineChart()
+                        chart.title = f"Tổng giờ các dự án ({project_list}) theo năm"
                         chart.x_axis.title = "Năm"
                         chart.y_axis.title = "Giờ"
-                        
                         data_ref = Reference(ws, min_col=df_comparison.columns.get_loc(total_hours_col_name) + 1, min_row=data_start_row, max_row=max_row_chart)
                         cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Year') + 1, min_row=data_start_row, max_row=max_row_chart)
-                        
-                        chart.add_data(data_ref, titles_from_data=False) 
+                        chart.add_data(data_ref, titles_from_data=False)
                         chart.set_categories(cats_ref)
                     else:
-                        raise ValueError("Không tìm thấy kích thước thời gian hợp lệ cho các danh mục biểu đồ trong chế độ so sánh qua tháng/năm.")
+                        raise ValueError("Không tìm thấy cấu trúc phù hợp để vẽ biểu đồ cho nhiều dự án theo tháng/năm.")
 
                 if chart: 
                     chart_placement_row = info_row + 2
