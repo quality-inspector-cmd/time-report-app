@@ -42,13 +42,13 @@ def get_comparison_pdf_path(comparison_mode, base_path):
     else:
         return base_path
         
-def get_comparison_pdf_path(comparison_mode, base_path):
+def get_comparison_excel_path(comparison_mode, base_path):
     if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
-        return base_path.replace(".pdf", "_Month.pdf")
+        return base_path.replace(".xlsx", "_Month.xlsx")
     elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
-        return base_path.replace(".pdf", "_SingleProjMonths.pdf")
-    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Năm"]:
-        return base_path.replace(".pdf", "_SingleProjYears.pdf")
+        return base_path.replace(".xlsx", "_SingleProjMonths.xlsx")
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Năm", "Compare One Project Over Years"]:
+        return base_path.replace(".xlsx", "_SingleProjYears.xlsx")
     else:
         return base_path
 
