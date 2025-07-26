@@ -575,7 +575,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 print("⚠️ Không có dữ liệu để vẽ biểu đồ tổng giờ theo dự án.")
                 return charts
 
-            fig, ax = plt.subplots(figsize=(11.7, 8.3))
+            fig, ax = plt.subplots(figsize=(15.7, 8.3))
             bars = ax.bar(df_total["Project Name"], df_total["Total Hours"])
             ax.set_title(f"{title} - Tổng giờ theo Dự án")
             ax.set_xlabel(x_label)
