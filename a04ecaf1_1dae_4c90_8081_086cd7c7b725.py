@@ -833,8 +833,8 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                 elif filter_mode == "Workcentre" and "Workcentre" in df_chart_data.columns:
                     df_chart_data = df_chart_data[df_chart_data["Workcentre"].str.strip() != "Total"]
                 # ✅ Lọc các hàng tổng trong Project Name hoặc Year
-                if 'Project Name' in df_chart_data.columns and 'Total' in df_chart_data['Project name'].values:
-                    df_chart_data = df_chart_data[df_chart_data['Project name'] != 'Total']
+                if 'Project Name' in df_chart_data.columns and 'Total' in df_chart_data['Project Name'].values:
+                    df_chart_data = df_chart_data[df_chart_data['Project Name'] != 'Total']
                 elif 'Year' in df_chart_data.columns and 'Total' in df_chart_data['Year'].values:
                     df_chart_data = df_chart_data[df_chart_data['Year'] != 'Total']
                 
