@@ -611,11 +611,14 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
     charts_for_pdf = []
 
     try:
+        # 🆕 Dùng project đã lọc thay vì lấy trực tiếp từ config
+        filtered_projects = comparison_config.get("filtered_projects", [])  # bạn cần truyền nó từ UI vào config
+        
         pdf_config_info = {
             "Mode": comparison_mode,
-            "Year": ', '.join(map(str, comparison_config.get('years', []))) if comparison_config.get('years') else "N/A",
-            "Months": ', '.join(comparison_config.get('months', [])) if comparison_config.get('months') else "All",
-            "Projects": ', '.join(comparison_config.get('selected_projects', [])) if comparison_config.get('selected_projects') else "Không có"
+            "Year": ', '.join(map(str, comparison_config.get('years', []))) or "N/A",
+            "Months": ', '.join(comparison_config.get('months', [])) or "All",
+            "Projects": ', '.join(filtered_projects) or "Không có"
         }
 
         # ✅ Cấu hình tiêu đề biểu đồ chung
@@ -729,6 +732,10 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
         df_filtered = df_filtered[df_filtered['Year'].isin(years)]
     if months:
         df_filtered = df_filtered[df_filtered['MonthName'].isin(months)]
+        # ✅ Loại bỏ các dự án không có dữ liệu
+        df_filtered_projects = df_filtered['Project name'].unique().tolist()
+        selected_projects = [p for p in selected_projects if p in df_filtered_projects]
+        comparison_config["filtered_projects"] = selected_projects
     if selected_projects:
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_projects)]
     else:
@@ -761,7 +768,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
             df_comparison['Workcentre'] = 'All'
 
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
-        return df_comparison, title
+        return df_comparison, title, selected_projects
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         if len(years) != 1 or len(selected_projects) < 2:
@@ -789,12 +796,6 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
         elif filter_mode == "Total":
             df_comparison['Task'] = 'All'
             df_comparison['Workcentre'] = 'All'
-    
-        elif filter_mode == "Workcentre":
-            df_comparison = df_comparison[df_comparison['Workcentre'] != 'All']
-        elif filter_mode == "Total":
-            df_comparison['Task'] = 'All'
-            df_comparison['Workcentre'] = 'All'
 
         # ➕ Dòng tổng hợp
         df_total_row = pd.DataFrame([{
@@ -810,7 +811,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
         title = f"So sánh giờ giữa các dự án trong năm {years[0]} (theo tháng)"
         print("📊 df_comparison shape after filter:", df_comparison.shape)
         print("📊 df_comparison preview:\n", df_comparison.head())
-        return df_comparison, title
+        return df_comparison, title, selected_projects
 
     elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
         if not selected_projects or not years:
@@ -837,7 +838,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
             df_comparison['Workcentre'] = 'All'
 
         title = "So sánh nhiều dự án qua các năm và tháng"
-        return df_comparison, title
+        return df_comparison, title, selected_projects
 
     return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
 
@@ -951,7 +952,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                     total_hours_col_name = [col for col in df_comparison.columns if 'Total Hours' in col]
                     total_hours_col_name = total_hours_col_name[0] if total_hours_col_name else 'Total Hours'
                     # Tên biểu đồ tổng hợp
-                    project_list = ", ".join(comparison_config.get("selected_projects", []))
+                    project_list = ", ".join(comparison_config.get("filtered_projects", comparison_config.get("selected_projects", [])))
                     
                     if 'MonthName' in df_comparison.columns and len(comparison_config['years']) == 1:
                     # Biểu đồ cột theo tháng
