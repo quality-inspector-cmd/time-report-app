@@ -445,6 +445,9 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
         elif filter_mode == "Total":
             df['Task'] = 'All'
             df['Workcentre'] = 'All'
+        if df.empty:
+            print(f"⚠️ [DEBUG] Data trống sau lọc trong biểu đồ: mode={filter_mode}, title={title}")
+            return {}  # trả về dict rỗng để không thêm vào charts_for_pdf
 
         # ✅ Xử lý chuẩn hóa
         df = df.copy()
@@ -625,18 +628,21 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             filter_mode=filter_mode # ✅ Thêm dòng này để truyền filter_mode
         )
         if charts_dict:
+            print("🧪 Tổng số biểu đồ được tạo:", len(charts_dict))
             chart_title_map = {
                 "time": "So sánh giờ theo thời gian",
                 "task": "So sánh giờ theo Task giữa các dự án",
                 "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
             }
             print("[DEBUG] charts_dict keys:", list(charts_dict.keys()))
+            
             for key in ["time", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
                 print(f"[DEBUG] chart {key} path = {charts_dict.get(key)}, exists = {os.path.exists(charts_dict.get(key, ''))}")
                 chart_path = charts_dict.get(key)
                 if chart_path and os.path.exists(chart_path):
                     charts_for_pdf.append((chart_path, chart_title_map.get(key, key), page_project_name_for_chart))
         else:
+            print("⚠️ charts_dict rỗng - không có biểu đồ nào được tạo từ create_comparison_chart.")
             return False, "⚠️ Không tạo được biểu đồ nào để hiển thị"
             
         if not charts_for_pdf:
