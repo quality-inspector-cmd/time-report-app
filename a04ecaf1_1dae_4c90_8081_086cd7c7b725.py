@@ -459,6 +459,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
     try:
         os.makedirs(output_dir, exist_ok=True)
         charts = {}
+
         # ✅ Lọc theo filter_mode
         if filter_mode == "Task":
             df = df[df['Task'] != 'All']
@@ -467,50 +468,55 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
         elif filter_mode == "Total":
             df['Task'] = 'All'
             df['Workcentre'] = 'All'
+
         if df.empty:
             print(f"⚠️ [DEBUG] Data trống sau lọc trong biểu đồ: mode={filter_mode}, title={title}")
-            return {}  # trả về dict rỗng để không thêm vào charts_for_pdf
-            
-        
-        # ✅ Xử lý chuẩn hóa
+            return {}
+
         df = df.copy()
         if 'MonthName' in df.columns:
             month_order = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December']
             df['MonthName'] = pd.Categorical(df['MonthName'], categories=month_order, ordered=True)
 
-        # ✅ Biểu đồ theo thời gian (Year-Month)
+        # ==============================
+        # 📈 Biểu đồ theo thời gian (YearMonth)
+        # ==============================
         if 'Year' in df.columns and 'MonthName' in df.columns:
             df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
             df_sorted = df.sort_values(['Year', 'MonthName'])
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
             for project in df_sorted['Project Name'].unique():
                 df_proj = df_sorted[df_sorted['Project Name'] == project]
                 ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
-                
                 for x, y in zip(df_proj['YearMonth'], df_proj['Total Hours']):
-                        ax.annotate(f"{y:.0f}", xy=(x, y), xytext=(0, 5), textcoords="offset points",
-                                    ha='center', fontsize=8)
-                    
-            plt.xticks(rotation=45, ha='right')
+                    ax.annotate(f"{y:.0f}", xy=(x, y), xytext=(0, 5), textcoords="offset points",
+                                ha='center', fontsize=8)
+
             ax.set_title(f"{title} - Over Time")
             ax.set_xlabel("Year-Month")
             ax.set_ylabel("Total Hours")
-            plt.xticks(rotation=45)
-            ax.legend()
+            plt.xticks(rotation=45, ha='right')
+
+            # ✅ Legend dưới
+            ax.legend(title="Project Name", loc='upper center',
+                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+
             plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_time.png")
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["time"] = chart_path
 
-            # ✅ Biểu đồ theo Task (chỉ khi filter_mode là "Task")
+        # ==============================
+        # 📊 Biểu đồ theo Task
+        # ==============================
         if 'Task' in df.columns and filter_mode == "Task":
             df_task = df.groupby(['Task', 'Project Name'], as_index=False)['Total Hours'].sum()
             df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
             bars = df_pivot.plot(kind='bar', ax=ax)
             for container in bars.containers:
                 for bar in container:
@@ -519,63 +525,81 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                         ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
                                     xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
 
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
             ax.set_title(f"{title} - By Task")
             ax.set_xlabel("Task")
             ax.set_ylabel("Total Hours")
-            plt.xticks(rotation=45)
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+            # ✅ Legend dưới
+            ax.legend(title="Project Name", loc='upper center',
+                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+
             plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_task.png")
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["task"] = chart_path
 
-        # ✅ Biểu đồ theo Workcentre (chỉ khi filter_mode là "Workcentre")
+        # ==============================
+        # 🏭 Biểu đồ theo Workcentre
+        # ==============================
         if 'Workcentre' in df.columns and filter_mode == "Workcentre":
             df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
             df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
             bars = df_pivot.plot(kind='bar', ax=ax)
             for container in bars.containers:
                 for bar in container:
                     height = bar.get_height()
                     if height > 0:
                         ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                                    xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+
             ax.set_title(f"{title} - By Workcentre")
             ax.set_xlabel("Workcentre")
             ax.set_ylabel("Total Hours")
-            plt.xticks(rotation=45)
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+
+            # ✅ Legend dưới
+            ax.legend(title="Project Name", loc='upper center',
+                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+
             plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_workcentre.png")
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["workcentre"] = chart_path
-         # ✅ Biểu đồ theo Tổng giờ (chỉ khi filter_mode là "Total")
+
+        # ==============================
+        # 📊 Biểu đồ tổng giờ (Total)
+        # ==============================
         if filter_mode == "Total":
             df_total = df.groupby("Project Name", as_index=False)["Total Hours"].sum()
 
             if df_total.empty:
                 print("⚠️ Không có dữ liệu để vẽ biểu đồ tổng giờ theo dự án.")
-                return charts  # trả về những biểu đồ khác nếu có
+                return charts
 
-            fig, ax = plt.subplots(figsize=(10, 6))
+            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
             bars = ax.bar(df_total["Project Name"], df_total["Total Hours"])
             ax.set_title(f"{title} - Tổng giờ theo Dự án")
             ax.set_xlabel("Dự án")
             ax.set_ylabel("Tổng giờ")
             ax.bar_label(bars, fontsize=8)
             plt.xticks(rotation=45, ha='right')
-            plt.tight_layout()
 
+            # ✅ Legend dưới
+            ax.legend(["Project Name"], loc='upper center',
+                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+
+            plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_total.png")
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["total"] = chart_path
-            
-        return charts  # ✅ Thêm dòng này
+
+        return charts
 
     except Exception as e:
         print(f"Chart error: {e}")
