@@ -340,91 +340,113 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
 
 
 def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner, filter_mode="Total"):
-    today_str = datetime.today().strftime('%Y-%m-%d')  # ✅ Thêm dòng này để tránh lỗi
+    from collections import defaultdict
+    from PIL import Image
+    today_str = datetime.today().strftime('%Y-%m-%d')
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
 
-    # ✅ Đăng ký và sử dụng font Unicode
+    # ✅ Font
     pdf.add_font('DejaVu', '', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans.ttf', uni=True)
     pdf.add_font('DejaVu', 'B', 'font/dejavu-fonts-ttf-2.37/ttf/DejaVuSans-Bold.ttf', uni=True)
-     # ✅ Logo và tiêu đề
-    pdf.set_font('DejaVu', 'B', 16)  # ⬅️ Đảm bảo gọi font trước khi viết gì
+
+    # =========================
+    # 🟨 Trang đầu: tiêu đề + thông tin
+    # =========================
+    pdf.set_font('DejaVu', 'B', 16)
     pdf.add_page()
-    
     if os.path.exists(logo_path_inner):
         pdf.image(logo_path_inner, x=10, y=10, w=30)
     pdf.ln(35)
     pdf.cell(0, 10, title, ln=True, align='C')
-    # Ngày tạo
+
     pdf.set_font("DejaVu", '', 11)
     pdf.ln(5)
     pdf.cell(0, 10, f"Generated on: {today_str}", ln=True, align='C')
     pdf.ln(10)
-     # ✅ Bảng thông tin gọn, có tự động xuống dòng nếu quá dài
-    pdf.set_font("DejaVu", '', 11)
+
+    # Bảng thông tin
     label_width = 40
     value_width = 150
     line_height = 8
-
     pdf.set_x(10)
     pdf.set_fill_color(240, 240, 240)
-    
+
     for key, value in config_info.items():
         value_str = "N/A" if pd.isna(value) else str(value)
-
-        # Tính chiều cao dòng cần thiết cho ô phải
         value_lines = pdf.multi_cell(value_width, line_height, value_str, border=0, split_only=True)
         row_height = line_height * len(value_lines)
-        
         x = pdf.get_x()
         y = pdf.get_y()
-        
-        # Ô trái (nhãn)
+
         pdf.set_font("DejaVu", 'B', 11)
         pdf.multi_cell(label_width, row_height, key, border=1, fill=True)
-        
-        # Trả lại vị trí để in ô phải
         pdf.set_xy(x + label_width, y)
-        
-        # Ô phải (giá trị)
         pdf.set_font("DejaVu", '', 11)
         pdf.multi_cell(value_width, line_height, value_str, border=1)
-        
-        # Xuống dòng cho dòng kế tiếp
         pdf.set_x(10)
-# 🟩 Gom biểu đồ theo project
-    from collections import defaultdict
+
+    # =========================
+    # 🟩 Gom biểu đồ theo project
+    # =========================
     project_charts = defaultdict(list)
     for img_path, chart_title, project_name in charts_data:
         project_charts[project_name].append((img_path, chart_title))
-# 🟩 Mỗi project 1 trang
+
+    # =========================
+    # 📄 Mỗi biểu đồ một trang
+    # =========================
     for project_name, charts in project_charts.items():
-        pdf.add_page()
-        if os.path.exists(logo_path_inner):
-            pdf.image(logo_path_inner, x=10, y=8, w=25)
-
-        pdf.set_font("DejaVu", 'B', 12)
-        pdf.set_y(35)
-        if project_name:
-            pdf.cell(0, 10, f"Project: {project_name}", ln=True, align='C')
-        else:
-            pdf.cell(0, 10, "Summary Charts", ln=True, align='C')
- # Chèn biểu đồ
         for img_path, chart_title in charts:
-            if os.path.exists(img_path):
-                pdf.ln(5)
-                pdf.set_font("DejaVu", '', 11)
-                pdf.cell(0, 10, chart_title, ln=True, align='C')
-                y_img = pdf.get_y() + 2
-                pdf.image(img_path, x=10, y=y_img, w=190)
-                pdf.ln(100)  # khoảng cách tránh đè ảnh kế tiếp
+            if not os.path.exists(img_path):
+                continue
 
-    # ✅ Đảm bảo thư mục tồn tại trước khi ghi file
+            # ➕ Mở ảnh để xác định chiều
+            img = Image.open(img_path)
+            img_width, img_height = img.size
+            aspect_ratio = img_height / img_width
+
+            # Xác định chiều trang PDF
+            margin = 10
+            is_landscape = img_width > img_height
+            orientation = 'L' if is_landscape else 'P'
+            pdf.add_page(orientation=orientation)
+            page_w, page_h = (297, 210) if is_landscape else (210, 297)
+
+            # ➕ Logo và Project title
+            pdf.set_font("DejaVu", 'B', 12)
+            if os.path.exists(logo_path_inner):
+                pdf.image(logo_path_inner, x=10, y=8, w=25)
+            pdf.set_y(35)
+            if project_name:
+                pdf.cell(0, 10, f"Project: {project_name}", ln=True, align='C')
+            else:
+                pdf.cell(0, 10, "Summary Charts", ln=True, align='C')
+
+            # ➕ Tiêu đề biểu đồ
+            pdf.set_font("DejaVu", '', 11)
+            pdf.ln(3)
+            pdf.cell(0, 10, chart_title, ln=True, align='C')
+
+            # ➕ Resize và chèn ảnh
+            max_w = page_w - 2 * margin
+            new_w = max_w
+            new_h = new_w * aspect_ratio
+            if new_h > (page_h - 2 * margin):
+                new_h = page_h - 2 * margin
+                new_w = new_h / aspect_ratio
+            x = (page_w - new_w) / 2
+            y = pdf.get_y() + 5
+            pdf.image(img_path, x=x, y=y, w=new_w, h=new_h)
+
+    # =========================
+    # 💾 Ghi file
+    # =========================
     output_dir = os.path.dirname(os.path.abspath(output_path))
     if output_dir and not os.path.exists(output_dir):
         os.makedirs(output_dir, exist_ok=True)
-        print(f"[DEBUG] Saving PDF to: {output_path}")
-        
+        print(f"[DEBUG] Created output dir: {output_dir}")
+
     pdf.output(output_path, "F")
     return True, "✅ PDF created"
 
