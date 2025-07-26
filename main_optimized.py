@@ -713,6 +713,7 @@ with tab_comparison_report_main:
                 'years': comp_years,
                 'months': comp_months,
                 'selected_projects': comp_projects,
+                'filter_mode': filter_mode   # ✅ THÊM DÒNG NÀY
                 # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
                 # nó đã được xử lý trong logic trên
             }
@@ -735,6 +736,11 @@ with tab_comparison_report_main:
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
                 df_raw, comparison_config, comparison_mode, filter_mode
             )
+            # ✅ Cảnh báo nếu có dự án được chọn nhưng không có dữ liệu thực tế
+            original_projects = comparison_config.get("selected_projects", [])
+            if len(filtered_projects) < len(original_projects):
+                removed = set(original_projects) - set(filtered_projects)
+                st.warning(f"⚠️ Một số dự án không có dữ liệu thực tế và đã bị loại khỏi báo cáo: {', '.join(removed)}")
 
             if df_filtered_comparison.empty:
                 # Đảm bảo thư mục chứa file output tồn tại
