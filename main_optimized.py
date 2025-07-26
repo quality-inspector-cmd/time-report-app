@@ -567,6 +567,14 @@ with tab_comparison_report_main:
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
+    filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
+    filter_mode_map = {
+        "Theo Tổng Giờ": "Total",
+        "Theo Task": "Task",
+        "Theo Workcentre": "Workcentre"
+    }
+    selected_filter_display = st.selectbox("Chế độ lọc so sánh", filter_mode_display_options, index=0, key="filter_mode_selectbox")
+    filter_mode = filter_mode_map[selected_filter_display]
 
     comp_years = []
     comp_months = []
@@ -725,7 +733,7 @@ with tab_comparison_report_main:
             # ✅ Thêm dòng này sau khi path_dict đã tạo
             # Áp dụng filter
             df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
-                df_raw, comparison_config, comparison_mode
+                df_raw, comparison_config, comparison_mode, filter_mode
             )
 
             if df_filtered_comparison.empty:
@@ -750,6 +758,7 @@ with tab_comparison_report_main:
                                 comparison_config,
                                 comparison_path_dict['comparison_output_file'],
                                 comparison_mode,
+                                filter_mode
                                 )
                         except Exception as e:
                             excel_success_comp = False
@@ -778,7 +787,8 @@ with tab_comparison_report_main:
                                 comparison_config,
                                 pdf_path,
                                 comparison_mode,
-                                comparison_path_dict['logo']                    # ✅ thêm logo_path
+                                comparison_path_dict['logo'],                   # ✅ thêm logo_path
+                                filter_mode
                             )
                             print("✅ PDF Success?", pdf_success_comp)
                             print("📁 File tồn tại?", os.path.exists(pdf_path))
