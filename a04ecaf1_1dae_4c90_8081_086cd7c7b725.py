@@ -37,6 +37,16 @@ def get_comparison_pdf_path(comparison_mode, base_path):
         return base_path.replace(".pdf", "_Month.pdf")
     elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
         return base_path.replace(".pdf", "_SingleProjMonths.pdf")
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Năm", "Compare One Project Over Years"]:
+        return base_path.replace(".pdf", "_SingleProjYears.pdf")
+    else:
+        return base_path
+        
+def get_comparison_pdf_path(comparison_mode, base_path):
+    if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
+        return base_path.replace(".pdf", "_Month.pdf")
+    elif comparison_mode in ["So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)"]:
+        return base_path.replace(".pdf", "_SingleProjMonths.pdf")
     elif comparison_mode in ["So Sánh Một Dự Án Qua Các Năm"]:
         return base_path.replace(".pdf", "_SingleProjYears.pdf")
     else:
@@ -1004,6 +1014,7 @@ if __name__ == '__main__':
             'months': [standard_config['months'][0]] if standard_config['months'] else ['January'], # Lấy tháng đầu tiên hoặc mặc định
             'selected_projects': projects_for_comparison_from_config[:2] if len(projects_for_comparison_from_config) >= 2 else all_projects_in_raw_data[:2]
         }
+        comparison_config_month_example["filter_mode"] = "Total"  # ✅ gán sau khi tạo dict
         if comparison_config_month_example['selected_projects']:
             print(f"\nChế độ: So Sánh Dự Án Trong Một Tháng (năm {comparison_config_month_example['years'][0]}, tháng {comparison_config_month_example['months'][0]})")
             df_comp_month, msg_month = apply_comparison_filters(raw_df, comparison_config_month_example, "So Sánh Dự Án Trong Một Tháng")
@@ -1032,6 +1043,7 @@ if __name__ == '__main__':
                 'months': standard_config['months'],
                 'selected_projects': [all_projects_in_raw_data[0]] # Chọn dự án đầu tiên
             }
+            comparison_config_single_proj_months_example["filter_mode"] = "Total"
             print(f"\nChế độ: So Sánh Một Dự Án Qua Các Tháng (dự án: {comparison_config_single_proj_months_example['selected_projects'][0]}, năm {comparison_config_single_proj_months_example['years'][0]})")
             df_comp_single_proj_months, msg_single_proj_months = apply_comparison_filters(raw_df, comparison_config_single_proj_months_example, "So Sánh Một Dự Án Qua Các Tháng/Năm")
             if not df_comp_single_proj_months.empty:
@@ -1063,6 +1075,7 @@ if __name__ == '__main__':
                 'months': [], # Không lọc theo tháng
                 'selected_projects': [all_projects_in_raw_data[0]] # Chọn dự án đầu tiên
             }
+            comparison_config_single_proj_years_example["filter_mode"] = "Total"
             print(f"\nChế độ: So Sánh Nhiều Dự Án Qua Các Tháng/Năm (dự án: {comparison_config_single_proj_years_example['selected_projects'][0]})")
             df_comp_single_proj_years, msg_single_proj_years = apply_comparison_filters(
                 raw_df,
