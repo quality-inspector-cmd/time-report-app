@@ -1019,6 +1019,8 @@ if __name__ == '__main__':
             print(f"\nChế độ: So Sánh Dự Án Trong Một Tháng (năm {comparison_config_month_example['years'][0]}, tháng {comparison_config_month_example['months'][0]})")
             df_comp_month, msg_month = apply_comparison_filters(raw_df, comparison_config_month_example, "So Sánh Dự Án Trong Một Tháng")
             if not df_comp_month.empty:
+                os.makedirs(os.path.dirname(paths['comparison_output_file']), exist_ok=True)
+                os.makedirs(os.path.dirname(paths['comparison_pdf_report']), exist_ok=True)
                 export_success_excel_comp_month = export_comparison_report(df_comp_month, comparison_config_month_example, get_comparison_excel_path("So Sánh Dự Án Trong Một Tháng", paths['comparison_output_file']), "So Sánh Dự Án Trong Một Tháng")
                 if export_success_excel_comp_month:
                     print(f"Báo cáo so sánh Excel (theo tháng) đã được tạo thành công tại: {get_comparison_excel_path('So Sánh Dự Án Trong Một Tháng', paths['comparison_output_file'])}")
@@ -1047,6 +1049,8 @@ if __name__ == '__main__':
             print(f"\nChế độ: So Sánh Một Dự Án Qua Các Tháng (dự án: {comparison_config_single_proj_months_example['selected_projects'][0]}, năm {comparison_config_single_proj_months_example['years'][0]})")
             df_comp_single_proj_months, msg_single_proj_months = apply_comparison_filters(raw_df, comparison_config_single_proj_months_example, "So Sánh Một Dự Án Qua Các Tháng/Năm")
             if not df_comp_single_proj_months.empty:
+                os.makedirs(os.path.dirname(paths['comparison_output_file']), exist_ok=True)
+                os.makedirs(os.path.dirname(paths['comparison_pdf_report']), exist_ok=True)
                 export_success_excel_comp_single_proj_months = export_comparison_report(df_comp_single_proj_months, comparison_config_single_proj_months_example, paths['comparison_output_file'].replace(".xlsx", "_SingleProjMonths.xlsx"), "So Sánh Một Dự Án Qua Các Tháng/Năm")
                 if export_success_excel_comp_single_proj_months:
                     print(f"Báo cáo so sánh Excel (một dự án qua các tháng) đã được tạo thành công tại: {paths['comparison_output_file'].replace('.xlsx', '_SingleProjMonths.xlsx')}")
@@ -1083,6 +1087,8 @@ if __name__ == '__main__':
                 comparison_mode
             )
             if not df_comp_single_proj_years.empty:
+                os.makedirs(os.path.dirname(paths['comparison_output_file']), exist_ok=True)
+                os.makedirs(os.path.dirname(paths['comparison_pdf_report']), exist_ok=True)
                 excel_path = get_comparison_excel_path(comparison_mode, paths["comparison_output_file"])
                 pdf_path = get_comparison_pdf_path(comparison_mode, paths["comparison_pdf_report"])
 
