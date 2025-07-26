@@ -615,7 +615,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
         # ✅ Gọi tạo biểu đồ tập trung (dù là mode nào cũng dùng chung)
         chart_path_placeholder = os.path.join(tmp_dir, "unused.png")  # chỉ để phù hợp với hàm gọi
         charts_dict = create_comparison_chart(
-            df_comparison=df_comparison,
+            df=df_comparison,
             comparison_mode=comparison_mode,
             chart_title=chart_title,
             x_label=x_label,
