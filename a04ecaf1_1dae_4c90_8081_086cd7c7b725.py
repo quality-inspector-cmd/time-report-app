@@ -460,33 +460,32 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
         os.makedirs(output_dir, exist_ok=True)
         charts = {}
 
+        df = df.copy()  # tránh cảnh báo SettingWithCopy
+
         # ✅ Lọc theo filter_mode
         if filter_mode == "Task":
             df = df[df['Task'] != 'All']
         elif filter_mode == "Workcentre":
             df = df[df['Workcentre'] != 'All']
         elif filter_mode == "Total":
-            df['Task'] = 'All'
-            df['Workcentre'] = 'All'
+            df.loc[:, 'Task'] = 'All'
+            df.loc[:, 'Workcentre'] = 'All'
 
         if df.empty:
             print(f"⚠️ [DEBUG] Data trống sau lọc trong biểu đồ: mode={filter_mode}, title={title}")
             return {}
 
-        df = df.copy()
         if 'MonthName' in df.columns:
             month_order = ['January', 'February', 'March', 'April', 'May', 'June',
                            'July', 'August', 'September', 'October', 'November', 'December']
             df['MonthName'] = pd.Categorical(df['MonthName'], categories=month_order, ordered=True)
 
-        # ==============================
-        # 📈 Biểu đồ theo thời gian (YearMonth)
-        # ==============================
+        # Biểu đồ theo thời gian (YearMonth)
         if 'Year' in df.columns and 'MonthName' in df.columns:
             df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
             df_sorted = df.sort_values(['Year', 'MonthName'])
 
-            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
+            fig, ax = plt.subplots(figsize=(15, 8.3))
             for project in df_sorted['Project Name'].unique():
                 df_proj = df_sorted[df_sorted['Project Name'] == project]
                 ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
@@ -495,13 +494,11 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                                 ha='center', fontsize=8)
 
             ax.set_title(f"{title} - Over Time")
-            ax.set_xlabel("Year-Month")
-            ax.set_ylabel("Total Hours")
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
             plt.xticks(rotation=45, ha='right')
 
-            # ✅ Legend dưới
-            ax.legend(title="Project Name", loc='upper center',
-                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+            ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
 
             plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_time.png")
@@ -509,71 +506,68 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             plt.close(fig)
             charts["time"] = chart_path
 
-        # ==============================
-        # 📊 Biểu đồ theo Task
-        # ==============================
+        # Biểu đồ theo Task
         if 'Task' in df.columns and filter_mode == "Task":
             df_task = df.groupby(['Task', 'Project Name'], as_index=False)['Total Hours'].sum()
-            df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
+            if df_task.empty:
+                print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Task cho {title}")
+            else:
+                df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
+                fig, ax = plt.subplots(figsize=(11.7, 8.3))
+                bars = df_pivot.plot(kind='bar', ax=ax)
+                for container in bars.containers:
+                    for bar in container:
+                        height = bar.get_height()
+                        if height > 0:
+                            ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
 
-            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
-            bars = df_pivot.plot(kind='bar', ax=ax)
-            for container in bars.containers:
-                for bar in container:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                    xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+                ax.set_title(f"{title} - By Task")
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
 
-            ax.set_title(f"{title} - By Task")
-            ax.set_xlabel("Task")
-            ax.set_ylabel("Total Hours")
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                ax.legend(title="Project Name", loc='upper center',
+                          bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
 
-            # ✅ Legend dưới
-            ax.legend(title="Project Name", loc='upper center',
-                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+                plt.tight_layout()
+                chart_path = os.path.join(output_dir, "chart_task.png")
+                fig.savefig(chart_path, dpi=150)
+                plt.close(fig)
+                charts["task"] = chart_path
 
-            plt.tight_layout()
-            chart_path = os.path.join(output_dir, "chart_task.png")
-            fig.savefig(chart_path, dpi=150)
-            plt.close(fig)
-            charts["task"] = chart_path
-
-        # ==============================
-        # 🏭 Biểu đồ theo Workcentre
-        # ==============================
+        # Biểu đồ theo Workcentre
         if 'Workcentre' in df.columns and filter_mode == "Workcentre":
             df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
-            df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
+            if df_wc.empty:
+                print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
+            else:
+                df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
 
-            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
-            bars = df_pivot.plot(kind='bar', ax=ax)
-            for container in bars.containers:
-                for bar in container:
-                    height = bar.get_height()
-                    if height > 0:
-                        ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                    xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+                fig, ax = plt.subplots(figsize=(15, 8.3))
+                bars = df_pivot.plot(kind='bar', ax=ax, width=0.8)
 
-            ax.set_title(f"{title} - By Workcentre")
-            ax.set_xlabel("Workcentre")
-            ax.set_ylabel("Total Hours")
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                for container in bars.containers:
+                    for bar in container:
+                        height = bar.get_height()
+                        if height > 0:
+                            ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
 
-            # ✅ Legend dưới
-            ax.legend(title="Project Name", loc='upper center',
-                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                ax.set_title(f"{title} - By Workcentre")
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
 
-            plt.tight_layout()
-            chart_path = os.path.join(output_dir, "chart_workcentre.png")
-            fig.savefig(chart_path, dpi=150)
-            plt.close(fig)
-            charts["workcentre"] = chart_path
+                ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
 
-        # ==============================
-        # 📊 Biểu đồ tổng giờ (Total)
-        # ==============================
+                plt.tight_layout()
+                chart_path = os.path.join(output_dir, "chart_workcentre.png")
+                fig.savefig(chart_path, dpi=150)
+                plt.close(fig)
+                charts["workcentre"] = chart_path
+
+        # Biểu đồ tổng giờ (Total)
         if filter_mode == "Total":
             df_total = df.groupby("Project Name", as_index=False)["Total Hours"].sum()
 
@@ -581,17 +575,16 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 print("⚠️ Không có dữ liệu để vẽ biểu đồ tổng giờ theo dự án.")
                 return charts
 
-            fig, ax = plt.subplots(figsize=(11.7, 8.3))  # A4 Landscape
+            fig, ax = plt.subplots(figsize=(11.7, 8.3))
             bars = ax.bar(df_total["Project Name"], df_total["Total Hours"])
             ax.set_title(f"{title} - Tổng giờ theo Dự án")
-            ax.set_xlabel("Dự án")
-            ax.set_ylabel("Tổng giờ")
+            ax.set_xlabel(x_label)
+            ax.set_ylabel(y_label)
             ax.bar_label(bars, fontsize=8)
             plt.xticks(rotation=45, ha='right')
 
-            # ✅ Legend dưới
-            ax.legend(["Project Name"], loc='upper center',
-                      bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+            # Biểu đồ này chỉ 1 nhóm nên không cần legend
+            # ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
 
             plt.tight_layout()
             chart_path = os.path.join(output_dir, "chart_total.png")
