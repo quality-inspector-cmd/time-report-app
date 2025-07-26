@@ -658,7 +658,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
     years = list(comparison_config.get('years', []))
     months = list(comparison_config.get('months', []))
-    selected_projects = list(comparison_config.get('selected_projects', []))
+    selected_projects = [p for p in comparison_config.get('selected_projects', []) if str(p).strip()]
     filter_mode = comparison_config.get("filter_mode", "Total")
 
     print("✅ Sau khi ép kiểu từ comparison_config:")
