@@ -733,8 +733,8 @@ with tab_comparison_report_main:
             print(f"DEBUG: comparison_path_dict = {comparison_path_dict}")
             # ✅ Thêm dòng này sau khi path_dict đã tạo
             # Áp dụng filter
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
-                df_raw, comparison_config, comparison_mode, filter_mode
+            df_filtered_comparison, comparison_filter_message, filtered_projects = apply_comparison_filters(
+            df_raw, comparison_config, comparison_mode, filter_mode
             )
             # ✅ Cảnh báo nếu có dự án được chọn nhưng không có dữ liệu thực tế
             original_projects = comparison_config.get("selected_projects", [])
