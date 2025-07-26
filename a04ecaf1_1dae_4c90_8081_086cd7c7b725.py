@@ -708,7 +708,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
 def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_mode="Total"):
     print("DEBUG: apply_comparison_filters called with:")
     if not isinstance(df_raw, pd.DataFrame):
-        return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ."    
+        return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ.", []   
 
     print(f"  df_raw type: {type(df_raw)}")
     print(f"  comparison_config type: {type(comparison_config)}")
@@ -739,16 +739,16 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
     if selected_projects:
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_projects)]
     else:
-        return pd.DataFrame(), "Vui lòng chọn ít nhất một dự án để so sánh."
+        return pd.DataFrame(), "Vui lòng chọn ít nhất một dự án để so sánh.", []
     
     if df_filtered.empty:
-        return pd.DataFrame(), f"Không tìm thấy dữ liệu cho chế độ so sánh: {comparison_mode} với các lựa chọn hiện tại."
+        return pd.DataFrame(), f"Không tìm thấy dữ liệu cho chế độ so sánh: {comparison_mode} với các lựa chọn hiện tại.", []
 
     title = ""
 
     if comparison_mode in ["So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"]:
         if len(years) != 1 or len(months) != 1 or len(selected_projects) < 2:
-            return pd.DataFrame(), "Vui lòng chọn MỘT năm, MỘT tháng và ít nhất HAI dự án cho chế độ này."
+            return pd.DataFrame(), "Vui lòng chọn MỘT năm, MỘT tháng và ít nhất HAI dự án cho chế độ này.", []
         
         df_comparison = df_filtered.copy()
         df_comparison.rename(columns={'Project name': 'Project Name'}, inplace=True)
@@ -772,7 +772,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         if len(years) != 1 or len(selected_projects) < 2:
-            return pd.DataFrame(), "Vui lòng chọn MỘT năm và ít nhất HAI dự án cho chế độ này."
+            return pd.DataFrame(), "Vui lòng chọn MỘT năm và ít nhất HAI dự án cho chế độ này.", []
 
         df_pivot = df_filtered.groupby(['Project name', 'MonthName'])['Hours'].sum().unstack(fill_value=0)
         month_order = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -815,7 +815,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
     elif comparison_mode in ["So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)"]:
         if not selected_projects or not years:
-            return pd.DataFrame(), "Vui lòng chọn ít nhất MỘT dự án và ít nhất MỘT năm."
+            return pd.DataFrame(), "Vui lòng chọn ít nhất MỘT dự án và ít nhất MỘT năm.", []
 
         if months:
             df_filtered = df_filtered[df_filtered['MonthName'].isin(months)]
@@ -840,7 +840,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
         title = "So sánh nhiều dự án qua các năm và tháng"
         return df_comparison, title, selected_projects
 
-    return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
+    return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ.", []
 
 def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode, filter_mode="Total"):
     """Xuất báo cáo so sánh ra file Excel."""
