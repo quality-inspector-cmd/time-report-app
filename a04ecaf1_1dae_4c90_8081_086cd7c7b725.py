@@ -569,7 +569,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 # GENERATE PDF REPORT
 # =======================================
 
-def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_path, comparison_mode, logo_path, filter_mode="Total"):
+def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode="Total"):
     tmp_dir = "tmp_comparison"
     os.makedirs(tmp_dir, exist_ok=True)
     charts_for_pdf = []
@@ -604,16 +604,15 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_path, c
         # ✅ Gọi tạo biểu đồ tập trung (dù là mode nào cũng dùng chung)
         chart_path_placeholder = os.path.join(tmp_dir, "unused.png")  # chỉ để phù hợp với hàm gọi
         charts_dict = create_comparison_chart(
-            df_comparison,
-            comparison_mode,
-            chart_title,
-            x_label,
-            y_label,
-            chart_path_placeholder,
-            comparison_config,
-            filter_mode=filter_mode  # ✅ Thêm dòng này để truyền filter_mode
+            df_comparison=df_comparison,
+            comparison_mode=comparison_mode,
+            chart_title=chart_title,
+            x_label=x_label,
+            y_label=y_label,
+            chart_path=chart_path_placeholder,
+            comparison_config=comparison_config,
+            filter_mode=filter_mode # ✅ Thêm dòng này để truyền filter_mode
         )
-
         if charts_dict:
             chart_title_map = {
                 "time": "So sánh giờ theo thời gian",
