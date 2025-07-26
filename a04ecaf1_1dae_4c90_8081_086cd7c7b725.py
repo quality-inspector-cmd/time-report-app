@@ -448,7 +448,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
         if df.empty:
             print(f"⚠️ [DEBUG] Data trống sau lọc trong biểu đồ: mode={filter_mode}, title={title}")
             return {}  # trả về dict rỗng để không thêm vào charts_for_pdf
-
+            
+        
         # ✅ Xử lý chuẩn hóa
         df = df.copy()
         if 'MonthName' in df.columns:
@@ -530,6 +531,27 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             fig.savefig(chart_path, dpi=150)
             plt.close(fig)
             charts["workcentre"] = chart_path
+         # ✅ Biểu đồ theo Tổng giờ (chỉ khi filter_mode là "Total")
+        if filter_mode == "Total":
+            df_total = df.groupby("Project Name", as_index=False)["Total Hours"].sum()
+
+            if df_total.empty:
+                print("⚠️ Không có dữ liệu để vẽ biểu đồ tổng giờ theo dự án.")
+                return charts  # trả về những biểu đồ khác nếu có
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            bars = ax.bar(df_total["Project Name"], df_total["Total Hours"])
+            ax.set_title(f"{title} - Tổng giờ theo Dự án")
+            ax.set_xlabel("Dự án")
+            ax.set_ylabel("Tổng giờ")
+            ax.bar_label(bars, fontsize=8)
+            plt.xticks(rotation=45, ha='right')
+            plt.tight_layout()
+
+            chart_path = os.path.join(output_dir, "chart_total.png")
+            fig.savefig(chart_path, dpi=150)
+            plt.close(fig)
+            charts["total"] = chart_path
             
         return charts  # ✅ Thêm dòng này
 
@@ -631,12 +653,13 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             print("🧪 Tổng số biểu đồ được tạo:", len(charts_dict))
             chart_title_map = {
                 "time": "So sánh giờ theo thời gian",
+                "total": "Tổng giờ theo từng dự án",  # ✅ thêm dòng này
                 "task": "So sánh giờ theo Task giữa các dự án",
                 "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
             }
             print("[DEBUG] charts_dict keys:", list(charts_dict.keys()))
             
-            for key in ["time", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
+            for key in ["time", "total", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
                 print(f"[DEBUG] chart {key} path = {charts_dict.get(key)}, exists = {os.path.exists(charts_dict.get(key, ''))}")
                 chart_path = charts_dict.get(key)
                 if chart_path and os.path.exists(chart_path):
