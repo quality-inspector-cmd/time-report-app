@@ -610,7 +610,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_path, c
             x_label,
             y_label,
             chart_path_placeholder,
-            comparison_config
+            comparison_config,
             filter_mode=filter_mode  # ✅ Thêm dòng này để truyền filter_mode
         )
 
