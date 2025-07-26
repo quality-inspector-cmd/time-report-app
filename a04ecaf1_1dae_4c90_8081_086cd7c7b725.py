@@ -329,7 +329,7 @@ def export_pdf_report(df, config, pdf_report_path, logo_path):
             shutil.rmtree(tmp_dir)
 
 
-def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner):
+def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, logo_path_inner, filter_mode="Total"):
     today_str = datetime.today().strftime('%Y-%m-%d')  # ✅ Thêm dòng này để tránh lỗi
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -422,11 +422,19 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 # CHART CREATOR (DUMMY)
 # =======================================
 
-def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
+def create_comparison_chart(df, mode, title, x_label, y_label, path, config, filter_mode="Total"):
     output_dir = "tmp_comparison"
     try:
         os.makedirs(output_dir, exist_ok=True)
         charts = {}
+        # ✅ Lọc theo filter_mode
+        if filter_mode == "Task":
+            df = df[df['Task'] != 'All']
+        elif filter_mode == "Workcentre":
+            df = df[df['Workcentre'] != 'All']
+        elif filter_mode == "Total":
+            df['Task'] = 'All'
+            df['Workcentre'] = 'All'
 
         # ✅ Xử lý chuẩn hóa
         df = df.copy()
@@ -461,8 +469,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             plt.close(fig)
             charts["time"] = chart_path
 
-        # ✅ Biểu đồ theo Task
-        if 'Task' in df.columns:
+            # ✅ Biểu đồ theo Task (chỉ khi filter_mode là "Task")
+        if 'Task' in df.columns and filter_mode == "Task":
             df_task = df.groupby(['Task', 'Project Name'], as_index=False)['Total Hours'].sum()
             df_pivot = df_task.pivot(index='Task', columns='Project Name', values='Total Hours').fillna(0)
 
@@ -486,8 +494,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config):
             plt.close(fig)
             charts["task"] = chart_path
 
-        # ✅ Biểu đồ theo Workcentre
-        if 'Workcentre' in df.columns:
+        # ✅ Biểu đồ theo Workcentre (chỉ khi filter_mode là "Workcentre")
+        if 'Workcentre' in df.columns and filter_mode == "Workcentre":
             df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
             df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
 
@@ -561,7 +569,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 # GENERATE PDF REPORT
 # =======================================
 
-def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_config, pdf_file_path, logo_path):
+def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_path, comparison_mode, logo_path, filter_mode="Total"):
     tmp_dir = "tmp_comparison"
     os.makedirs(tmp_dir, exist_ok=True)
     charts_for_pdf = []
@@ -603,6 +611,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
             y_label,
             chart_path_placeholder,
             comparison_config
+            filter_mode=filter_mode  # ✅ Thêm dòng này để truyền filter_mode
         )
 
         if charts_dict:
@@ -638,7 +647,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_mode, comparison_co
         if os.path.exists(tmp_dir):
             shutil.rmtree(tmp_dir)
 
-def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
+def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_mode="Total"):
     print("DEBUG: apply_comparison_filters called with:")
     if not isinstance(df_raw, pd.DataFrame):
         return pd.DataFrame(), "Dữ liệu đầu vào không hợp lệ."    
@@ -650,11 +659,13 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
     years = list(comparison_config.get('years', []))
     months = list(comparison_config.get('months', []))
     selected_projects = list(comparison_config.get('selected_projects', []))
+    filter_mode = comparison_config.get("filter_mode", "Total")
 
     print("✅ Sau khi ép kiểu từ comparison_config:")
     print(f"   - Years: {years}")
     print(f"   - Months: {months}")
     print(f"   - Selected Projects: {selected_projects}")
+    print(f"   - Filter Mode: {filter_mode}")
 
     df_filtered = df_raw.copy()
     df_filtered['Hours'] = pd.to_numeric(df_filtered['Hours'], errors='coerce').fillna(0)
@@ -683,6 +694,15 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         df_comparison['Task'] = 'All'
         df_comparison['Workcentre'] = 'All'
 
+        # ✅ Lọc theo filter_mode nếu có
+        if filter_mode == "Task":
+            df_comparison = df_comparison[df_comparison['Task'] != 'All']
+        elif filter_mode == "Workcentre":
+            df_comparison = df_comparison[df_comparison['Workcentre'] != 'All']
+        elif filter_mode == "Total":
+            df_comparison['Task'] = 'All'
+            df_comparison['Workcentre'] = 'All'
+
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
         return df_comparison, title
 
@@ -702,6 +722,15 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         df_comparison['Hours'] = df_comparison['Total Hours']
         df_comparison['Task'] = 'All'
         df_comparison['Workcentre'] = 'All'
+
+        # ✅ Lọc theo filter_mode nếu có
+        if filter_mode == "Task":
+            df_comparison = df_comparison[df_comparison['Task'] != 'All']
+        elif filter_mode == "Workcentre":
+            df_comparison = df_comparison[df_comparison['Workcentre'] != 'All']
+        elif filter_mode == "Total":
+            df_comparison['Task'] = 'All'
+            df_comparison['Workcentre'] = 'All'
 
         # ➕ Dòng tổng hợp
         df_total_row = pd.DataFrame([{
@@ -732,12 +761,21 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode):
         if 'Workcentre' not in df_comparison.columns:
             df_comparison['Workcentre'] = 'All'
 
+        # ✅ Lọc theo filter_mode nếu có
+        if filter_mode == "Task":
+            df_comparison = df_comparison[df_comparison['Task'] != 'All']
+        elif filter_mode == "Workcentre":
+            df_comparison = df_comparison[df_comparison['Workcentre'] != 'All']
+        elif filter_mode == "Total":
+            df_comparison['Task'] = 'All'
+            df_comparison['Workcentre'] = 'All'
+
         title = "So sánh nhiều dự án qua các năm và tháng"
         return df_comparison, title
 
     return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
 
-def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode):
+def export_comparison_report(df, config, output_path, comparison_mode, filter_mode="Total"):
     """Xuất báo cáo so sánh ra file Excel."""
     try:
         # ✅ Đảm bảo thư mục chứa file tồn tại
@@ -773,6 +811,12 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                 data_start_row = 2 
                 
                 df_chart_data = df_comparison.copy()
+                # ✅ Lọc theo filter_mode nếu là Task hoặc Workcentre
+                if filter_mode == "Task" and "Task" in df_chart_data.columns:
+                    df_chart_data = df_chart_data[df_chart_data["Task"].str.strip() != "Total"]
+                elif filter_mode == "Workcentre" and "Workcentre" in df_chart_data.columns:
+                    df_chart_data = df_chart_data[df_chart_data["Workcentre"].str.strip() != "Total"]
+                # ✅ Lọc các hàng tổng trong Project Name hoặc Year
                 if 'Project name' in df_chart_data.columns and 'Total' in df_chart_data['Project name'].values:
                     df_chart_data = df_chart_data[df_chart_data['Project name'] != 'Total']
                 elif 'Year' in df_chart_data.columns and 'Total' in df_chart_data['Year'].values:
