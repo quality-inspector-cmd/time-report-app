@@ -833,7 +833,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                 elif filter_mode == "Workcentre" and "Workcentre" in df_chart_data.columns:
                     df_chart_data = df_chart_data[df_chart_data["Workcentre"].str.strip() != "Total"]
                 # ✅ Lọc các hàng tổng trong Project Name hoặc Year
-                if 'Project name' in df_chart_data.columns and 'Total' in df_chart_data['Project name'].values:
+                if 'Project Name' in df_chart_data.columns and 'Total' in df_chart_data['Project name'].values:
                     df_chart_data = df_chart_data[df_chart_data['Project name'] != 'Total']
                 elif 'Year' in df_chart_data.columns and 'Total' in df_chart_data['Year'].values:
                     df_chart_data = df_chart_data[df_chart_data['Year'] != 'Total']
@@ -853,7 +853,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                     chart.y_axis.title = "Giờ"
                     
                     data_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Total Hours') + 1, min_row=data_start_row, max_row=max_row_chart)
-                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project name') + 1, min_row=data_start_row, max_row=max_row_chart) 
+                    cats_ref = Reference(ws, min_col=df_comparison.columns.get_loc('Project Name') + 1, min_row=data_start_row, max_row=max_row_chart) 
                     
                     chart.add_data(data_ref, titles_from_data=False) 
                     chart.set_categories(cats_ref)
@@ -879,7 +879,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                         min_col_month = min_col_month_index + 1 
                         max_col_month = max_col_month_index + 1
                         cats_ref = Reference(ws, min_col=min_col_month, min_row=1, max_col=max_col_month)
-                        for r_idx, project_name in enumerate(df_chart_data['Project name']):
+                        for r_idx, project_name in enumerate(df_chart_data['Project Name']):
                             series_ref = Reference(ws,
                                                    min_col=min_col_month,
                                                    max_col=max_col_month,
