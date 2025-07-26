@@ -528,7 +528,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
 # EXPORT PDF COMPARISON
 # =======================================
 
-def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path):
+def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode="Total"):
     print("=== [DEBUG] GỌI export_comparison_pdf_report ===")
     print(f"  pdf_file_path: {pdf_file_path}")
     print(f"  comparison_mode: {comparison_mode}")
@@ -556,7 +556,8 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
             comparison_mode=comparison_mode,
             comparison_config=comparison_config,
             pdf_file_path=pdf_file_path,
-            logo_path=logo_path
+            logo_path=logo_path,
+            filter_mode=filter_mode  # ✅ Truyền filter_mode xuống
         )
         return success, msg
     except Exception as e:
@@ -774,7 +775,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
     return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
 
-def export_comparison_report(df, config, output_path, comparison_mode, filter_mode="Total"):
+def export_comparison_report(df, config, output_file_path, comparison_mode, filter_mode="Total"):
     """Xuất báo cáo so sánh ra file Excel."""
     try:
         # ✅ Đảm bảo thư mục chứa file tồn tại
