@@ -620,12 +620,18 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
                 "task": "So sánh giờ theo Task giữa các dự án",
                 "workcentre": "So sánh giờ theo Workcentre giữa các dự án"
             }
+            print("[DEBUG] charts_dict keys:", list(charts_dict.keys()))
             for key in ["time", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
+                print(f"[DEBUG] chart {key} path = {charts_dict.get(key)}, exists = {os.path.exists(charts_dict.get(key, ''))}")
                 chart_path = charts_dict.get(key)
                 if chart_path and os.path.exists(chart_path):
                     charts_for_pdf.append((chart_path, chart_title_map.get(key, key), page_project_name_for_chart))
         else:
             return False, "⚠️ Không tạo được biểu đồ nào để hiển thị"
+            
+        if not charts_for_pdf:
+            print("❌ Không có biểu đồ nào hợp lệ để tạo PDF.")
+            return False, "❌ Không có biểu đồ nào tồn tại để tạo PDF"  
 
         # ✅ Xuất PDF
         success, msg = create_pdf_from_charts_comp(
