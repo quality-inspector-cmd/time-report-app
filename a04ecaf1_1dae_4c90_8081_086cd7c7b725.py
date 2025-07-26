@@ -775,7 +775,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
     return pd.DataFrame(), "❌ Chế độ so sánh không hỗ trợ."
 
-def export_comparison_report(df, config, output_file_path, comparison_mode, filter_mode="Total"):
+def export_comparison_report(df_comparison, comparison_config, output_file_path, comparison_mode, filter_mode="Total"):
     """Xuất báo cáo so sánh ra file Excel."""
     try:
         # ✅ Đảm bảo thư mục chứa file tồn tại
@@ -1051,20 +1051,21 @@ if __name__ == '__main__':
         # Đoạn so sánh theo năm
         available_years = raw_df['Year'].unique().tolist()
         if len(available_years) >= 2:
+            comparison_mode = "So Sánh Nhiều Dự Án Qua Các Tháng/Năm"
             comparison_config_single_proj_years_example = {
                 'years': available_years, # Sử dụng tất cả các năm có sẵn
                 'months': [], # Không lọc theo tháng
                 'selected_projects': [all_projects_in_raw_data[0]] # Chọn dự án đầu tiên
             }
-            print(f"\nChế độ: So Sánh Một Dự Án Qua Các Năm (dự án: {comparison_config_single_proj_years_example['selected_projects'][0]})")
+            print(f"\nChế độ: So Sánh Nhiều Dự Án Qua Các Tháng/Năm (dự án: {comparison_config_single_proj_years_example['selected_projects'][0]})")
             df_comp_single_proj_years, msg_single_proj_years = apply_comparison_filters(
                 raw_df,
                 comparison_config_single_proj_years_example,
                 comparison_mode
             )
             if not df_comp_single_proj_years.empty:
-                excel_path = get_comparison_excel_path("So Sánh Dự Án Trong Một Tháng", paths["comparison_output_file"])
-                pdf_path = get_comparison_pdf_path("So Sánh Dự Án Trong Một Tháng", paths["comparison_pdf_report"])
+                excel_path = get_comparison_excel_path(comparison_mode, paths["comparison_output_file"])
+                pdf_path = get_comparison_pdf_path(comparison_mode, paths["comparison_pdf_report"])
 
                 comparison_path_dict["comparison_output_file"] = excel_path
                 comparison_path_dict["comparison_pdf_report"] = pdf_path
@@ -1073,7 +1074,7 @@ if __name__ == '__main__':
                     df_comp_single_proj_years,
                     comparison_config_single_proj_years_example,
                     excel_path,
-                    comparison_mode = "So Sánh Một Dự Án Qua Các Tháng/Năm"
+                    comparison_mode = "So Sánh Nhiều Dự Án Qua Các Tháng/Năm"
                 )
                 if export_success_excel:
                     print(f"✅ Báo cáo Excel đã tạo: {excel_path}")
