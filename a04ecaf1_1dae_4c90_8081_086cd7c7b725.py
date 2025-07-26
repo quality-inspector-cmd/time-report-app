@@ -649,6 +649,13 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             config=comparison_config,
             filter_mode=filter_mode # ✅ Thêm dòng này để truyền filter_mode
         )
+                # ✅ Kiểm tra nếu chỉ có 1 Year-Month → bỏ biểu đồ time
+        only_one_time_point = False
+        if "Year" in df_comparison.columns and "MonthName" in df_comparison.columns:
+            df_temp = df_comparison.copy()
+            df_temp["YearMonth"] = df_temp["Year"].astype(str) + "-" + df_temp["MonthName"].astype(str)
+            only_one_time_point = df_temp["YearMonth"].nunique() <= 1
+        
         if charts_dict:
             print("🧪 Tổng số biểu đồ được tạo:", len(charts_dict))
             chart_title_map = {
@@ -660,8 +667,11 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             print("[DEBUG] charts_dict keys:", list(charts_dict.keys()))
             
             for key in ["time", "total", "task", "workcentre"]:  # ✅ duyệt theo thứ tự ưu tiên
-                print(f"[DEBUG] chart {key} path = {charts_dict.get(key)}, exists = {os.path.exists(charts_dict.get(key, ''))}")
+                if key == "time" and only_one_time_point:
+                    print(f"⏭️ Bỏ qua biểu đồ '{key}' vì chỉ có 1 mốc thời gian.")
+                    continue  # ✅ Bỏ qua biểu đồ time nếu không có đủ mốc thời gian
                 chart_path = charts_dict.get(key)
+                print(f"[DEBUG] chart {key} path = {chart_path}, exists = {os.path.exists(chart_path or '')}")
                 if chart_path and os.path.exists(chart_path):
                     charts_for_pdf.append((chart_path, chart_title_map.get(key, key), page_project_name_for_chart))
         else:
