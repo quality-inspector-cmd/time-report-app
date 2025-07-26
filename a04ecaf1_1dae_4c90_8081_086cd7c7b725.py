@@ -616,12 +616,12 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
         chart_path_placeholder = os.path.join(tmp_dir, "unused.png")  # chỉ để phù hợp với hàm gọi
         charts_dict = create_comparison_chart(
             df=df_comparison,
-            comparison_mode=comparison_mode,
-            chart_title=chart_title,
+            mode=comparison_mode,
+            title=chart_title,
             x_label=x_label,
             y_label=y_label,
-            chart_path=chart_path_placeholder,
-            comparison_config=comparison_config,
+            path=chart_path_placeholder,
+            config=comparison_config,
             filter_mode=filter_mode # ✅ Thêm dòng này để truyền filter_mode
         )
         if charts_dict:
@@ -675,7 +675,7 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
     years = list(comparison_config.get('years', []))
     months = list(comparison_config.get('months', []))
     selected_projects = [p for p in comparison_config.get('selected_projects', []) if str(p).strip()]
-    filter_mode = comparison_config.get("filter_mode", "Total")
+    filter_mode = filter_mode or comparison_config.get("filter_mode", "Total")
 
     print("✅ Sau khi ép kiểu từ comparison_config:")
     print(f"   - Years: {years}")
