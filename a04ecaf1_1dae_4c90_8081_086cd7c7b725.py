@@ -436,7 +436,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 new_h = page_h - 2 * margin
                 new_w = new_h / aspect_ratio
             x = (page_w - new_w) / 2
-            y = pdf.get_y() + 3
+            y = pdf.get_y() + 1.5
             pdf.image(img_path, x=x, y=y, w=new_w, h=new_h)
 
     # =========================
