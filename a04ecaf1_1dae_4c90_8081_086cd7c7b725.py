@@ -574,6 +574,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     fontsize=8,
                     frameon=False
                 )
+
+                plt.draw()  # ⬅️ BẮT BUỘC để legend hiện
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
                 plt.close(fig)
