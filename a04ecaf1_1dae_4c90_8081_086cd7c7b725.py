@@ -542,57 +542,30 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             if df_wc.empty:
                 print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
             else:
-                print(f"[DEBUG] Có {len(df_wc)} dòng dữ liệu để vẽ biểu đồ Workcentre")
-
                 df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
-                if df_pivot.empty:
-                    print(f"⚠️ df_pivot rỗng sau pivot Workcentre cho {title}")
-                else:
-                    num_workcentres = df_pivot.shape[0]
-                    fig_width = max(12, num_workcentres * 0.5 + 2)
-                    fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # Tăng chiều ngang theo số Workcentre
+                fig, ax = plt.subplots(figsize=(11.7, 8.3))  # Khổ giấy A4 ngang
 
-                    # Vẽ biểu đồ cột theo từng project
-                    bar_width = 0.8 / len(df_pivot.columns)
-                    x = np.arange(len(df_pivot.index))
-                    colors = plt.cm.tab10.colors
-                    bars_list = []
-                    for idx, project in enumerate(df_pivot.columns):
-                        heights = df_pivot[project].values
-                        bar = ax.bar(x + idx * bar_width, heights, bar_width,
-                                 label=project, color=colors[idx % len(colors)])
-                        bars_list.append(bar)
+                bars = df_pivot.plot(kind='bar', ax=ax)
+                for container in bars.containers:
+                    for bar in container:
+                        height = bar.get_height()
+                        if height > 0:
+                            ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
 
-                    # Ghi nhãn số giờ trên cột
-                    for bars in bars_list:
-                        for bar in bars:
-                            height = bar.get_height()
-                            if height > 0:
-                                ax.annotate(f"{height:.0f}",
-                                            xy=(bar.get_x() + bar.get_width() / 2, height),
-                                            xytext=(0, 3),
-                                            textcoords="offset points",
-                                            ha='center', fontsize=8)
+                ax.set_title(f"{title} - By Workcentre")
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+    
+                ax.legend(title="Project Name", loc='upper center',
+                          bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
 
-                    # Thiết lập trục x
-                    ax.set_xticks(x + bar_width * (len(df_pivot.columns) - 1) / 2)
-                    ax.set_xticklabels(df_pivot.index, rotation=45, ha='right')
-                    ax.set_title(f"{title} - By Workcentre")
-                    ax.set_xlabel(x_label)
-                    ax.set_ylabel(y_label)
-                    ax.set_xlim(-0.5, len(df_pivot.index) - 0.5)
-
-                    # ✅ Legend luôn hiển thị bên dưới
-                    ax.legend(title="Project Name",
-                              loc='upper center', bbox_to_anchor=(0.5, -0.20),
-                              ncol=min(len(df_pivot.columns), 5), fontsize=8)
-
-                    plt.tight_layout()
-                    chart_path = os.path.join(output_dir, "chart_workcentre.png")
-                    print(f"[DEBUG] Lưu biểu đồ workcentre vào: {chart_path}")
-                    fig.savefig(chart_path, dpi=150)
-                    plt.close(fig)
-                    charts["workcentre"] = chart_path
+                plt.tight_layout()
+                chart_path = os.path.join(output_dir, "chart_workcentre.png")
+                fig.savefig(chart_path, dpi=150)
+                plt.close(fig)
+                charts["workcentre"] = chart_path
         # Biểu đồ tổng giờ (Total)
         if filter_mode == "Total":
             df_total = df.groupby("Project Name", as_index=False)["Total Hours"].sum()
