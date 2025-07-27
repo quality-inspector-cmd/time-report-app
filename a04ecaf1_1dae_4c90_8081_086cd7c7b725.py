@@ -572,7 +572,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     frameon=False
                 )
                 # 🔧 Điều chỉnh layout thủ công cho khớp trang A4 ngang
-                fig.subplots_adjust(left=0.08, right=0.98, top=0.88, bottom=0.22)
+                fig.subplots_adjust(left=0.08, right=0.98, top=0.73, bottom=0.33)
                 
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
