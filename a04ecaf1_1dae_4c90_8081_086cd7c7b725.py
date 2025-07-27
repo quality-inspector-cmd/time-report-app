@@ -425,8 +425,8 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
-            pdf.ln(3)
-            pdf.cell(0, 10, chart_title, ln=True, align='C')
+            pdf.ln(0.5)
+            pdf.cell(0, 8, chart_title, ln=True, align='C')
 
             # ➕ Resize và chèn ảnh
             max_w = page_w - 2 * margin
@@ -436,7 +436,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 new_h = page_h - 2 * margin
                 new_w = new_h / aspect_ratio
             x = (page_w - new_w) / 2
-            y = pdf.get_y() + 5
+            y = pdf.get_y() + 3
             pdf.image(img_path, x=x, y=y, w=new_w, h=new_h)
 
     # =========================
