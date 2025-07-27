@@ -550,20 +550,20 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 else:
                     num_workcentres = df_pivot.shape[0]
                     fig_width = max(12, num_workcentres * 0.5 + 2)
-                    fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # tăng ngang theo số workcentre
+                    fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # Tăng chiều ngang theo số Workcentre
 
-                    # Vẽ biểu đồ thủ công theo từng project
+                    # Vẽ biểu đồ cột theo từng project
                     bar_width = 0.8 / len(df_pivot.columns)
                     x = np.arange(len(df_pivot.index))
                     colors = plt.cm.tab10.colors
-                    bars_list = []              
+                    bars_list = []
                     for idx, project in enumerate(df_pivot.columns):
                         heights = df_pivot[project].values
                         bar = ax.bar(x + idx * bar_width, heights, bar_width,
-                                     label=project, color=colors[idx % len(colors)])
+                                 label=project, color=colors[idx % len(colors)])
                         bars_list.append(bar)
 
-                    # Ghi số giờ lên từng cột
+                    # Ghi nhãn số giờ trên cột
                     for bars in bars_list:
                         for bar in bars:
                             height = bar.get_height()
@@ -582,12 +582,10 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     ax.set_ylabel(y_label)
                     ax.set_xlim(-0.5, len(df_pivot.index) - 0.5)
 
-                    # ✅ Legend đảm bảo hiện trong PDF
-                    handles, labels = ax.get_legend_handles_labels()
-                    if handles and labels:
-                        ax.legend(handles, labels, title="Project Name",
-                                  loc='upper center', bbox_to_anchor=(0.5, -0.20),
-                                  ncol=min(len(labels), 5), fontsize=8)
+                    # ✅ Legend luôn hiển thị bên dưới
+                    ax.legend(title="Project Name",
+                              loc='upper center', bbox_to_anchor=(0.5, -0.20),
+                              ncol=min(len(df_pivot.columns), 5), fontsize=8)
 
                     plt.tight_layout()
                     chart_path = os.path.join(output_dir, "chart_workcentre.png")
@@ -595,7 +593,6 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     fig.savefig(chart_path, dpi=150)
                     plt.close(fig)
                     charts["workcentre"] = chart_path
-
         # Biểu đồ tổng giờ (Total)
         if filter_mode == "Total":
             df_total = df.groupby("Project Name", as_index=False)["Total Hours"].sum()
