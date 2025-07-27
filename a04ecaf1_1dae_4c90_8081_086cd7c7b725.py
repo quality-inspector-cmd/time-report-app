@@ -548,9 +548,12 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 fig_width = max(12, num_workcentres * 0.5 + 2)
                 fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # tăng ngang theo số workcentre
                 bars = df_pivot.plot(kind='bar', ax=ax, width=0.95)  # tăng độ rộng
-                # ✅ Hiện lại legend sau khi vẽ xong
-                ax.legend(title="Project Name", loc='upper center',
-                          bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
+                # ✅ Lấy lại legend đúng cách (trường hợp chỉ có 1 project cũng hoạt động)
+                handles, labels = ax.get_legend_handles_labels()
+                if handles:
+                    ax.legend(handles, labels, title="Project Name",
+                              loc='upper center', bbox_to_anchor=(0.5, -0.20),
+                              ncol=min(len(labels), 5), fontsize=8)
                 # ✅ Ghi số giờ trên mỗi cột
                 for container in bars.containers:
                     for bar in container:
