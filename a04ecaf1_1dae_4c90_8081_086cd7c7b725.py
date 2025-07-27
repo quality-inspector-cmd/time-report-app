@@ -571,8 +571,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     fontsize=8,
                     frameon=False
                 )
-
-                plt.tight_layout()
+                fig.subplots_adjust(bottom=0.25)  # ✅ chừa chỗ cho nhãn trục X và legend
+                
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
                 plt.close(fig)
