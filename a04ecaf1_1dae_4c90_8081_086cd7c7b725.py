@@ -536,48 +536,48 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 plt.close(fig)
                 charts["task"] = chart_path
 
-# Biểu đồ theo Workcentre
-if 'Workcentre' in df.columns and filter_mode == "Workcentre":
-    df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
-    if df_wc.empty:
-        print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
-    else:
-        df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
+        # Biểu đồ theo Workcentre
+        if 'Workcentre' in df.columns and filter_mode == "Workcentre":
+            df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
+            if df_wc.empty:
+                print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
+            else:
+                df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
 
-        num_workcentres = df_pivot.shape[0]
-        fig_width = max(12, num_workcentres * 0.5 + 2)
-        fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # tăng ngang theo số workcentre
+                num_workcentres = df_pivot.shape[0]
+                fig_width = max(12, num_workcentres * 0.5 + 2)
+                fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # tăng ngang theo số workcentre
 
-        # Vẽ biểu đồ
-        bars = df_pivot.plot(kind='bar', ax=ax, width=0.95, legend=False)  # tắt auto-legend
+                # Vẽ biểu đồ
+                bars = df_pivot.plot(kind='bar', ax=ax, width=0.95, legend=False)  # tắt auto-legend
 
-        # ✅ Ghi số giờ trên mỗi cột
-        for container in bars.containers:
-            for bar in container:
-                height = bar.get_height()
-                if height > 0:
-                    ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+                # ✅ Ghi số giờ trên mỗi cột
+                for container in bars.containers:
+                    for bar in container:
+                        height = bar.get_height()
+                        if height > 0:
+                            ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
 
-        # ✅ Hiện lại legend thủ công (không bị mất khi tight_layout)
-        handles, labels = ax.get_legend_handles_labels()
-        if handles and labels:
-            ax.legend(handles, labels, title="Project Name",
-                      loc='upper center', bbox_to_anchor=(0.5, -0.20),
-                      ncol=min(len(labels), 5), fontsize=8)
+                # ✅ Hiện lại legend thủ công (không bị mất khi tight_layout)
+                handles, labels = ax.get_legend_handles_labels()
+                if handles and labels:
+                    ax.legend(handles, labels, title="Project Name",
+                              loc='upper center', bbox_to_anchor=(0.5, -0.20),
+                              ncol=min(len(labels), 5), fontsize=8)
 
-        # Các thiết lập khác
-        ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-        ax.set_title(f"{title} - By Workcentre")
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        ax.set_xlim(-0.5, num_workcentres - 0.5)
+                # Các thiết lập khác
+                ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
+                ax.set_title(f"{title} - By Workcentre")
+                ax.set_xlabel(x_label)
+                ax.set_ylabel(y_label)
+                ax.set_xlim(-0.5, num_workcentres - 0.5)
 
-        plt.tight_layout()
-        chart_path = os.path.join(output_dir, "chart_workcentre.png")
-        fig.savefig(chart_path, dpi=150)
-        plt.close(fig)
-        charts["workcentre"] = chart_path
+                plt.tight_layout()
+                chart_path = os.path.join(output_dir, "chart_workcentre.png")
+                fig.savefig(chart_path, dpi=150)
+                plt.close(fig)
+                charts["workcentre"] = chart_path
 
         # Biểu đồ tổng giờ (Total)
         if filter_mode == "Total":
