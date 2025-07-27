@@ -426,7 +426,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
             pdf.ln(0.5)
-            pdf.cell(0, 2, chart_title, ln=True, align='C')
+            pdf.cell(0, 5, chart_title, ln=True, align='C')
 
             # ➕ Resize và chèn ảnh
             max_w = page_w - 2 * margin
@@ -436,7 +436,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 new_h = page_h - 2 * margin
                 new_w = new_h / aspect_ratio
             x = (page_w - new_w) / 2
-            y = pdf.get_y() + 2
+            y = pdf.get_y() + 3
             pdf.image(img_path, x=x, y=y, w=new_w, h=new_h)
 
     # =========================
@@ -564,7 +564,6 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
 
                 # ✅ Legend nằm ngang bên dưới
                 handles, labels = ax.get_legend_handles_labels()
-                ax.legend_.remove()  # xoá legend cũ nếu có
                 fig.legend(
                     handles,
                     labels,
