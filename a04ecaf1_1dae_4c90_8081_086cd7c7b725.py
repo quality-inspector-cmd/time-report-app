@@ -537,13 +537,14 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 charts["task"] = chart_path
 
         # Biểu đồ theo Workcentre
+        # Biểu đồ theo Workcentre
         if 'Workcentre' in df.columns and filter_mode == "Workcentre":
             df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
             if df_wc.empty:
                 print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
             else:
                 df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
-                fig, ax = plt.subplots(figsize=(11.7, 8.3))  # Khổ giấy A4 ngang
+                fig, ax = plt.subplots(figsize=(11.7, 8.3))  # Khổ A4 ngang chuẩn
 
                 bars = df_pivot.plot(kind='bar', ax=ax)
                 for container in bars.containers:
@@ -557,9 +558,19 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 ax.set_xlabel(x_label)
                 ax.set_ylabel(y_label)
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
-    
-                ax.legend(title="Project Name", loc='upper center',
-                          bbox_to_anchor=(0.5, -0.25), ncol=4, fontsize=8, frameon=False)
+
+                # ✅ Legend nằm ngang bên dưới
+                handles, labels = ax.get_legend_handles_labels()
+                ax.legend_.remove()  # xoá legend cũ nếu có
+                fig.legend(
+                    handles,
+                    labels,
+                    loc='lower center',
+                    bbox_to_anchor=(0.5, -0.15),
+                    ncol=min(len(labels), 5),
+                    fontsize=8,
+                    frameon=False
+                )
 
                 plt.tight_layout()
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
