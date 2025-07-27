@@ -426,7 +426,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
             pdf.ln(0.5)
-            pdf.cell(0, 8, chart_title, ln=True, align='C')
+            pdf.cell(0, 2, chart_title, ln=True, align='C')
 
             # ➕ Resize và chèn ảnh
             max_w = page_w - 2 * margin
@@ -436,7 +436,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 new_h = page_h - 2 * margin
                 new_w = new_h / aspect_ratio
             x = (page_w - new_w) / 2
-            y = pdf.get_y() + 3
+            y = pdf.get_y() + 2
             pdf.image(img_path, x=x, y=y, w=new_w, h=new_h)
 
     # =========================
@@ -559,6 +559,9 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 ax.set_ylabel(y_label)
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
 
+                # 🔧 Điều chỉnh layout thủ công cho khớp trang A4 ngang
+                fig.subplots_adjust(left=0.08, right=0.98, top=0.73, bottom=0.33)
+
                 # ✅ Legend nằm ngang bên dưới
                 handles, labels = ax.get_legend_handles_labels()
                 ax.legend_.remove()  # xoá legend cũ nếu có
@@ -570,9 +573,6 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     ncol=min(len(labels), 5),
                     fontsize=8,
                     frameon=False
-                )
-                # 🔧 Điều chỉnh layout thủ công cho khớp trang A4 ngang
-                fig.subplots_adjust(left=0.08, right=0.98, top=0.73, bottom=0.33)
                 
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
