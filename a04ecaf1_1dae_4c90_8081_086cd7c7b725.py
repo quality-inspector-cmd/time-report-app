@@ -419,14 +419,14 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 pdf.image(logo_path_inner, x=10, y=8, w=25)
             pdf.set_y(35)
             if project_name:
-                pdf.cell(0, 5, f"Project: {project_name}", ln=True, align='C')
+                pdf.cell(0, 6, f"Project: {project_name}", ln=True, align='C')
             else:
-                pdf.cell(0, 5, "Summary Charts", ln=True, align='C')
+                pdf.cell(0, 6, "Summary Charts", ln=True, align='C')
 
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
             pdf.ln(0.5)
-            pdf.cell(0, 1, chart_title, ln=True, align='C')
+            pdf.cell(0, 2, chart_title, ln=True, align='C')
 
             # ➕ Resize và chèn ảnh
             max_w = page_w - 2 * margin
