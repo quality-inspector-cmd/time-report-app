@@ -544,7 +544,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 print(f"⚠️ Không có dữ liệu để vẽ biểu đồ Workcentre cho {title}")
             else:
                 df_pivot = df_wc.pivot(index='Workcentre', columns='Project Name', values='Total Hours').fillna(0)
-                fig, ax = plt.subplots(figsize=(11.7, 8.3))  # Khổ A4 ngang chuẩn
+                fig, ax = plt.subplots(figsize=(15, 8.3))  # Khổ A4 ngang chuẩn
 
                 bars = df_pivot.plot(kind='bar', ax=ax)
                 for container in bars.containers:
@@ -571,7 +571,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     fontsize=8,
                     frameon=False
                 )
-                fig.subplots_adjust(bottom=0.25)  # ✅ chừa chỗ cho nhãn trục X và legend
+                # 🔧 Điều chỉnh layout thủ công cho khớp trang A4 ngang
+                fig.subplots_adjust(left=0.08, right=0.98, top=0.88, bottom=0.22)
                 
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
