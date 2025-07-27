@@ -548,7 +548,10 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 fig_width = max(12, num_workcentres * 0.5 + 2)
                 fig, ax = plt.subplots(figsize=(fig_width, 8.3))  # tăng ngang theo số workcentre
                 bars = df_pivot.plot(kind='bar', ax=ax, width=0.95)  # tăng độ rộng
-
+                # ✅ Hiện lại legend sau khi vẽ xong
+                ax.legend(title="Project Name", loc='upper center',
+                          bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
+                # ✅ Ghi số giờ trên mỗi cột
                 for container in bars.containers:
                     for bar in container:
                         height = bar.get_height()
@@ -562,8 +565,6 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 ax.set_ylabel(y_label)
                 
                 ax.set_xlim(-0.5, num_workcentres - 0.5)  # bóp khoảng trắng dư
-
-                ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
 
                 plt.tight_layout()
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
