@@ -426,7 +426,7 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
             pdf.ln(0.5)
-            pdf.cell(0, 5, chart_title, ln=True, align='C')
+            pdf.cell(0, 1, chart_title, ln=True, align='C')
 
             # ➕ Resize và chèn ảnh
             max_w = page_w - 2 * margin
@@ -547,23 +547,23 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 fig, ax = plt.subplots(figsize=(15, 8.3))  # Khổ A4 ngang chuẩn
 
                 bars = df_pivot.plot(kind='bar', ax=ax)
+                # ➕ Nhãn số giờ trên cột
                 for container in bars.containers:
                     for bar in container:
                         height = bar.get_height()
                         if height > 0:
                             ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
                                         xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
-
+                # ➕ Tiêu đề và trục
                 ax.set_title(f"{title} - By Workcentre")
                 ax.set_xlabel(x_label)
                 ax.set_ylabel(y_label)
                 ax.set_xticklabels(ax.get_xticklabels(), rotation=45, ha='right')
 
-                # 🔧 Điều chỉnh layout thủ công cho khớp trang A4 ngang
-                fig.subplots_adjust(left=0.08, right=0.98, top=0.73, bottom=0.33)
-
                 # ✅ Legend nằm ngang bên dưới
                 handles, labels = ax.get_legend_handles_labels()
+                if ax.get_legend():
+                    ax.get_legend().remove()
                 fig.legend(
                     handles,
                     labels,
@@ -573,8 +573,11 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     fontsize=8,
                     frameon=False
                 )
+                # ✅ Chừa khoảng cho legend
+                fig.subplots_adjust(left=0.08, right=0.98, top=0.75, bottom=0.33)
+                # ✅ BẮT BUỘC: Đảm bảo render legend trước khi lưu ảnh
+                fig.canvas.draw()
 
-                plt.draw()  # ⬅️ BẮT BUỘC để legend hiện
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
                 plt.close(fig)
