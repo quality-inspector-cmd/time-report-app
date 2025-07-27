@@ -573,7 +573,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                     ncol=min(len(labels), 5),
                     fontsize=8,
                     frameon=False
-                
+                )
                 chart_path = os.path.join(output_dir, "chart_workcentre.png")
                 fig.savefig(chart_path, dpi=150)
                 plt.close(fig)
