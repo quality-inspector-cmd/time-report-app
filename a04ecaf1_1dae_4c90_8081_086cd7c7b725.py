@@ -419,9 +419,9 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
                 pdf.image(logo_path_inner, x=10, y=8, w=25)
             pdf.set_y(35)
             if project_name:
-                pdf.cell(0, 10, f"Project: {project_name}", ln=True, align='C')
+                pdf.cell(0, 5, f"Project: {project_name}", ln=True, align='C')
             else:
-                pdf.cell(0, 10, "Summary Charts", ln=True, align='C')
+                pdf.cell(0, 5, "Summary Charts", ln=True, align='C')
 
             # ➕ Tiêu đề biểu đồ
             pdf.set_font("DejaVu", '', 11)
