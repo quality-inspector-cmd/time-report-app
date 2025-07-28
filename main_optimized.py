@@ -567,36 +567,41 @@ with tab_comparison_report_main:
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
+    # Display options và mapping display → internal
     if st.session_state.lang == 'vi':
         filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
-        filter_mode_map = {
-            "Theo Tổng Giờ": "By Total hour",
-            "Theo Task": "By Task",
-            "Theo Workcentre": "By Workcentre"
-        }
     else:
         filter_mode_display_options = ["By Total hour", "By Task", "By Workcentre"]
-        filter_mode_map = {
-            "By Total hour": "By Total hour",
-            "By Task": "By Task",
-            "By Workcentre": "By Workcentre"
-        }
-    # Lấy giá trị hiện tại từ session (nếu chưa có thì mặc định đầu tiên)
+
+    # ✅ Map display string → internal string
+    display_to_internal = {
+        "Theo Tổng Giờ": "Total",
+        "Theo Task": "Task",
+        "Theo Workcentre": "Workcentre",
+        "By Total hour": "Total",
+        "By Task": "Task",
+        "By Workcentre": "Workcentre"
+    }
+
+    # Lấy giá trị hiện tại từ session hoặc mặc định
     current_display = st.session_state.get("selected_filter_display", filter_mode_display_options[0])
-     # Hiển thị selectbox
+
+    # Hiển thị selectbox
     selected_filter_display = st.selectbox(
         "Comparison filter mode",
         options=filter_mode_display_options,
         index=filter_mode_display_options.index(current_display),
         key="filter_mode_selectbox"
     )
-        # Nếu người dùng chọn khác → cập nhật session và rerun
+
+    # Nếu người dùng thay đổi lựa chọn
     if selected_filter_display != current_display:
         st.session_state.selected_filter_display = selected_filter_display
-        st.session_state.selected_filter_mode = filter_mode_map[selected_filter_display]
+        st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
         st.rerun()
-        # ✅ Luôn lấy filter_mode từ session
-    filter_mode = st.session_state.get("selected_filter_mode", filter_mode_map[current_display])
+
+      # ✅ Luôn lấy filter_mode (chuẩn hóa) từ session
+    filter_mode = st.session_state.get("selected_filter_mode", display_to_internal[current_display])
 
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
