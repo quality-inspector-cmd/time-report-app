@@ -584,6 +584,11 @@ with tab_comparison_report_main:
 
     selected_filter_display = st.selectbox("Comparison filter mode", filter_mode_display_options, index=0, key="filter_mode_selectbox")
     filter_mode = filter_mode_map[selected_filter_display]
+    
+    # ✅ Rerun nếu người dùng đổi filter mode
+    if 'selected_filter_mode' not in st.session_state or st.session_state.selected_filter_mode != filter_mode:
+        st.session_state.selected_filter_mode = filter_mode
+        st.experimental_rerun()
 
     comp_years = []
     comp_months = []
