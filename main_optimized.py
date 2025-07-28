@@ -588,7 +588,7 @@ with tab_comparison_report_main:
     # ✅ Rerun nếu người dùng đổi filter mode
     if 'selected_filter_mode' not in st.session_state or st.session_state.selected_filter_mode != filter_mode:
         st.session_state.selected_filter_mode = filter_mode
-        st.experimental_rerun()
+        st.rerun()
 
     comp_years = []
     comp_months = []
