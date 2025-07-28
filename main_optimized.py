@@ -567,7 +567,7 @@ with tab_comparison_report_main:
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
-    filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
+    filter_mode_display_options = ["By Total hour", "By Task", "By Workcentre"]
     filter_mode_map = {
         "Theo Tổng Giờ": "Total",
         "Theo Task": "Task",
