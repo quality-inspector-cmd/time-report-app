@@ -567,13 +567,22 @@ with tab_comparison_report_main:
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
-    filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
-    filter_mode_map = {
-        "Theo Tổng Giờ": "By Total hour",
-        "Theo Task": "By Task",
-        "Theo Workcentre": "By Workcentre"
-    }
-    selected_filter_display = st.selectbox("Chế độ lọc so sánh", filter_mode_display_options, index=0, key="filter_mode_selectbox")
+    if st.session_state.lang == 'vi':
+        filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
+        filter_mode_map = {
+            "Theo Tổng Giờ": "By Total hour",
+            "Theo Task": "By Task",
+            "Theo Workcentre": "By Workcentre"
+        }
+    else:
+        filter_mode_display_options = ["By Total hour", "By Task", "By Workcentre"]
+        filter_mode_map = {
+            "By Total hour": "By Total hour",
+            "By Task": "By Task",
+            "By Workcentre": "By Workcentre"
+        }
+
+    selected_filter_display = st.selectbox("Comparison filter mode", filter_mode_display_options, index=0, key="filter_mode_selectbox")
     filter_mode = filter_mode_map[selected_filter_display]
 
     comp_years = []
@@ -585,7 +594,11 @@ with tab_comparison_report_main:
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
 
-    select_all_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_projects_checkbox")
+    select_all_projects = st.checkbox(
+    get_text("select_all_projects_checkbox"),
+    value=True,
+    key="select_all_projects_checkbox"
+    )
     if select_all_projects:
         comp_projects = all_projects
     else:
