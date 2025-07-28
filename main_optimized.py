@@ -193,6 +193,15 @@ TEXTS = {
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
+        'help_tab_title': "🔧 Need Help?",
+        'help_tab_description': "If you experience issues or have questions, please describe your problem below. The system will notify the administrator.",
+        'your_email': "Your email",
+        'describe_issue': "Describe the issue you're facing",
+        'send_help_request_button': "Send Help Request",
+        'issue_required_warning': "Please enter the issue description.",
+        'email_required_warning': "Please enter your email.",
+        'email_sent_success': "✅ Request sent successfully. Admin will respond soon.",
+        'email_sent_error': "❌ Failed to send your help request",
         'select_all_projects_checkbox': "Select all projects"
     },
     'vi': {
@@ -267,6 +276,15 @@ TEXTS = {
         'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
+        'help_tab_title': "🔧 Cần trợ giúp?",
+        'help_tab_description': "Nếu bạn gặp sự cố hoặc có thắc mắc, vui lòng mô tả vấn đề bên dưới. Hệ thống sẽ thông báo cho quản trị viên.",
+        'your_email': "Email của bạn",
+        'describe_issue': "Mô tả vấn đề bạn gặp phải",
+        'send_help_request_button': "Gửi yêu cầu trợ giúp",
+        'issue_required_warning': "Vui lòng nhập mô tả vấn đề.",
+        'email_required_warning': "Vui lòng nhập email của bạn.",
+        'email_sent_success': "✅ Đã gửi yêu cầu thành công. Quản trị viên sẽ phản hồi sớm.",
+        'email_sent_error': "❌ Gửi yêu cầu trợ giúp thất bại",
         'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
 }
@@ -906,3 +924,32 @@ with tab_user_guide_main:
     if "access_log" in st.session_state:
         st.write("📜 Current session access log:")
         st.dataframe(pd.DataFrame(st.session_state.access_log))
+# HELP TAB
+# =========================================================================
+with tab_help_main:
+    st.markdown(f"### {get_text('help_title')}")
+    st.markdown(get_text('help_instruction'))
+
+    user_issue = st.text_area(
+        label=get_text("help_input_label"),
+        placeholder=get_text("help_input_placeholder"),
+        key="help_user_input"
+    )
+
+    if st.button(get_text("help_submit_button")):
+        if user_issue.strip():
+            subject = f"[Time Report Help] New issue from user"
+            body = f"User submitted the following issue:\n\n{user_issue}"
+            
+            sender_email = "your_email@gmail.com"         # ✅ Thay bằng email gửi
+            sender_password = "your_app_password"         # ✅ Thay bằng App Password hoặc mật khẩu
+            receiver_email = "admin@example.com"          # ✅ Email admin nhận
+
+            sent = send_email_to_admin(subject, body, sender_email, sender_password, receiver_email)
+
+            if sent:
+                st.success(get_text("help_submit_success"))
+            else:
+                st.error(get_text("help_submit_fail"))
+        else:
+            st.warning(get_text("help_submit_warning"))
