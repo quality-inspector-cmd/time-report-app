@@ -535,8 +535,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 fig.savefig(chart_path, dpi=150)
                 plt.close(fig)
                 charts["task"] = chart_path
-
-        # Biểu đồ theo Workcentre
+                
         # Biểu đồ theo Workcentre
         if 'Workcentre' in df.columns and filter_mode == "Workcentre":
             df_wc = df.groupby(['Workcentre', 'Project Name'], as_index=False)['Total Hours'].sum()
@@ -964,36 +963,30 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
                     chart.set_categories(cats_ref)
                 
                 elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
-                    chart = LineChart()
+                    chart = BarChart()
                     chart.title = "So sánh giờ theo dự án và tháng"
                     chart.x_axis.title = "Tháng"
                     chart.y_axis.title = "Giờ"
-
-                    month_cols = [col for col in df_comparison.columns if col not in ['Project Name', 'Total Hours']]
                     
                     # Cần lấy các tháng theo thứ tự đúng cho biểu đồ LineChart
                     month_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+                    
+                    month_cols = [col for col in df_comparison.columns if col in month_order]
+                    
                     ordered_month_cols = [m for m in month_order if m in month_cols]
 
                     # Lấy phạm vi cho danh mục (các tháng)
                     # Giả định các tháng nằm cạnh nhau trong bảng và bắt đầu từ một cột cụ thể
                     if ordered_month_cols:
-                        min_col_month_index = df_comparison.columns.get_loc(ordered_month_cols[0])
-                        max_col_month_index = df_comparison.columns.get_loc(ordered_month_cols[-1])
                         # openpyxl Reference uses 1-based indexing
-                        min_col_month = min_col_month_index + 1 
-                        max_col_month = max_col_month_index + 1
-                        cats_ref = Reference(ws, min_col=min_col_month, min_row=1, max_col=max_col_month)
-                        for r_idx, project_name in enumerate(df_chart_data['Project Name']):
-                            series_ref = Reference(ws,
-                                                   min_col=min_col_month,
-                                                   max_col=max_col_month,
-                                                   min_row=data_start_row + r_idx,
-                                                   max_row=data_start_row + r_idx)
-                            series = Series(series_ref)
-                            series.title = str(project_name)  # ⚠️ Quan trọng: ép kiểu thành str
-                            chart.series.append(series)
-
+                        ordered_month_cols = [m for m in month_order if m in month_cols]
+                        min_col = df_comparison.columns.get_loc(ordered_month_cols[0]) + 1  # openpyxl 1-based
+                        max_col = df_comparison.columns.get_loc(ordered_month_cols[-1]) + 1
+                        
+                        data_ref = Reference(ws, min_col=min_col, max_col=max_col, min_row=data_start_row, max_row=max_row_chart)
+                        cats_ref = Reference(ws, min_col=min_col, min_row=1, max_col=max_col)
+                        
+                        chart.add_data(data_ref, titles_from_data=False)
                         chart.set_categories(cats_ref)      
                     else:
                         print("Không tìm thấy cột tháng để tạo biểu đồ.")
@@ -1021,7 +1014,7 @@ def export_comparison_report(df_comparison, comparison_config, output_file_path,
 
                     elif 'Year' in df_comparison.columns and not comparison_config['months'] and len(comparison_config['years']) > 1:
                         # Biểu đồ đường theo năm
-                        chart = LineChart()
+                        chart = BarChart()
                         chart.title = f"Tổng giờ các dự án ({project_list}) theo năm"
                         chart.x_axis.title = "Năm"
                         chart.y_axis.title = "Giờ"
