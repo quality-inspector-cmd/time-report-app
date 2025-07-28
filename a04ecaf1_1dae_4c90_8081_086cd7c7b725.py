@@ -484,7 +484,9 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
         # Biểu đồ theo thời gian (YearMonth)
         if 'Year' in df.columns and 'MonthName' in df.columns:
             df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
-            df_sorted = df.sort_values(['Year', 'MonthName'])
+            
+            # ✅ Gom nhóm để tránh trùng dòng và tính tổng chính xác
+            f_sorted = df.groupby(['Project Name', 'Year', 'MonthName', 'YearMonth'], as_index=False)['Total Hours'].sum()
 
             projects = df_sorted['Project Name'].unique()
             all_yearmonths = sorted(df_sorted['YearMonth'].unique())
@@ -498,9 +500,11 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 y_vals = []
                 for ym in all_yearmonths:
                     match = df_proj[df_proj['YearMonth'] == ym]
-                    y = match['Total Hours'].values[0] if not match.empty else 0
+                    y = match['Total Hours'].sum() if not match.empty else 0  # ✅ Lấy tổng thay vì dòng đầu
                     y_vals.append(y)
+                    
                 ax.bar(x + i * width, y_vals, width=width, label=project)
+                
                 for j, val in enumerate(y_vals):
                     if val > 0:
                         ax.annotate(f"{val:.0f}", xy=(x[j] + i * width, val), xytext=(0, 3),
