@@ -806,7 +806,8 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
         # ✅ Loại bỏ các dự án không có dữ liệu
         df_filtered_projects = df_filtered['Project name'].unique().tolist()
         selected_projects = [p for p in selected_projects if p in df_filtered_projects]
-        comparison_config["filtered_projects"] = selected_projects
+    # ✅ Luôn gán filtered_projects vào config
+    comparison_config["filtered_projects"] = selected_projects
     if selected_projects:
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_projects)]
     else:
