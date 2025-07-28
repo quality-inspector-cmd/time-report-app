@@ -581,19 +581,22 @@ with tab_comparison_report_main:
             "By Task": "By Task",
             "By Workcentre": "By Workcentre"
         }
-
-    selected_filter_display = st.selectbox("Comparison filter mode", filter_mode_display_options, index=0, key="filter_mode_selectbox")
-    filter_mode = filter_mode_map[selected_filter_display]
-    
-    # ✅ Rerun nếu người dùng đổi filter mode
-    if 'selected_filter_mode' not in st.session_state or st.session_state.selected_filter_mode != filter_mode:
-        st.session_state.selected_filter_mode = filter_mode
+    # Lấy giá trị hiện tại từ session (nếu chưa có thì mặc định đầu tiên)
+    current_display = st.session_state.get("selected_filter_display", filter_mode_display_options[0])
+     # Hiển thị selectbox
+    selected_filter_display = st.selectbox(
+        "Comparison filter mode",
+        options=filter_mode_display_options,
+        index=filter_mode_display_options.index(current_display),
+        key="filter_mode_selectbox"
+    )
+        # Nếu người dùng chọn khác → cập nhật session và rerun
+    if selected_filter_display != current_display:
+        st.session_state.selected_filter_display = selected_filter_display
+        st.session_state.selected_filter_mode = filter_mode_map[selected_filter_display]
         st.rerun()
-
-    comp_years = []
-    comp_months = []
-    comp_projects = []
-    validation_error = False # Flag to check input errors
+        # ✅ Luôn lấy filter_mode từ session
+    filter_mode = st.session_state.get("selected_filter_mode", filter_mode_map[current_display])
 
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
