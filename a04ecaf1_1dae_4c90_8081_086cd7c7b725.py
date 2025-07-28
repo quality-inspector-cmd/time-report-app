@@ -486,7 +486,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
             
             # ✅ Gom nhóm để tránh trùng dòng và tính tổng chính xác
-            f_sorted = df.groupby(['Project Name', 'Year', 'MonthName', 'YearMonth'], as_index=False)['Total Hours'].sum()
+            df_sorted = df.groupby(['Project Name', 'Year', 'MonthName', 'YearMonth'], as_index=False)['Total Hours'].sum()
 
             projects = df_sorted['Project Name'].unique()
             all_yearmonths = sorted(df_sorted['YearMonth'].unique())
