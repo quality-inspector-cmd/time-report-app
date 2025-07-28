@@ -387,6 +387,18 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
         pdf.multi_cell(value_width, line_height, value_str, border=1)
         pdf.set_x(10)
 
+    # ✅ Hiển thị filter mode đang sử dụng
+    if filter_mode == "Task":
+        filter_mode_display = "Theo Task"
+    elif filter_mode == "Workcentre":
+        filter_mode_display = "Theo Workcentre"
+    else:
+        filter_mode_display = "Theo Tổng Giờ"
+        
+    pdf.ln(5)
+    pdf.set_font("DejaVu", 'B', 11)
+    pdf.cell(0, 8, f"Chế độ lọc: {filter_mode_display}", ln=True)
+
     # =========================
     # 🟩 Gom biểu đồ theo project
     # =========================
@@ -676,7 +688,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 # GENERATE PDF REPORT
 # =======================================
 
-def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode="Total"):
+def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode=filter_mode):
     tmp_dir = "tmp_comparison"
     os.makedirs(tmp_dir, exist_ok=True)
     charts_for_pdf = []
@@ -763,6 +775,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             "TRIAC TIME REPORT - COMPARISON",
             pdf_config_info,
             logo_path
+            filter_mode=filter_mode  # ✅ THÊM DÒNG NÀY
         )
         print(f"[DEBUG] PDF success: {success}")
         print(f"[DEBUG] PDF message: {msg}")
