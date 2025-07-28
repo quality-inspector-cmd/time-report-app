@@ -485,18 +485,31 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             df['YearMonth'] = df['Year'].astype(str) + "-" + df['MonthName'].astype(str)
             df_sorted = df.sort_values(['Year', 'MonthName'])
 
+            projects = df_sorted['Project Name'].unique()
+            all_yearmonths = sorted(df_sorted['YearMonth'].unique())
+            x = np.arange(len(all_yearmonths))
+            width = 0.8 / len(projects) if len(projects) > 1 else 0.6
+
             fig, ax = plt.subplots(figsize=(15, 8.3))
-            for project in df_sorted['Project Name'].unique():
+
+            for i, project in enumerate(projects):
                 df_proj = df_sorted[df_sorted['Project Name'] == project]
-                ax.plot(df_proj['YearMonth'], df_proj['Total Hours'], marker='o', label=project)
-                for x, y in zip(df_proj['YearMonth'], df_proj['Total Hours']):
-                    ax.annotate(f"{y:.0f}", xy=(x, y), xytext=(0, 5), textcoords="offset points",
-                                ha='center', fontsize=8)
+                y_vals = []
+                for ym in all_yearmonths:
+                    match = df_proj[df_proj['YearMonth'] == ym]
+                    y = match['Total Hours'].values[0] if not match.empty else 0
+                    y_vals.append(y)
+                ax.bar(x + i * width, y_vals, width=width, label=project)
+                for j, val in enumerate(y_vals):
+                    if val > 0:
+                        ax.annotate(f"{val:.0f}", xy=(x[j] + i * width, val), xytext=(0, 3),
+                                    textcoords="offset points", ha='center', fontsize=8)
 
             ax.set_title(f"{title} - Over Time")
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
-            plt.xticks(rotation=45, ha='right')
+            ax.set_xticks(x + width * (len(projects) - 1) / 2)
+            ax.set_xticklabels(all_yearmonths, rotation=45, ha='right')
 
             ax.legend(loc='upper center', bbox_to_anchor=(0.5, -0.20), ncol=5, fontsize=8)
 
