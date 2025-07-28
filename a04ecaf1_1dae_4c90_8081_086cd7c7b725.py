@@ -1264,21 +1264,21 @@ if __name__ == '__main__':
             print("⚠️ Không đủ năm trong dữ liệu để thực hiện so sánh một dự án qua các năm.")
 
 def send_email_to_admin(subject, body, sender_email, sender_password, receiver_email):
-    admin_email = "ky@triaccomposites.com"  # Thay bằng email thật của admin
-    smtp_server = "smtp.example.com"
-    smtp_port = 587
-    smtp_username = "your_email@example.com"
-    smtp_password = "your_password"
+    try:
+        msg = MIMEText(body)
+        msg["Subject"] = subject
+        msg["From"] = sender_email
+        msg["To"] = receiver_email
 
-    subject = "🛠️ Help Request from Time Report App"
-    body = f"User Email: {user_email}\n\nIssue:\n{issue_description}"
+        smtp_server = "smtp.gmail.com"  # Hoặc server SMTP bạn dùng
+        smtp_port = 587
 
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = smtp_username
-    msg["To"] = admin_email
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
 
-    with smtplib.SMTP(smtp_server, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.send_message(msg)
+        return True
+    except Exception as e:
+        print("Error sending email:", e)
+        return False
