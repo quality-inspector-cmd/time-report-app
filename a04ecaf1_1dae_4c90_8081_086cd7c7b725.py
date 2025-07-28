@@ -774,7 +774,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
             pdf_file_path,
             "TRIAC TIME REPORT - COMPARISON",
             pdf_config_info,
-            logo_path
+            logo_path,
             filter_mode=filter_mode  # ✅ THÊM DÒNG NÀY
         )
         print(f"[DEBUG] PDF success: {success}")
