@@ -696,6 +696,7 @@ def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_pa
     try:
         # 🆕 Dùng project đã lọc thay vì lấy trực tiếp từ config
         filtered_projects = comparison_config.get("filtered_projects", [])  # bạn cần truyền nó từ UI vào config
+        filter_mode = comparison_config.get("filter_mode", "Total")  # ✅ thêm dòng này
         
         pdf_config_info = {
             "Mode": comparison_mode,
