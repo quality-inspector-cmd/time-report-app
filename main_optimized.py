@@ -337,7 +337,7 @@ all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
 
 
 # Main interface tabs
-tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main = st.tabs, tab_help_main = st.tabs([
+tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main, tab_help_main = st.tabs([
     get_text('tab_standard_report'),
     get_text('tab_comparison_report'),
     get_text('tab_data_preview'),
