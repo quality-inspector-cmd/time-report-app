@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import os
 from datetime import datetime
+from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import send_email_to_admin
+
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
@@ -943,7 +945,7 @@ with tab_help_main:
             
             sender_email = "your_email@gmail.com"         # ✅ Thay bằng email gửi
             sender_password = "your_app_password"         # ✅ Thay bằng App Password hoặc mật khẩu
-            receiver_email = "admin@example.com"          # ✅ Email admin nhận
+            receiver_email = "ky@triaccomposites.com"          # ✅ Email admin nhận
 
             sent = send_email_to_admin(subject, body, sender_email, sender_password, receiver_email)
 
