@@ -636,6 +636,8 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             plt.close(fig)
             charts["total"] = chart_path
 
+        print(f"[DEBUG] Giá trị duy nhất trong Task: {df['Task'].unique()}")
+        print(f"[DEBUG] Giá trị duy nhất trong Workcentre: {df['Workcentre'].unique()}")
         return charts
 
     except Exception as e:
