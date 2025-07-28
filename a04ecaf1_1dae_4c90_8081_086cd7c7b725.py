@@ -832,16 +832,19 @@ def apply_comparison_filters(df_raw, comparison_config, comparison_mode, filter_
 
         # ✅ Lọc theo filter_mode nếu có
         if filter_mode == "Task":
-            df_comparison = df_comparison[df_comparison['Task'] != 'All']
+            df_comparison = df_comparison[df_comparison["Task"].str.strip().str.lower() != "all"]
         elif filter_mode == "Workcentre":
-            df_comparison = df_comparison[df_comparison['Workcentre'] != 'All']
+            df_comparison = df_comparison[df_comparison["Workcentre"].str.strip().str.lower() != "all"]
         elif filter_mode == "Total":
             df_comparison['Task'] = 'All'
             df_comparison['Workcentre'] = 'All'
 
         title = f"So sánh giờ giữa các dự án trong {months[0]}, năm {years[0]}"
+        
+        print(f"✅ After filter_mode='{filter_mode}', df_comparison shape: {df_comparison.shape}")
+        print(df_comparison[['Project Name', 'Task', 'Workcentre', 'Hours']].head())
+        
         return df_comparison, title, selected_projects
-
     elif comparison_mode in ["So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"]:
         if len(years) != 1 or len(selected_projects) < 2:
             return pd.DataFrame(), "Vui lòng chọn MỘT năm và ít nhất HAI dự án cho chế độ này.", []
