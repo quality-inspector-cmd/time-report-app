@@ -341,7 +341,8 @@ tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab
     get_text('tab_standard_report'),
     get_text('tab_comparison_report'),
     get_text('tab_data_preview'),
-    get_text('user_guide')
+    get_text('user_guide'),
+    get_text("help_tab")
 ])
 
 # =========================================================================
