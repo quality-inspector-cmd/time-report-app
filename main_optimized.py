@@ -533,7 +533,7 @@ with tab_comparison_report_main:
     internal_comparison_modes_map = {
         'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
         'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
-        'Compare Projects Over Time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
+        'compare_projects_over_time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
     }
     # Tạo display options và ánh xạ ngược lại
     display_options = [get_text(k) for k in internal_comparison_modes_map]
