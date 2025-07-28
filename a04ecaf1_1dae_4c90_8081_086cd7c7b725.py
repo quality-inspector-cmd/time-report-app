@@ -1213,6 +1213,7 @@ if __name__ == '__main__':
                 'selected_projects': [all_projects_in_raw_data[0]] # Chọn dự án đầu tiên
             }
             comparison_config_single_proj_years_example["filter_mode"] = "Total"
+            filter_mode = comparison_config_single_proj_years_example.get("filter_mode", "Total")
             print(f"\nChế độ: So Sánh Nhiều Dự Án Qua Các Tháng/Năm (dự án: {comparison_config_single_proj_years_example['selected_projects'][0]})")
             df_comp_single_proj_years, msg_single_proj_years = apply_comparison_filters(
                 raw_df,
@@ -1242,7 +1243,8 @@ if __name__ == '__main__':
                         comparison_config_single_proj_years_example,
                         pdf_path,
                         comparison_mode,
-                        logo_path
+                        logo_path,
+                        filter_mode
                     )
 
                     if export_success_pdf:
