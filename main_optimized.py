@@ -601,6 +601,8 @@ with tab_comparison_report_main:
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
+    # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
+    validation_error = False
 
     select_all_projects = st.checkbox(
     get_text("select_all_projects_checkbox"),
