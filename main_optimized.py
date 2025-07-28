@@ -569,9 +569,9 @@ with tab_comparison_report_main:
     st.subheader(get_text('filter_data_for_comparison'))
     filter_mode_display_options = ["By Total hour", "By Task", "By Workcentre"]
     filter_mode_map = {
-        "Theo Tổng Giờ": "Total",
-        "Theo Task": "Task",
-        "Theo Workcentre": "Workcentre"
+        "Theo Tổng Giờ": "By Total hour",
+        "Theo Task": "By Task",
+        "Theo Workcentre": "By Workcentre"
     }
     selected_filter_display = st.selectbox("Chế độ lọc so sánh", filter_mode_display_options, index=0, key="filter_mode_selectbox")
     filter_mode = filter_mode_map[selected_filter_display]
