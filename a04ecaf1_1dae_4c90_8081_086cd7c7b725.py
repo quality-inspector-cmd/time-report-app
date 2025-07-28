@@ -688,7 +688,7 @@ def export_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path
 # GENERATE PDF REPORT
 # =======================================
 
-def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode=filter_mode):
+def generate_comparison_pdf_report(df_comparison, comparison_config, pdf_file_path, comparison_mode, logo_path, filter_mode="Total"):
     tmp_dir = "tmp_comparison"
     os.makedirs(tmp_dir, exist_ok=True)
     charts_for_pdf = []
