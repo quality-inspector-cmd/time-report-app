@@ -585,6 +585,12 @@ with tab_comparison_report_main:
 
     # Lấy giá trị hiện tại từ session hoặc mặc định
     current_display = st.session_state.get("selected_filter_display", filter_mode_display_options[0])
+    
+    # ✅ Fallback nếu không hợp lệ sau khi đổi ngôn ngữ
+    if current_display not in filter_mode_display_options:
+        current_display = filter_mode_display_options[0]
+        st.session_state.selected_filter_display = current_display
+        st.session_state.selected_filter_mode = display_to_internal[current_display]
 
     # Hiển thị selectbox
     selected_filter_display = st.selectbox(
