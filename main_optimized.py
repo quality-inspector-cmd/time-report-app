@@ -330,8 +330,7 @@ def cached_load():
 
 with st.spinner(get_text('loading_data')):
     df_raw, config_data = cached_load()
-# ✅ Luôn gán df tại đây  
-df = df_raw.copy()  # ✅ THÊM DÒNG NÀY ở đây
+    df = df_raw.copy()  # ✅ THÊM DÒNG NÀY ở đây
 
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
