@@ -1,8 +1,9 @@
 import streamlit as st
-import pandas as pd
 import os
-from datetime import datetime
 import requests
+import pandas as pd
+from datetime import datetime
+
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
@@ -948,6 +949,20 @@ with tab_user_guide_main:
     if "access_log" in st.session_state:
         st.write("📜 Current session access log:")
         st.dataframe(pd.DataFrame(st.session_state.access_log))
+
+def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
+    payload = {
+        "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
+        "template_id": "time report app",      # 👈 Template bạn đã tạo
+        "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
+        "template_params": {
+            "user_email": user_email,
+            "message": user_issue
+        }
+    }
+    response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
+    print("EmailJS Response:", response.status_code, response.text)
+    return response.status_code == 200
 # HELP TAB
 # =========================================================================
 with tab_help_main:
@@ -973,17 +988,3 @@ with tab_help_main:
                 st.error(get_text("help_submit_fail", lang))
         else:
             st.warning(get_text("help_submit_warning", lang))
-            
-def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
-    payload = {
-        "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
-        "template_id": "time report app",      # 👈 Template bạn đã tạo
-        "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
-        "template_params": {
-            "user_email": user_email,
-            "message": user_issue
-        }
-    }
-    response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
-    print("EmailJS Response:", response.status_code, response.text)
-    return response.status_code == 200
