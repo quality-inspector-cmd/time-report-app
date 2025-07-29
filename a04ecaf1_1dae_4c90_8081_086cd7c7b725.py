@@ -1265,20 +1265,22 @@ if __name__ == '__main__':
 
 def send_email_to_admin(subject, body, sender_email, sender_password, receiver_email):
     try:
-        msg = MIMEText(body)
+        # Tạo nội dung email
+        msg = MIMEText(body, "plain", "utf-8")
         msg["Subject"] = subject
         msg["From"] = sender_email
         msg["To"] = receiver_email
 
-        smtp_server = "smtp.gmail.com"  # Hoặc server SMTP bạn dùng
+        # Kết nối SMTP
+        smtp_server = "smtp.gmail.com"
         smtp_port = 587
 
         with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()
+            server.starttls()  # Bảo mật TLS
             server.login(sender_email, sender_password)
             server.send_message(msg)
 
         return True
     except Exception as e:
-        print("Error sending email:", e)
+        print("❌ Error sending email:", e)
         return False
