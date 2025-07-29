@@ -926,5 +926,6 @@ with tab_user_guide_main:
 # =========================================================================
 with tab_help_main:
     lang = st.session_state.get("lang", "vi")
+
     st.markdown(f"### {get_text('help_title', lang)}")
-    st.info(get_text("help_instruction_simple", lang))
+    st.markdown(get_text("help_instruction_simple", lang))
