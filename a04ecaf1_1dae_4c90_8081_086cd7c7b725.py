@@ -522,7 +522,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 for j, val in enumerate(y_vals):
                     if val > 0:
                         ax.annotate(f"{val:.0f}", xy=(x[j] + i * width, val), xytext=(0, 3),
-                                    textcoords="offset points", ha='center', fontsize=8)
+                                    textcoords="offset points", ha='center', fontsize=8, rotation=90)
 
             ax.set_title(f"{title} - Over Time")
             ax.set_xlabel(x_label)
@@ -552,7 +552,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                         height = bar.get_height()
                         if height > 0:
                             ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8, rotation=90)
 
                 ax.set_title(f"{title} - By Task")
                 ax.set_xlabel(x_label)
@@ -584,7 +584,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                         height = bar.get_height()
                         if height > 0:
                             ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8)
+                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8,rotation=90)
                 # ➕ Tiêu đề và trục
                 ax.set_title(f"{title} - By Workcentre")
                 ax.set_xlabel(x_label)
@@ -626,7 +626,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
             ax.set_title(f"{title} - Tổng giờ theo Dự án")
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
-            ax.bar_label(bars, fontsize=8)
+            ax.bar_label(bars, fontsize=8, rotation=90, label_type='edge', padding=2)
             plt.xticks(rotation=45, ha='right')
 
             # Biểu đồ này chỉ 1 nhóm nên không cần legend
