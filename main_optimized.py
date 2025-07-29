@@ -2,6 +2,12 @@ import streamlit as st
 import os
 import pandas as pd
 from datetime import datetime
+import plotly.express as px
+import pdfkit
+from jinja2 import Template
+import uuid
+import os
+import tempfile
 
 
 # ==============================================================================
@@ -336,12 +342,13 @@ all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
 
 
 # Main interface tabs
-tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main, tab_help_main = st.tabs([
+tab_dashboard_main, tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main, tab_help_main = st.tabs([
+    "📈 Dashboard",
     get_text('tab_standard_report'),
     get_text('tab_comparison_report'),
     get_text('tab_data_preview'),
     get_text('user_guide'),
-    get_text("tab_help")   # <-- phải đúng key trong text_dict
+    get_text("tab_help")
 ])
 
 # =========================================================================
@@ -946,3 +953,62 @@ with tab_help_main:
 
     st.markdown(f"### {get_text('tab_help', lang)}")
     st.markdown(get_text("help_instruction_simple", lang))
+    
+with tab_dashboard_main:
+    st.subheader("📊 Tổng Quan Nhanh")
+
+    # 👉 Thời gian hiện tại
+    today = datetime.today()
+    current_year = today.year
+    current_month = today.strftime('%B')
+    current_week = today.isocalendar()[1]
+
+    # 👉 Chọn tuần trong tháng hiện tại
+    available_weeks = sorted(df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique())
+    selected_week = st.selectbox("🗓️ Chọn tuần trong tháng hiện tại", options=available_weeks, index=len(available_weeks)-1)
+
+    # 👉 Lọc dữ liệu
+    df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week)]
+    df_month = df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]
+
+    # 👉 Tính tổng giờ
+    total_hours_week = df_week['Hours'].sum()
+    total_hours_month = df_month['Hours'].sum()
+
+    # 👉 Hiển thị metric
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("🗓️ Tổng giờ tuần", f"{total_hours_week:.1f}h")
+    with col2:
+        st.metric("📆 Tổng giờ tháng", f"{total_hours_month:.1f}h")
+
+    # 👉 Top 5 dự án theo giờ (tuần)
+    top_projects = (
+        df_week.groupby("Project name")["Hours"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(5)
+        .reset_index()
+    )
+    fig1 = px.bar(
+        top_projects, x="Project name", y="Hours", color="Project name",
+        title="🔝 Top 5 Dự Án Theo Giờ", template="plotly_white"
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+    # 👉 Tỉ lệ giờ theo team (pie)
+    team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
+    fig2 = px.pie(
+        team_ratio, names="Workcentre", values="Hours",
+        title="🧩 Tỷ Lệ Giờ Theo Team (Workcentre)", template="plotly_white"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+    # 👉 Phân bổ team theo dự án (stacked bar)
+    team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
+    fig3 = px.bar(
+        team_project, x="Project name", y="Hours", color="Workcentre",
+        title="🏗️ Phân Bổ Team Theo Dự Án", template="plotly_white"
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+
