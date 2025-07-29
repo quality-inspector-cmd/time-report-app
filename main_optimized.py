@@ -954,7 +954,7 @@ with tab_user_guide_main:
 def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
     payload = {
         "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
-        "template_id": "__ejs-test-mail-service__",      # 👈 Template bạn đã tạo
+        "template_id": "template_is5l5s4",      # 👈 Template bạn đã tạo
         "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
         "template_params": {
             "user_email": user_email,
