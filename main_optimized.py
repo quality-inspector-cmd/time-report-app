@@ -199,7 +199,6 @@ TEXTS = {
         'your_email': "Your email",
         'describe_issue': "Describe the issue you're facing",
         "help_title": ("Gửi Yêu Cầu Trợ Giúp", "Submit Help Request"),
-        "help_title": "Help Guide",
         "help_instruction": "Please enter your email to receive detailed instructions.",
         "help_input_label": "Enter your email",
         "help_input_placeholder": ("Nhập mô tả sự cố ở đây...", "Type your issue here..."),
@@ -287,9 +286,9 @@ TEXTS = {
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
         'tab_help': "🔧 Cần trợ giúp?",
+        "help_title": ("Gửi Yêu Cầu Trợ Giúp", "Help Guide"), 
         'help_tab_description': "Nếu bạn gặp sự cố hoặc có thắc mắc, vui lòng mô tả vấn đề bên dưới. Hệ thống sẽ thông báo cho quản trị viên.",
         'your_email': "Email của bạn",
-        "help_title": "Hướng dẫn sử dụng",
         "help_instruction": "Vui lòng nhập email để nhận hướng dẫn chi tiết qua email.",
         "help_input_label": "Nhập email của bạn",
         'describe_issue': "Mô tả vấn đề bạn gặp phải",
@@ -303,8 +302,18 @@ TEXTS = {
 }
 
 # Lấy từ điển văn bản dựa trên lựa chọn ngôn ngữ hiện tại
-def get_text(key):
-    return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
+def get_text(key, lang=None):
+    lang = lang or st.session_state.get("lang", "vi")
+    val = TEXTS.get(lang, {}).get(key)
+
+    if val is None:
+        return f"Missing text for {key}"
+
+    # ✅ Nếu là tuple, chọn theo lang
+    if isinstance(val, tuple):
+        return val[0] if lang == 'vi' else val[1]
+
+    return val
 
 # Header của ứng dụng
 col_logo_title, col_lang = st.columns([0.8, 0.2])
@@ -941,29 +950,31 @@ with tab_user_guide_main:
 # HELP TAB
 # =========================================================================
 with tab_help_main:
-    st.markdown(f"### {get_text('help_title')}")
-    st.markdown(get_text('help_instruction'))
+    lang = st.session_state.get("lang", "vi")
+
+    st.markdown(f"### {get_text('help_title', lang)}")
+    st.markdown(get_text('help_instruction', lang))
 
     user_issue = st.text_area(
-        label=get_text("help_input_label"),
-        placeholder=get_text("help_input_placeholder"),
+        label=get_text("help_input_label", lang),
+        placeholder=get_text("help_input_placeholder", lang),
         key="help_user_input"
     )
 
-    if st.button(get_text("help_submit_button")):
+    if st.button(get_text("help_submit_button", lang)):
         if user_issue.strip():
             subject = f"[Time Report Help] New issue from user"
             body = f"User submitted the following issue:\n\n{user_issue}"
             
             sender_email = "your_email@gmail.com"         # ✅ Thay bằng email gửi
-            sender_password = "your_app_password"         # ✅ Thay bằng App Password hoặc mật khẩu
-            receiver_email = "ky@triaccomposites.com"          # ✅ Email admin nhận
+            sender_password = "your_app_password"         # ✅ Cần bổ sung dòng này
+            receiver_email = "ky@triaccomposites.com"     # ✅ Email admin nhận
 
             sent = send_email_to_admin(subject, body, sender_email, sender_password, receiver_email)
 
             if sent:
-                st.success(get_text("help_submit_success"))
+                st.success(get_text("help_submit_success", lang))
             else:
-                st.error(get_text("help_submit_fail"))
+                st.error(get_text("help_submit_fail", lang))
         else:
-            st.warning(get_text("help_submit_warning"))
+            st.warning(get_text("help_submit_warning", lang))
