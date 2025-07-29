@@ -572,11 +572,11 @@ with tab_comparison_report_main:
         get_text('select_comparison_mode'),
         options=display_options,
         index=current_index,
-        key='selected_comparison_display_key'  # 👈 đổi key khác
+        key='selected_comparison_mode_key'  # 👈 đổi key thành chính session key đã dùng trước đó
     )
     # Ánh xạ ngược lại key gốc
+    # Không cần gán lại session_state nữa!
     selected_key = display_to_key_map[selected_display]
-    st.session_state.selected_comparison_mode_key = selected_key
     # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
     vi_val, en_val = internal_comparison_modes_map[selected_key]
