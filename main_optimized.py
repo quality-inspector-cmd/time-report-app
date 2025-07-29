@@ -557,6 +557,7 @@ with tab_comparison_report_main:
         'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
         'compare_projects_over_time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
     }
+    current_language = st.session_state.get("lang", "vi")
     # Lấy danh sách display_name tùy ngôn ngữ
     comparison_mode_display_options = [
         vi if current_language == 'vi' else en
@@ -574,7 +575,7 @@ with tab_comparison_report_main:
     default_display = vi_val if current_language == 'vi' else en_val
 
     try:
-        current_index = display_options.index(default_display)
+        current_index = comparison_mode_display_options.index(default_display)
     except ValueError:
         # Giá trị mặc định không tìm thấy trong options hiện tại, fallback về đầu tiên
         current_index = 0
