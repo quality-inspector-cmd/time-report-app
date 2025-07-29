@@ -194,7 +194,7 @@ TEXTS = {
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
-        "help_instruction_simple": "If you have any questions or need support, please email **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!"
+        "help_instruction_simple": "If you have any questions or need support, please email **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!",
         'select_all_projects_checkbox': "Select all projects"
     },
     'vi': {
