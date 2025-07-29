@@ -620,7 +620,6 @@ with tab_comparison_report_main:
     if selected_filter_display != current_display:
         st.session_state.selected_filter_display = selected_filter_display
         st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
-        st.rerun()
 
       # ✅ Luôn lấy filter_mode (chuẩn hóa) từ session
     filter_mode = st.session_state.get("selected_filter_mode", display_to_internal[current_display])
@@ -631,22 +630,30 @@ with tab_comparison_report_main:
     # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
     validation_error = False
 
+    # Lưu trạng thái checkbox chọn tất cả
+    if "select_all_projects_checkbox" not in st.session_state:
+        st.session_state.select_all_projects_checkbox = True
+
     select_all_projects = st.checkbox(
-    get_text("select_all_projects_checkbox"),
-    value=True,
-    key="select_all_projects_checkbox"
+        get_text("select_all_projects_checkbox"),
+        value=st.session_state.select_all_projects_checkbox,
+        key="select_all_projects_checkbox"
     )
+
+    # Reset hoặc cập nhật danh sách project đã chọn
     if select_all_projects:
-        comp_projects = all_projects
+        comp_projects = all_projects  # ✅ Gán vào biến comp_projects
+        if st.session_state.comparison_selected_projects != all_projects:
+            st.session_state.comparison_selected_projects = all_projects
     else:
         comp_projects = st.multiselect(
             get_text('select_projects_comp'),
             options=all_projects,
-            default=[p for p in st.session_state.comparison_selected_projects if p in all_projects],
+            default=st.session_state.comparison_selected_projects,
             key='comp_projects_select_tab_common'
         )
-    st.session_state.comparison_selected_projects = comp_projects # Update state
-
+        if comp_projects != st.session_state.comparison_selected_projects:
+            st.session_state.comparison_selected_projects = comp_projects
 
     if comparison_mode == "So Sánh Nhiều Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare Projects Over Time (Months/Years)":
         if len(comp_projects) < 1:
@@ -660,10 +667,11 @@ with tab_comparison_report_main:
         selected_years_over_time = st.multiselect(
             get_text('select_years_for_over_time_months'),
             options=all_years,
-            default=[y for y in st.session_state.comparison_selected_years_over_time if y in all_years], # Ensure default is valid
+            default=st.session_state.comparison_selected_years_over_time,
             key='comp_years_select_tab_over_time'
         )
-        st.session_state.comparison_selected_years_over_time = selected_years_over_time # Update state
+        if selected_years_over_time != st.session_state.comparison_selected_years_over_time:
+            st.session_state.comparison_selected_years_over_time = selected_years_over_time
         comp_years = selected_years_over_time # Assign to comp_years for config
 
         # State management for selected months in "Over Time" mode (if single year selected)
