@@ -391,15 +391,15 @@ def create_pdf_from_charts_comp(charts_data, output_path, title, config_info, lo
 
     # ✅ Hiển thị filter mode đang sử dụng
     if filter_mode == "Task":
-        filter_mode_display = "Theo Task"
+        filter_mode_display = "By Task"
     elif filter_mode == "Workcentre":
-        filter_mode_display = "Theo Workcentre"
+        filter_mode_display = "By Workcentre"
     else:
-        filter_mode_display = "Theo Tổng Giờ"
+        filter_mode_display = "By Total Hours"
         
     pdf.ln(5)
     pdf.set_font("DejaVu", 'B', 11)
-    pdf.cell(0, 8, f"Chế độ lọc: {filter_mode_display}", ln=True)
+    pdf.cell(0, 8, f"Filter mode: {filter_mode_display}", ln=True)
 
     # =========================
     # 🟩 Gom biểu đồ theo project
@@ -623,7 +623,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
 
             fig, ax = plt.subplots(figsize=(15.7, 8.3))
             bars = ax.bar(df_total["Project Name"], df_total["Total Hours"])
-            ax.set_title(f"{title} - Tổng giờ theo Dự án")
+            ax.set_title(f"{title} - Total Hours by Project")
             ax.set_xlabel(x_label)
             ax.set_ylabel(y_label)
             ax.bar_label(bars, fontsize=8, rotation=90, label_type='edge', padding=2)
