@@ -194,7 +194,7 @@ TEXTS = {
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
-        'help_title': "Help",
+        'tab_help': "Help",
         "help_instruction_simple": "If you have any questions or need support, please email **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!",
         'select_all_projects_checkbox': "Select all projects"
     },
@@ -270,7 +270,7 @@ TEXTS = {
         'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
-        'help_title': "Trợ giúp",
+        'tab_help': "Trợ giúp",
         "help_instruction_simple": "Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ, vui lòng gửi email đến **ky@triaccomposites.com**. Chúng tôi sẽ phản hồi trong thời gian sớm nhất. Xin cảm ơn!",
         'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
@@ -927,5 +927,5 @@ with tab_user_guide_main:
 with tab_help_main:
     lang = st.session_state.get("lang", "vi")
 
-    st.markdown(f"### {get_text('help_title', lang)}")
+    st.markdown(f"### {get_text('tab_help', lang)}")
     st.markdown(get_text("help_instruction_simple", lang))
