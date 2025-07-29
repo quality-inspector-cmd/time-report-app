@@ -551,13 +551,21 @@ with tab_comparison_report_main:
         'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
         'compare_projects_over_time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
     }
-    # Tạo display options và ánh xạ ngược lại
-    display_options = [get_text(k) for k in internal_comparison_modes_map]
-    display_to_key_map = {get_text(k): k for k in internal_comparison_modes_map}
+    # Lấy danh sách display_name tùy ngôn ngữ
+    comparison_mode_display_options = [
+        vi if current_language == 'vi' else en
+        for (_, (vi, en)) in internal_comparison_modes_map.items()
+    ]
 
+    # Tạo map từ display → internal
+    display_to_internal_map = {
+        (vi if current_language == 'vi' else en): key
+        for key, (vi, en) in internal_comparison_modes_map.items()
+    }
     # Lấy giá trị mặc định từ session
     default_key = st.session_state.get('selected_comparison_mode_key', list(internal_comparison_modes_map.keys())[0])
-    default_display = get_text(default_key)
+    vi_val, en_val = internal_comparison_modes_map[default_key]
+    default_display = vi_val if current_language == 'vi' else en_val
 
     try:
         current_index = display_options.index(default_display)
@@ -569,17 +577,14 @@ with tab_comparison_report_main:
         default_display = get_text(default_key)  # cập nhật lại display nếu fallback
     # Hiển thị selectbox (dùng chính session key để giữ đồng bộ)
     selected_display = st.selectbox(
-        get_text('select_comparison_mode'),
-        options=display_options,
-        index=current_index,
-        key='selected_comparison_mode_key'  # 👈 đổi key thành chính session key đã dùng trước đó
+        get_text('comparison_mode_label'),
+        options=comparison_mode_display_options,
     )
-    # Ánh xạ ngược lại key gốc
-    # Không cần gán lại session_state nữa!
-    selected_key = display_to_key_map[selected_display]
-    # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
+
+    # Chuyển lại thành key nội bộ
+    comparison_mode_selected = display_to_internal_map[selected_display]
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
-    vi_val, en_val = internal_comparison_modes_map[selected_key]
+    vi_val, en_val = internal_comparison_modes_map[comparison_mode_selected]
     comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
     
     st.subheader(get_text('filter_data_for_comparison'))
