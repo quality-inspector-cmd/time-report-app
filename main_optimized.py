@@ -10,6 +10,8 @@ import os
 import tempfile
 
 
+
+
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
 # HOẶC THAY THẾ TÊN FILE NẾU BẠN ĐÃ ĐỔI TÊN NÓ.
@@ -352,7 +354,6 @@ tab_dashboard_main, tab_standard_report_main, tab_comparison_report_main, tab_da
     get_text('user_guide'),
     get_text("tab_help")
 ])
-
 # =========================================================================
 # STANDARD REPORT TAB
 # =========================================================================
@@ -957,7 +958,7 @@ with tab_help_main:
     st.markdown(get_text("help_instruction_simple", lang))
     
 with tab_dashboard_main:
-    st.subheader("📊 Quick Overview")
+    st.subheader("📊 Tổng Quan Nhanh")
 
     # 👉 Thời gian hiện tại
     today = datetime.today()
@@ -967,7 +968,7 @@ with tab_dashboard_main:
 
     # 👉 Chọn tuần trong tháng hiện tại
     available_weeks = sorted(df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique())
-    selected_week = st.selectbox("🗓️ Select week in current month", options=available_weeks, index=len(available_weeks)-1)
+    selected_week = st.selectbox("🗓️ Chọn tuần trong tháng hiện tại", options=available_weeks, index=len(available_weeks)-1)
 
     # 👉 Lọc dữ liệu
     df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week)]
@@ -980,9 +981,9 @@ with tab_dashboard_main:
     # 👉 Hiển thị metric
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("🗓️ Total weekly hours", f"{total_hours_week:.1f}h")
+        st.metric("🗓️ Tổng giờ tuần", f"{total_hours_week:.1f}h")
     with col2:
-        st.metric("📆 Total monthly hours", f"{total_hours_month:.1f}h")
+        st.metric("📆 Tổng giờ tháng", f"{total_hours_month:.1f}h")
 
     # 👉 Top 5 dự án theo giờ (tuần)
     top_projects = (
@@ -994,7 +995,7 @@ with tab_dashboard_main:
     )
     fig1 = px.bar(
         top_projects, x="Project name", y="Hours", color="Project name",
-        title="🔝 Top 5 Hourly Projects", template="plotly_white"
+        title="🔝 Top 5 Dự Án Theo Giờ", template="plotly_white"
     )
     st.plotly_chart(fig1, use_container_width=True)
 
@@ -1002,7 +1003,7 @@ with tab_dashboard_main:
     team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
     fig2 = px.pie(
         team_ratio, names="Workcentre", values="Hours",
-        title="🧩 Hourly Rate By Team (Workcentre)", template="plotly_white"
+        title="🧩 Tỷ Lệ Giờ Theo Team (Workcentre)", template="plotly_white"
     )
     st.plotly_chart(fig2, use_container_width=True)
 
@@ -1010,7 +1011,6 @@ with tab_dashboard_main:
     team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
     fig3 = px.bar(
         team_project, x="Project name", y="Hours", color="Workcentre",
-        title="🏗️ Team Allocation By Project", template="plotly_white"
+        title="🏗️ Phân Bổ Team Theo Dự Án", template="plotly_white"
     )
     st.plotly_chart(fig3, use_container_width=True)
-
