@@ -953,22 +953,23 @@ with tab_help_main:
     lang = st.session_state.get("lang", "vi")
 
     st.markdown(f"### {get_text('help_title', lang)}")
-    st.markdown(get_text('help_instruction', lang))
+    st.markdown(get_text("help_instruction", lang))
 
     user_issue = st.text_area(
-        label=get_text("help_input_label", lang),
+        label=get_text("describe_issue", lang),
         placeholder=get_text("help_input_placeholder", lang),
         key="help_user_input"
     )
 
     if st.button(get_text("help_submit_button", lang)):
         if user_issue.strip():
-            subject = f"[Time Report Help] New issue from user"
-            body = f"User submitted the following issue:\n\n{user_issue}"
-            
-            sender_email = "your_email@gmail.com"         # ✅ Thay bằng email gửi
-            sender_password = "your_app_password"         # ✅ Cần bổ sung dòng này
-            receiver_email = "ky@triaccomposites.com"     # ✅ Email admin nhận
+            user_email = st.session_state.get('user_email', 'unknown@triaccomposites.com')
+            subject = "[Time Report Help] New issue from user"
+            body = f"User email: {user_email}\n\nIssue description:\n\n{user_issue}"
+
+            sender_email = "ky@triaccomposites.com"           # email gửi
+            sender_password = "your_app_password"             # App password
+            receiver_email = "ky@triaccomposites.com"         # bạn nhận
 
             sent = send_email_to_admin(subject, body, sender_email, sender_password, receiver_email)
 
