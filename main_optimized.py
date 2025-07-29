@@ -198,6 +198,17 @@ TEXTS = {
         'help_tab_description': "If you experience issues or have questions, please describe your problem below. The system will notify the administrator.",
         'your_email': "Your email",
         'describe_issue': "Describe the issue you're facing",
+        "help_title": ("Gửi Yêu Cầu Trợ Giúp", "Submit Help Request"),
+        "help_instruction": (
+            "Vui lòng mô tả sự cố bạn gặp phải. Thông tin sẽ được gửi đến quản trị viên.",
+            "Please describe the issue you're experiencing. Your message will be sent to the admin."
+        ),
+        "help_input_label": ("Mô tả sự cố", "Describe the issue"),
+        "help_input_placeholder": ("Nhập mô tả sự cố ở đây...", "Type your issue here..."),
+        "help_submit_button": ("Gửi yêu cầu", "Submit request"),
+        "help_submit_success": ("Yêu cầu đã được gửi thành công!", "Your request has been successfully sent!"),
+        "help_submit_fail": ("Không thể gửi yêu cầu. Vui lòng thử lại.", "Failed to send the request. Please try again."),
+        "help_submit_warning": ("Vui lòng nhập nội dung trước khi gửi.", "Please enter some text before submitting."),
         'send_help_request_button': "Send Help Request",
         'issue_required_warning': "Please enter the issue description.",
         'email_required_warning': "Please enter your email.",
