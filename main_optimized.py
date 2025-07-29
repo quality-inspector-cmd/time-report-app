@@ -966,13 +966,6 @@ with tab_help_main:
         if user_issue.strip():
             user_email = st.session_state.get('user_email', 'unknown@triaccomposites.com')
             sent = send_email_via_emailjs(user_issue, user_email)
-            
-            if sent:
-                st.success(get_text("help_submit_success", lang))
-            else:
-                st.error(get_text("help_submit_fail", lang))
-    else:
-        st.warning(get_text("help_submit_warning", lang))
 
             if sent:
                 st.success(get_text("help_submit_success", lang))
