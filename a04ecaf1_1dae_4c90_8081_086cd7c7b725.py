@@ -1263,17 +1263,3 @@ if __name__ == '__main__':
                 print(f"⚠️ Không có dữ liệu cho '{comparison_mode}': {msg_single_proj_years}")
         else:
             print("⚠️ Không đủ năm trong dữ liệu để thực hiện so sánh một dự án qua các năm.")
-
-def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
-    payload = {
-        "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
-        "template_id": "time report app",      # 👈 Template bạn đã tạo
-        "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
-        "template_params": {
-            "user_email": user_email,
-            "message": user_issue
-        }
-    }
-    response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
-    print("EmailJS Response:", response.status_code, response.text)
-    return response.status_code == 200
