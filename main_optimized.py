@@ -195,6 +195,7 @@ TEXTS = {
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
         "help_instruction_simple": "If you have any questions or need support, please email **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!",
+        'help_title': "Help",
         'select_all_projects_checkbox': "Select all projects"
     },
     'vi': {
@@ -270,6 +271,7 @@ TEXTS = {
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
         "help_instruction_simple": "Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ, vui lòng gửi email đến **ky@triaccomposites.com**. Chúng tôi sẽ phản hồi trong thời gian sớm nhất. Xin cảm ơn!",
+        'help_title': "Trợ giúp",
         'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
 }
