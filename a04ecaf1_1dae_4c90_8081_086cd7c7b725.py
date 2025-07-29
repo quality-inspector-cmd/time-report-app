@@ -521,7 +521,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                 
                 for j, val in enumerate(y_vals):
                     if val > 0:
-                        ax.annotate(f"{val:.0f}", xy=(x[j] + i * width, val), xytext=(0, 3),
+                        ax.annotate(f"{val:.0f}", xy=(x[j] + i * width, val), xytext=(0, 5),
                                     textcoords="offset points", ha='center', fontsize=8, rotation=90)
 
             ax.set_title(f"{title} - Over Time")
@@ -552,7 +552,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                         height = bar.get_height()
                         if height > 0:
                             ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8, rotation=90)
+                                        xytext=(0, 5), textcoords="offset points", ha='center', fontsize=8, rotation=90)
 
                 ax.set_title(f"{title} - By Task")
                 ax.set_xlabel(x_label)
@@ -584,7 +584,7 @@ def create_comparison_chart(df, mode, title, x_label, y_label, path, config, fil
                         height = bar.get_height()
                         if height > 0:
                             ax.annotate(f"{height:.0f}", xy=(bar.get_x() + bar.get_width() / 2, height),
-                                        xytext=(0, 3), textcoords="offset points", ha='center', fontsize=8,rotation=90)
+                                        xytext=(0, 5), textcoords="offset points", ha='center', fontsize=8,rotation=90)
                 # ➕ Tiêu đề và trục
                 ax.set_title(f"{title} - By Workcentre")
                 ax.set_xlabel(x_label)
