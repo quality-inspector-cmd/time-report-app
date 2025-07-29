@@ -324,11 +324,13 @@ if not os.path.exists(path_dict['template_file']):
 @st.cache_data(ttl=1800)
 def cached_load():
     df_raw = load_raw_data(path_dict['template_file'])
+    df = df_raw.copy()
     config_data = read_configs(path_dict['template_file'])
     return df_raw, config_data
 
 with st.spinner(get_text('loading_data')):
     df_raw, config_data = cached_load()
+    df = df_raw.copy()  # ✅ THÊM DÒNG NÀY ở đây
 
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
