@@ -14,7 +14,6 @@ import traceback
 import numpy as np
 import smtplib
 from email.mime.text import MIMEText
-import requests
 
 # Hàm hỗ trợ làm sạch tên file/sheet
 def sanitize_filename(name):
