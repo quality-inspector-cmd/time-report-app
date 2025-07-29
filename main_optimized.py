@@ -962,8 +962,11 @@ def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com")
         }
     }
     response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
-    print("EmailJS Response:", response.status_code, response.text)
+    print("EmailJS Status:", response.status_code)
+    print("EmailJS Text:", response.text)
     return response.status_code == 200
+# Gọi hàm test:
+send_email_via_emailjs("🧪 Đây là tin nhắn test gửi từ Python", "ky@triaccomposites.com")
 # HELP TAB
 # =========================================================================
 with tab_help_main:
