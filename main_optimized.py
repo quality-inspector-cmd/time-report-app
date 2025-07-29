@@ -11,7 +11,7 @@ from datetime import datetime
 from a04ecaf1_1dae_4c90_8081_086cd7c7b725 import (
     setup_paths, load_raw_data, read_configs,
     apply_filters, export_report, export_pdf_report,
-    apply_comparison_filters, export_comparison_report, export_comparison_pdf_report,send_email_to_admin
+    apply_comparison_filters, export_comparison_report, export_comparison_pdf_report
 )
 # ==============================================================================
 
