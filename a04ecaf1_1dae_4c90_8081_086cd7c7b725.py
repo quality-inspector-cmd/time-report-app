@@ -1263,24 +1263,16 @@ if __name__ == '__main__':
         else:
             print("⚠️ Không đủ năm trong dữ liệu để thực hiện so sánh một dự án qua các năm.")
 
-def send_email_to_admin(subject, body, sender_email, sender_password, receiver_email):
-    try:
-        # Tạo nội dung email
-        msg = MIMEText(body, "plain", "utf-8")
-        msg["Subject"] = subject
-        msg["From"] = sender_email
-        msg["To"] = receiver_email
-
-        # Kết nối SMTP
-        smtp_server = "smtp.gmail.com"
-        smtp_port = 587
-
-        with smtplib.SMTP(smtp_server, smtp_port) as server:
-            server.starttls()  # Bảo mật TLS
-            server.login(sender_email, sender_password)
-            server.send_message(msg)
-
-        return True
-    except Exception as e:
-        print("❌ Error sending email:", e)
-        return False
+def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
+    payload = {
+        "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
+        "template_id": "time report app",      # 👈 Template bạn đã tạo
+        "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
+        "template_params": {
+            "user_email": user_email,
+            "message": user_issue
+        }
+    }
+    response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
+    print("EmailJS Response:", response.status_code, response.text)
+    return response.status_code == 200
