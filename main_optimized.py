@@ -1,6 +1,5 @@
 import streamlit as st
 import os
-import requests
 import pandas as pd
 from datetime import datetime
 
@@ -195,23 +194,7 @@ TEXTS = {
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
-        'tab_help': "🔧 Need Help?",
-        'help_tab_description': "If you experience issues or have questions, please describe your problem below. The system will notify the administrator.",
-        'your_email': "Your email",
-        'describe_issue': "Describe the issue you're facing",
-        "help_title": ("Gửi Yêu Cầu Trợ Giúp", "Submit Help Request"),
-        "help_instruction": "Please enter your email to receive detailed instructions.",
-        "help_input_label": "Enter your email",
-        "help_input_placeholder": ("Nhập mô tả sự cố ở đây...", "Type your issue here..."),
-        "help_submit_button": ("Gửi yêu cầu", "Submit request"),
-        "help_submit_success": ("Yêu cầu đã được gửi thành công!", "Your request has been successfully sent!"),
-        "help_submit_fail": ("Failed to send the request. Please try again."),
-        "help_submit_warning": ("Vui lòng nhập nội dung trước khi gửi.", "Please enter some text before submitting."),
-        'send_help_request_button': "Send Help Request",
-        'issue_required_warning': "Please enter the issue description.",
-        'email_required_warning': "Please enter your email.",
-        'email_sent_success': "✅ Request sent successfully. Admin will respond soon.",
-        'email_sent_error': "❌ Failed to send your help request",
+        "help_instruction_simple": "If you have any questions or need support, please email **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!"
         'select_all_projects_checkbox': "Select all projects"
     },
     'vi': {
@@ -286,20 +269,7 @@ TEXTS = {
         'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
-        'tab_help': "🔧 Cần trợ giúp?",
-        "help_title": "Gửi Yêu Cầu Trợ Giúp",
-        'help_tab_description': "Nếu bạn gặp sự cố hoặc có thắc mắc, vui lòng mô tả vấn đề bên dưới. Hệ thống sẽ thông báo cho quản trị viên.",
-        'your_email': "Email của bạn",
-        "help_instruction": "Vui lòng nhập email để nhận hướng dẫn chi tiết qua email.",
-        'help_input_label': "Nhập nội dung cần trợ giúp",
-        'help_input_placeholder': "Nhập mô tả sự cố ở đây...",
-        'describe_issue': "Mô tả vấn đề bạn gặp phải",
-        'help_submit_button': "Gửi yêu cầu",
-        'help_submit_fail': "Không thể gửi yêu cầu. Vui lòng thử lại.",
-        'issue_required_warning': "Vui lòng nhập mô tả vấn đề.",
-        'email_required_warning': "Vui lòng nhập email của bạn.",
-        'email_sent_success': "✅ Đã gửi yêu cầu thành công. Quản trị viên sẽ phản hồi sớm.",
-        'email_sent_error': "❌ Gửi yêu cầu trợ giúp thất bại",
+        "help_instruction_simple": "Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ, vui lòng gửi email đến **ky@triaccomposites.com**. Chúng tôi sẽ phản hồi trong thời gian sớm nhất. Xin cảm ơn!",
         'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
 }
@@ -950,45 +920,9 @@ with tab_user_guide_main:
     if "access_log" in st.session_state:
         st.write("📜 Current session access log:")
         st.dataframe(pd.DataFrame(st.session_state.access_log))
-
-def send_email_via_emailjs(user_issue, user_email="unknown@triaccomposites.com"):
-    payload = {
-        "service_id": "service_6petxed",        # 👈 Thay bằng ID thực tế
-        "template_id": "template_is5l5s4",      # 👈 Template bạn đã tạo
-        "user_id": "9QJ-PFvJXzUhcfvAl",           # 👈 Public key (user ID)
-        "template_params": {
-            "user_email": user_email,
-            "message": user_issue
-        }
-    }
-    response = requests.post("https://api.emailjs.com/api/v1.0/email/send", json=payload)
-    print("EmailJS Status:", response.status_code)
-    print("EmailJS Text:", response.text)
-    return response.status_code == 200
-# Gọi hàm test:
-send_email_via_emailjs("🧪 Đây là tin nhắn test gửi từ Python", "ky@triaccomposites.com")
 # HELP TAB
 # =========================================================================
 with tab_help_main:
     lang = st.session_state.get("lang", "vi")
-
     st.markdown(f"### {get_text('help_title', lang)}")
-    st.markdown(get_text("help_instruction", lang))
-
-    user_issue = st.text_area(
-        label=get_text("describe_issue", lang),
-        placeholder=get_text("help_input_placeholder", lang),
-        key="help_user_input"
-    )
-
-    if st.button(get_text("help_submit_button", lang)):
-        if user_issue.strip():
-            user_email = st.session_state.get('user_email', 'unknown@triaccomposites.com')
-            sent = send_email_via_emailjs(user_issue, user_email)
-
-            if sent:
-                st.success(get_text("help_submit_success", lang))
-            else:
-                st.error(get_text("help_submit_fail", lang))
-        else:
-            st.warning(get_text("help_submit_warning", lang))
+    st.info(get_text("help_instruction_simple", lang))
