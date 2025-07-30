@@ -354,6 +354,25 @@ else:
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
     st.stop()
+    
+def create_hierarchy_chart(df_filtered, config=None):
+    if not all(col in df_filtered.columns for col in ['Project name', 'Workcentre', 'Task', 'Job', 'Hours']):
+        return None
+
+    df_hierarchy = df_filtered.groupby(
+        ['Project name', 'Workcentre', 'Task', 'Job']
+    )['Hours'].sum().reset_index()
+
+    fig = px.sunburst(
+        df_hierarchy,
+        path=['Project name', 'Workcentre', 'Task', 'Job'],
+        values='Hours',
+        title="🔍 Phân Cấp Project → Workcentre → Task → Job",
+        template='plotly_white',
+        color='Project name'
+    )
+    fig.update_layout(margin=dict(t=40, l=10, r=10, b=10))
+    return fig
 
 # Get unique years, months, and projects from raw data for selectbox options
 all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist())
@@ -615,6 +634,10 @@ with tab_standard_report_main:
                 fig_workcentre = create_workcentre_chart(df_filtered_standard, standard_report_config)
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
+                    
+                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                if fig_hierarchy:
+                    st.plotly_chart(fig_hierarchy, use_container_width=True)
                 st.markdown("---")
                 
                 today_str = datetime.today().strftime("%Y-%m-%d")  # ✅ Đúng cú pháp
@@ -951,7 +974,10 @@ with tab_comparison_report_main:
                 fig_workcentre = create_workcentre_chart(df_filtered_comparison, comparison_config)
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
-
+                    
+                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                if fig_hierarchy:
+                    st.plotly_chart(fig_hierarchy, use_container_width=True)
                 st.markdown("---")
 
                 report_generated_comp = False
@@ -1087,22 +1113,17 @@ with tab_dashboard_main:
     current_month = today.strftime('%B')
     current_week = today.isocalendar()[1]
 
-    # 👉 Get start and end dates for each week number
     def get_week_date_range(year, week_num):
-        d = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w")  # Monday of that ISO week
+        d = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w")  # Monday
         start_date = d.strftime('%d/%m')
         end_date = (d + timedelta(days=6)).strftime('%d/%m')
         return f"Week {week_num} ({start_date} → {end_date})"
 
-    # 👉 Get list of available weeks in the current month
     available_weeks = sorted(
         df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique()
     )
-
-    # 👉 Create a label map for week numbers
     week_labels = {w: get_week_date_range(current_year, w) for w in available_weeks}
 
-    # 👉 Week selector with formatted labels
     selected_week_num = st.selectbox(
         "🗓️ Select a week in the current month",
         options=available_weeks,
@@ -1110,22 +1131,18 @@ with tab_dashboard_main:
         index=len(available_weeks) - 1
     )
 
-    # 👉 Filter data
     df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week_num)]
     df_month = df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]
 
-    # 👉 Total hours
     total_hours_week = df_week['Hours'].sum()
     total_hours_month = df_month['Hours'].sum()
 
-    # 👉 Show metrics
     col1, col2 = st.columns(2)
     with col1:
         st.metric("🗓️ Total Weekly Hours", f"{total_hours_week:.1f}h")
     with col2:
         st.metric("📆 Total Monthly Hours", f"{total_hours_month:.1f}h")
 
-    # 👉 Top 5 projects by hours (week)
     top_projects = (
         df_week.groupby("Project name")["Hours"]
         .sum()
@@ -1139,7 +1156,6 @@ with tab_dashboard_main:
     )
     st.plotly_chart(fig1, use_container_width=True)
 
-    # 👉 Hour distribution by team (pie chart)
     team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
     fig2 = px.pie(
         team_ratio, names="Workcentre", values="Hours",
@@ -1147,10 +1163,22 @@ with tab_dashboard_main:
     )
     st.plotly_chart(fig2, use_container_width=True)
 
-    # 👉 Team allocation by project (stacked bar chart)
     team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
     fig3 = px.bar(
         team_project, x="Project name", y="Hours", color="Workcentre",
         title="🏗️ Team Allocation by Project", template="plotly_white"
     )
     st.plotly_chart(fig3, use_container_width=True)
+
+    # 🔽 Phân tích phân cấp
+    st.markdown("---")
+    st.subheader("🧭 Hierarchical Analysis (Project → Workcentre → Task → Job)")
+
+    df_hierarchy_base = df_week if not df_week.empty else df_month
+
+    if all(col in df_hierarchy_base.columns for col in ['Project name', 'Workcentre', 'Task', 'Job', 'Hours']):
+        fig_hierarchy = create_hierarchy_chart(df_hierarchy_base)
+        if fig_hierarchy:
+            st.plotly_chart(fig_hierarchy, use_container_width=True)
+    else:
+        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Workcentre, Task, Job, Hours)")
