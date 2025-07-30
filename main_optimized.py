@@ -774,10 +774,6 @@ with tab_comparison_report_main:
     # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
     validation_error = False
 
-    # Lưu trạng thái checkbox chọn tất cả
-    if "select_all_projects_checkbox" not in st.session_state:
-        st.session_state.select_all_projects_checkbox = True
-
     select_all_projects = st.checkbox(
         get_text("select_all_projects_checkbox"),
         value=st.session_state.select_all_projects_checkbox,
