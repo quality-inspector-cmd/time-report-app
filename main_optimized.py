@@ -8,6 +8,10 @@ from jinja2 import Template
 import uuid
 import os
 import tempfile
+from datetime import datetime, timedelta
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 
 
@@ -151,6 +155,7 @@ TEXTS = {
         'no_year_selected_error': "Please select a valid year to generate the report.",
         'no_project_selected_warning_standard': "Please select at least one project to generate the standard report.",
         'no_data_after_filter_standard': "⚠️ No data after filtering for the standard report. Please check your selections.",
+        'latest_update_date': "Latest data update",
         'generating_excel_report': "Generating Excel report...",
         'excel_report_generated': "✅ Excel Report generated: {}",
         'download_excel_report': "📥 Download Excel Report",
@@ -168,7 +173,6 @@ TEXTS = {
         'select_years': "Select Year(s):",
         'select_months_comp': "Select Month(s):",
         'select_projects_comp': "Select Project(s):",
-        'latest_update_date': "Latest data update",
         'generate_comparison_report_btn': "🚀 Generate Comparison Report",
         'no_data_after_filter_comparison': "⚠️ {}",
         'data_filtered_success': "✅ Data filtered successfully for comparison.",
@@ -207,6 +211,7 @@ TEXTS = {
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
         'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
         'tab_help': "Help",
+        'preview_charts_title': "📊 Preview Charts",
         "help_instruction_simple": "If you have any questions or need support, please email to Admin **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!",
         'select_all_projects_checkbox': "Select all projects"
     },
@@ -250,6 +255,7 @@ TEXTS = {
         'select_projects_comp': "Chọn dự án(các dự án):", # Dùng chung cho các mode
         'generate_comparison_report_btn': "🚀 Tạo báo cáo so sánh",
         'no_data_after_filter_comparison': "⚠️ {}",
+        'latest_update_date': "Dữ liệu được cập nhật đến ngày",
         'data_filtered_success': "✅ Dữ liệu đã được lọc thành công cho so sánh.",
         'comparison_data_preview': "Xem trước dữ liệu so sánh",
         'generating_comparison_excel': "Đang tạo báo cáo Excel so sánh...",
@@ -257,7 +263,6 @@ TEXTS = {
         'download_comparison_excel': "📥 Tải báo cáo Excel so sánh",
         'generating_comparison_pdf': "Đang tạo báo cáo PDF so sánh...",
         'comparison_pdf_generated': "✅ Báo cáo PDF so sánh đã được tạo: {}",
-        'latest_update_date': "Dữ liệu được cập nhật đến ngày",
         'download_comparison_pdf': "📥 Tải báo cáo PDF so sánh",
         'failed_to_generate_comparison_excel': "❌ Đã xảy ra lỗi khi tạo báo cáo Excel so sánh.",
         'failed_to_generate_comparison_pdf': "❌ Đã xảy ra lỗi khi tạo báo cáo PDF so sánh.",
@@ -284,6 +289,7 @@ TEXTS = {
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
         'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
         'tab_help': "Trợ giúp",
+        'preview_charts_title': "📊 Biểu đồ xem trước",
         "help_instruction_simple": "Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ, vui lòng gửi email đến Quản trị viên **ky@triaccomposites.com**. Chúng tôi sẽ phản hồi trong thời gian sớm nhất. Xin cảm ơn!",
         'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
@@ -344,6 +350,7 @@ if 'Date' in df_raw.columns:
         st.warning(get_text('no_valid_dates_found'))
 else:
     st.warning(get_text('date_column_missing'))
+
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
     st.stop()
@@ -364,6 +371,80 @@ tab_dashboard_main, tab_standard_report_main, tab_comparison_report_main, tab_da
     get_text('user_guide'),
     get_text("tab_help")
 ])
+# Review charts
+def create_monthly_chart(df_filtered, config):
+    if 'MonthName' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    ordered_months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+
+    df_month = (
+        df_filtered.groupby('MonthName')['Hours']
+        .sum()
+        .reindex(ordered_months)
+        .dropna()
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_month,
+        x='MonthName',
+        y='Hours',
+        title="📆 Monthly Total Hours",
+        color='MonthName',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Month", yaxis_title="Hours")
+    return fig
+
+def create_task_chart(df_filtered, config):
+    if 'Task' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_task = (
+        df_filtered.groupby('Task')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_task,
+        x='Hours',
+        y='Task',
+        orientation='h',
+        title="📋 Total Hours by Task",
+        color='Task',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Task")
+    return fig
+
+def create_workcentre_chart(df_filtered, config):
+    if 'Workcentre' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_wc = (
+        df_filtered.groupby('Workcentre')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_wc,
+        x='Hours',
+        y='Workcentre',
+        orientation='h',
+        title="🏭 Total Hours by Workcentre",
+        color='Workcentre',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Workcentre")
+    return fig
 # =========================================================================
 # STANDARD REPORT TAB
 # =========================================================================
@@ -521,6 +602,21 @@ with tab_standard_report_main:
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
+                # 👇 CHỈ THÊM PHẦN NÀY
+                st.subheader(get_text("preview_charts_title"))  # ví dụ: "📊 Biểu đồ xem trước"
+                fig_monthly = create_monthly_chart(df_filtered_standard, standard_report_config)
+                if fig_monthly:
+                    st.plotly_chart(fig_monthly, use_container_width=True)
+
+                fig_task = create_task_chart(df_filtered_standard, standard_report_config)
+                if fig_task:
+                    st.plotly_chart(fig_task, use_container_width=True)
+
+                fig_workcentre = create_workcentre_chart(df_filtered_standard, standard_report_config)
+                if fig_workcentre:
+                    st.plotly_chart(fig_workcentre, use_container_width=True)
+                st.markdown("---")
+                
                 today_str = datetime.today().strftime("%Y-%m-%d")  # ✅ Đúng cú pháp
                 path_dict = {                                        # ✅ Bổ sung cần thiết
                 'output_file': f'outputs/standard/Time_report_Standard_{today_str}.xlsx',
@@ -841,6 +937,22 @@ with tab_comparison_report_main:
                 st.success(get_text('data_filtered_success'))
                 st.subheader(get_text('comparison_data_preview'))
                 st.dataframe(df_filtered_comparison)
+                # 👇 Thêm biểu đồ xem trước (dùng plotly)
+                st.subheader(get_text("preview_charts_title"))  # 📊 Biểu đồ xem trước
+
+                fig_monthly = create_monthly_chart(df_filtered_comparison, comparison_config)
+                if fig_monthly:
+                    st.plotly_chart(fig_monthly, use_container_width=True)
+
+                fig_task = create_task_chart(df_filtered_comparison, comparison_config)
+                if fig_task:
+                    st.plotly_chart(fig_task, use_container_width=True)
+
+                fig_workcentre = create_workcentre_chart(df_filtered_comparison, comparison_config)
+                if fig_workcentre:
+                    st.plotly_chart(fig_workcentre, use_container_width=True)
+
+                st.markdown("---")
 
                 report_generated_comp = False
                 if export_excel_comp:
@@ -970,32 +1082,50 @@ with tab_help_main:
 with tab_dashboard_main:
     st.subheader("📊 Quick Overview")
 
-    # 👉 Thời gian hiện tại
     today = datetime.today()
     current_year = today.year
     current_month = today.strftime('%B')
     current_week = today.isocalendar()[1]
 
-    # 👉 Chọn tuần trong tháng hiện tại
-    available_weeks = sorted(df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique())
-    selected_week = st.selectbox("🗓️ Select week in current month", options=available_weeks, index=len(available_weeks)-1)
+    # 👉 Get start and end dates for each week number
+    def get_week_date_range(year, week_num):
+        d = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w")  # Monday of that ISO week
+        start_date = d.strftime('%d/%m')
+        end_date = (d + timedelta(days=6)).strftime('%d/%m')
+        return f"Week {week_num} ({start_date} → {end_date})"
 
-    # 👉 Lọc dữ liệu
-    df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week)]
+    # 👉 Get list of available weeks in the current month
+    available_weeks = sorted(
+        df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique()
+    )
+
+    # 👉 Create a label map for week numbers
+    week_labels = {w: get_week_date_range(current_year, w) for w in available_weeks}
+
+    # 👉 Week selector with formatted labels
+    selected_week_num = st.selectbox(
+        "🗓️ Select a week in the current month",
+        options=available_weeks,
+        format_func=lambda x: week_labels.get(x, f"Week {x}"),
+        index=len(available_weeks) - 1
+    )
+
+    # 👉 Filter data
+    df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week_num)]
     df_month = df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]
 
-    # 👉 Tính tổng giờ
+    # 👉 Total hours
     total_hours_week = df_week['Hours'].sum()
     total_hours_month = df_month['Hours'].sum()
 
-    # 👉 Hiển thị metric
+    # 👉 Show metrics
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("🗓️ Total weekly hours", f"{total_hours_week:.1f}h")
+        st.metric("🗓️ Total Weekly Hours", f"{total_hours_week:.1f}h")
     with col2:
-        st.metric("📆 Total monthly hours", f"{total_hours_month:.1f}h")
+        st.metric("📆 Total Monthly Hours", f"{total_hours_month:.1f}h")
 
-    # 👉 Top 5 dự án theo giờ (tuần)
+    # 👉 Top 5 projects by hours (week)
     top_projects = (
         df_week.groupby("Project name")["Hours"]
         .sum()
@@ -1005,22 +1135,22 @@ with tab_dashboard_main:
     )
     fig1 = px.bar(
         top_projects, x="Project name", y="Hours", color="Project name",
-        title="🔝 Top 5 Hourly Projects", template="plotly_white"
+        title="🔝 Top 5 Projects by Hours", template="plotly_white"
     )
     st.plotly_chart(fig1, use_container_width=True)
 
-    # 👉 Tỉ lệ giờ theo team (pie)
+    # 👉 Hour distribution by team (pie chart)
     team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
     fig2 = px.pie(
         team_ratio, names="Workcentre", values="Hours",
-        title="🧩 Hourly Rate By Team (Workcentre)", template="plotly_white"
+        title="🧩 Hour Distribution by Team", template="plotly_white"
     )
     st.plotly_chart(fig2, use_container_width=True)
 
-    # 👉 Phân bổ team theo dự án (stacked bar)
+    # 👉 Team allocation by project (stacked bar chart)
     team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
     fig3 = px.bar(
         team_project, x="Project name", y="Hours", color="Workcentre",
-        title="🏗️ Team Allocation By Project", template="plotly_white"
+        title="🏗️ Team Allocation by Project", template="plotly_white"
     )
     st.plotly_chart(fig3, use_container_width=True)
