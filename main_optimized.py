@@ -773,10 +773,12 @@ with tab_comparison_report_main:
         st.session_state.comparison_selected_projects = [] # Default to empty
     # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
     validation_error = False
-
+    # ✅ Đảm bảo checkbox đã có trong session_state
+    if "select_all_projects_checkbox" not in st.session_state:
+        st.session_state.select_all_projects_checkbox = False
+    
     select_all_projects = st.checkbox(
         get_text("select_all_projects_checkbox"),
-        value=st.session_state.select_all_projects_checkbox,
         key="select_all_projects_checkbox"
     )
 
