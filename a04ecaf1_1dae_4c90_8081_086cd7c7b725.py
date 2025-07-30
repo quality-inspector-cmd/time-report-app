@@ -113,19 +113,27 @@ def apply_filters(df, config):
     """Áp dụng các bộ lọc dữ liệu dựa trên cấu hình."""
     df_filtered = df.copy()
 
-    if 'years' in config and config['years']: # Dành cho so sánh nhiều năm
+    # ✅ Lọc theo nhiều năm nếu có
+    if 'years' in config and config['years']:  # Dành cho so sánh nhiều năm
         df_filtered = df_filtered[df_filtered['Year'].isin(config['years'])]
-    elif 'year' in config and config['year']: # Dành cho báo cáo tiêu chuẩn một năm
-        df_filtered = df_filtered[df_filtered['Year'] == config['year']]
 
-    if config['months']:
+    # ✅ Lọc theo 1 hoặc nhiều năm nếu là báo cáo tiêu chuẩn
+    elif 'year' in config and config['year']:  # Dành cho báo cáo tiêu chuẩn
+        if isinstance(config['year'], list):
+            df_filtered = df_filtered[df_filtered['Year'].isin(config['year'])]
+        else:
+            df_filtered = df_filtered[df_filtered['Year'] == config['year']]
+
+    # ✅ Lọc theo tháng (nếu có)
+    if config.get('months'):
         df_filtered = df_filtered[df_filtered['MonthName'].isin(config['months'])]
 
+    # ✅ Lọc theo project
     if not config['project_filter_df'].empty:
         selected_project_names = config['project_filter_df']['Project Name'].tolist()
         df_filtered = df_filtered[df_filtered['Project name'].isin(selected_project_names)]
     else:
-        return pd.DataFrame(columns=df.columns) 
+        return pd.DataFrame(columns=df.columns)  # Trả dataframe rỗng nếu không có project
 
     return df_filtered
 
