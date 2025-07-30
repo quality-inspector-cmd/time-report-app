@@ -757,20 +757,20 @@ with tab_comparison_report_main:
         st.session_state.selected_filter_mode = display_to_internal[current_display]
 
     # Hiển thị selectbox
-    selected_filter_display = st.selectbox(
+    # Cho phép chọn nhiều filter mode
+    selected_filter_displays = st.multiselect(
         "Comparison filter mode",
         options=filter_mode_display_options,
-        index=filter_mode_display_options.index(current_display),
-        key="filter_mode_selectbox"
+        default=[current_display],  # Mặc định 1 lựa chọn ban đầu
+        key="filter_mode_multiselect"
     )
-
     # Nếu người dùng thay đổi lựa chọn
     if selected_filter_display != current_display:
         st.session_state.selected_filter_display = selected_filter_display
         st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
 
-      # ✅ Luôn lấy filter_mode (chuẩn hóa) từ session
-    filter_mode = st.session_state.get("selected_filter_mode", display_to_internal[current_display])
+    # Danh sách filter mode nội bộ
+    filter_mode = [display_to_internal[display] for display in selected_filter_displays]
 
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
@@ -913,15 +913,11 @@ with tab_comparison_report_main:
             print(f"DEBUG: Selected Projects before filter: {comp_projects}")
             print(f"DEBUG: Selected Years before filter: {comp_years}")
             print(f"DEBUG: Selected Months before filter: {comp_months}")
-
-
             comparison_config = {
                 'years': comp_years,
                 'months': comp_months,
                 'selected_projects': comp_projects,
-                'filter_mode': filter_mode   # ✅ THÊM DÒNG NÀY
-                # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
-                # nó đã được xử lý trong logic trên
+                'filter_mode': filter_mode  # giờ là list
             }
             print("✅ DEBUG - comparison_config:", comparison_config)
             # Print the final config before calling the function
