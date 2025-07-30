@@ -489,33 +489,25 @@ with tab_standard_report_main:
             index=mode_index,
             key='standard_mode_tab'
         )
-        st.session_state.standard_analysis_mode = mode # Update state
-
     with col2_std:
-        # State management for standard selected year
-        if 'standard_selected_year' not in st.session_state:
-            st.session_state.standard_selected_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
-        
-        default_std_year_index = 0
-        if st.session_state.standard_selected_year in all_years:
-            default_std_year_index = all_years.index(st.session_state.standard_selected_year)
-        elif all_years:
-            st.session_state.standard_selected_year = all_years[0] # Fallback
-            default_std_year_index = 0
-        elif st.session_state.standard_selected_year is None: # No years available at all
-            default_std_year_index = None
+        # State management for multi-year selection
+        if 'standard_selected_years' not in st.session_state:
+            # Gán giá trị mặc định từ config (nếu hợp lệ), nếu không thì chọn năm đầu tiên
+            default_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
+            st.session_state.standard_selected_years = [default_year] if default_year else []
 
-
-        selected_year = st.selectbox(
+        selected_years = st.multiselect(
             get_text('select_year'),
             options=all_years,
-            index=default_std_year_index,
+            default=st.session_state.standard_selected_years,
             key='standard_year_tab'
         )
-        st.session_state.standard_selected_year = selected_year # Update state
 
-        if selected_year is None:
+        if selected_years:
+            st.session_state.standard_selected_years = selected_years
+        else:
             st.warning(get_text('no_year_in_data'))
+            st.stop()
 
     with col3_std:
         # State management for standard selected months
@@ -580,7 +572,7 @@ with tab_standard_report_main:
     if st.button(get_text('generate_standard_report_btn'), key='generate_standard_report_btn_tab'):
         if not export_excel and not export_pdf:
             st.warning(get_text("warning_select_export_format"))
-        elif selected_year is None:
+        elif not selected_years:
             st.error(get_text('no_year_selected_error'))
         elif not standard_project_selection:
             st.warning(get_text('no_project_selected_warning_standard'))
@@ -592,7 +584,7 @@ with tab_standard_report_main:
 
             standard_report_config = {
                 'mode': mode,
-                'year': selected_year,
+                'year': selected_years,
                 'months': selected_months,
                 'project_filter_df': temp_project_filter_df_standard
             }
@@ -678,6 +670,7 @@ with tab_standard_report_main:
                             st.download_button(get_text("download_pdf"), data=f, file_name=os.path.basename(path_dict['pdf_report']), use_container_width=True, key='download_pdf_std_btn')
                 else:
                     st.error(get_text('error_generating_report'))
+
 
 
 # =========================================================================
