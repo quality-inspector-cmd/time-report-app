@@ -975,9 +975,10 @@ with tab_comparison_report_main:
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
                     
-                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
-                if fig_hierarchy:
-                    st.plotly_chart(fig_hierarchy, use_container_width=True)
+                if 'df_filtered_comparison' in locals():
+                    fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                    if fig_hierarchy:
+                        st.plotly_chart(fig_hierarchy, use_container_width=True)
                 st.markdown("---")
 
                 report_generated_comp = False
