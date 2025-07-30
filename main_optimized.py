@@ -764,10 +764,6 @@ with tab_comparison_report_main:
         default=[current_display],  # Mặc định 1 lựa chọn ban đầu
         key="filter_mode_multiselect"
     )
-    # Nếu người dùng thay đổi lựa chọn
-    if selected_filter_display != current_display:
-        st.session_state.selected_filter_display = selected_filter_display
-        st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
 
     # Danh sách filter mode nội bộ
     filter_mode = [display_to_internal[display] for display in selected_filter_displays]
