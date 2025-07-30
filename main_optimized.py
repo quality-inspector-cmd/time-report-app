@@ -964,11 +964,14 @@ with tab_comparison_report_main:
                 fig_workcentre = create_workcentre_chart(df_filtered_comparison, comparison_config)
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
-                    
-                if 'df_filtered_comparison' in locals():
-                    fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
-                    if fig_hierarchy:
+                # ======== Biểu đồ phân cấp (Hierarchy Chart) ======== 
+                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                if fig_hierarchy:
+                    with st.expander("📌 Biểu đồ phân cấp Project → Workcentre → Task → Job", expanded=False):
                         st.plotly_chart(fig_hierarchy, use_container_width=True)
+                else:
+                    st.info("Không đủ dữ liệu để hiển thị biểu đồ phân cấp.")
+                
                 st.markdown("---")
 
                 report_generated_comp = False
