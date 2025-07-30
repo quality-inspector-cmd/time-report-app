@@ -333,7 +333,15 @@ def cached_load():
 with st.spinner(get_text('loading_data')):
     df_raw, config_data = cached_load()
     df = df_raw.copy()  # ✅ THÊM DÒNG NÀY ở đây
-
+# Hiển thị ngày cập nhật mới nhất
+if 'Date' in df_raw.columns:
+    latest_date = pd.to_datetime(df_raw['Date'], errors='coerce').max()
+    if pd.notnull(latest_date):
+        st.info(f"📅 {get_text('latest_update_date')}: {latest_date.strftime('%d/%m/%Y')}")
+    else:
+        st.warning(get_text('no_valid_dates_found'))
+else:
+    st.warning(get_text('date_column_missing'))
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
     st.stop()
