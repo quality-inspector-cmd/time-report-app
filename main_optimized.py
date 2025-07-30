@@ -635,7 +635,7 @@ with tab_standard_report_main:
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
                     
-                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                fig_hierarchy = create_hierarchy_chart(df_filtered_standard, standard_report_config)
                 if fig_hierarchy:
                     st.plotly_chart(fig_hierarchy, use_container_width=True)
                 st.markdown("---")
