@@ -356,18 +356,18 @@ if df_raw.empty:
     st.stop()
     
 def create_hierarchy_chart(df_filtered, config=None):
-    if not all(col in df_filtered.columns for col in ['Project name', 'Workcentre', 'Task', 'Job', 'Hours']):
+    if not all(col in df_filtered.columns for col in ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']):
         return None
 
     df_hierarchy = df_filtered.groupby(
-        ['Project name', 'Workcentre', 'Task', 'Job']
+        ['Project name', 'Team', 'Workcentre', 'Task', 'Job']
     )['Hours'].sum().reset_index()
 
     fig = px.sunburst(
         df_hierarchy,
-        path=['Project name', 'Workcentre', 'Task', 'Job'],
+        path=['Project name', 'Team', 'Workcentre', 'Task', 'Job'],
         values='Hours',
-        title="🔍 Phân Cấp Project → Workcentre → Task → Job",
+        title="🔍 Phân Cấp Project → Team →  Workcentre → Task → Job",
         template='plotly_white',
         color='Project name'
     )
@@ -464,6 +464,33 @@ def create_workcentre_chart(df_filtered, config):
     )
     fig.update_layout(xaxis_title="Hours", yaxis_title="Workcentre")
     return fig
+def create_team_chart(df_filtered, config):
+    if 'Team' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_team = (
+        df_filtered.groupby('Team')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_team,
+        x='Hours',
+        y='Team',
+        orientation='h',
+        title="👥 Total Hours by Team",
+        color='Team',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Team")
+    return fig
+
+
+
+
+
 # =========================================================================
 # STANDARD REPORT TAB
 # =========================================================================
@@ -672,7 +699,6 @@ with tab_standard_report_main:
                     st.error(get_text('error_generating_report'))
 
 
-
 # =========================================================================
 # COMPARISON REPORT TAB
 # =========================================================================
@@ -750,28 +776,34 @@ with tab_comparison_report_main:
         st.session_state.selected_filter_mode = display_to_internal[current_display]
 
     # Hiển thị selectbox
-    # Cho phép chọn nhiều filter mode
-    selected_filter_displays = st.multiselect(
+    selected_filter_display = st.selectbox(
         "Comparison filter mode",
         options=filter_mode_display_options,
-        default=[current_display],  # Mặc định 1 lựa chọn ban đầu
-        key="filter_mode_multiselect"
+        index=filter_mode_display_options.index(current_display),
+        key="filter_mode_selectbox"
     )
 
-    # Danh sách filter mode nội bộ
-    filter_mode = [display_to_internal[display] for display in selected_filter_displays]
+    # Nếu người dùng thay đổi lựa chọn
+    if selected_filter_display != current_display:
+        st.session_state.selected_filter_display = selected_filter_display
+        st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
+
+      # ✅ Luôn lấy filter_mode (chuẩn hóa) từ session
+    filter_mode = st.session_state.get("selected_filter_mode", display_to_internal[current_display])
 
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
     # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
     validation_error = False
-    # ✅ Đảm bảo checkbox đã có trong session_state
+
+    # Lưu trạng thái checkbox chọn tất cả
     if "select_all_projects_checkbox" not in st.session_state:
-        st.session_state.select_all_projects_checkbox = False
-    
+        st.session_state.select_all_projects_checkbox = True
+
     select_all_projects = st.checkbox(
         get_text("select_all_projects_checkbox"),
+        value=st.session_state.select_all_projects_checkbox,
         key="select_all_projects_checkbox"
     )
 
@@ -900,11 +932,15 @@ with tab_comparison_report_main:
             print(f"DEBUG: Selected Projects before filter: {comp_projects}")
             print(f"DEBUG: Selected Years before filter: {comp_years}")
             print(f"DEBUG: Selected Months before filter: {comp_months}")
+
+
             comparison_config = {
                 'years': comp_years,
                 'months': comp_months,
                 'selected_projects': comp_projects,
-                'filter_mode': filter_mode  # giờ là list
+                'filter_mode': filter_mode   # ✅ THÊM DÒNG NÀY
+                # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
+                # nó đã được xử lý trong logic trên
             }
             print("✅ DEBUG - comparison_config:", comparison_config)
             # Print the final config before calling the function
@@ -957,14 +993,11 @@ with tab_comparison_report_main:
                 fig_workcentre = create_workcentre_chart(df_filtered_comparison, comparison_config)
                 if fig_workcentre:
                     st.plotly_chart(fig_workcentre, use_container_width=True)
-                # ======== Biểu đồ phân cấp (Hierarchy Chart) ======== 
-                fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
-                if fig_hierarchy:
-                    with st.expander("📌 Biểu đồ phân cấp Project → Workcentre → Task → Job", expanded=False):
+                    
+                if 'df_filtered_comparison' in locals():
+                    fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                    if fig_hierarchy:
                         st.plotly_chart(fig_hierarchy, use_container_width=True)
-                else:
-                    st.info("Không đủ dữ liệu để hiển thị biểu đồ phân cấp.")
-                
                 st.markdown("---")
 
                 report_generated_comp = False
@@ -1156,16 +1189,23 @@ with tab_dashboard_main:
         title="🏗️ Team Allocation by Project", template="plotly_white"
     )
     st.plotly_chart(fig3, use_container_width=True)
+    
+        # 👥 Biểu đồ phân tích theo Team
+    fig_team = create_team_chart(df_week, config_data)
+    if fig_team:
+        st.plotly_chart(fig_team, use_container_width=True)
+    else:
+        st.info("⚠️ Not enough data to display team chart.")
 
     # 🔽 Phân tích phân cấp
     st.markdown("---")
-    st.subheader("🧭 Hierarchical Analysis (Project → Workcentre → Task → Job)")
+    st.subheader("🧭 Hierarchical Analysis (Project → Team → Workcentre → Task → Job)")
 
     df_hierarchy_base = df_week if not df_week.empty else df_month
 
-    if all(col in df_hierarchy_base.columns for col in ['Project name', 'Workcentre', 'Task', 'Job', 'Hours']):
+    if all(col in df_hierarchy_base.columns for col in ['Project name','Team', 'Workcentre', 'Task', 'Job', 'Hours']):
         fig_hierarchy = create_hierarchy_chart(df_hierarchy_base)
         if fig_hierarchy:
             st.plotly_chart(fig_hierarchy, use_container_width=True)
     else:
-        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Workcentre, Task, Job, Hours)")
+        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Team, Workcentre, Task, Job, Hours)")
