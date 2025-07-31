@@ -1,7 +1,20 @@
 import streamlit as st
-import pandas as pd
 import os
+import pandas as pd
 from datetime import datetime
+import plotly.express as px
+import pdfkit
+from jinja2 import Template
+import uuid
+import os
+import tempfile
+from datetime import datetime, timedelta
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+
+
+
 
 # ==============================================================================
 # ĐẢM BẢO FILE 'a04ecaf1_1dae_4c90_8081_086cd7c7b725.py' NẰNG CÙNG THƯ MỤC
@@ -23,6 +36,9 @@ path_dict = setup_paths()
 # ==============================================================================
 # KHỞI TẠO CÁC BIẾN TRẠNG THÁI PHIÊN (SESSION STATE VARIABLES)
 # ==============================================================================
+if 'comparison_mode_select_tab_main' not in st.session_state:
+    st.session_state.comparison_mode_select_tab_main = "Compare Projects in a Month"  # hoặc giá trị phù hợp với `display_options`
+    
 if 'comparison_mode' not in st.session_state:
     st.session_state.comparison_mode = "So Sánh Dự Án Trong Một Tháng" # Hoặc giá trị mặc định phù hợp
 
@@ -47,6 +63,7 @@ if 'selected_months' not in st.session_state: # Ví dụ cho bộ lọc báo cá
 # Thêm dòng này để mặc định ngôn ngữ là tiếng Anh
 if 'selected_language' not in st.session_state:
     st.session_state.selected_language = "English"
+    
 
 # ---------------------------
 # PHẦN XÁC THỰC TRUY CẬP
@@ -138,6 +155,7 @@ TEXTS = {
         'no_year_selected_error': "Please select a valid year to generate the report.",
         'no_project_selected_warning_standard': "Please select at least one project to generate the standard report.",
         'no_data_after_filter_standard': "⚠️ No data after filtering for the standard report. Please check your selections.",
+        'latest_update_date': "Latest data update",
         'generating_excel_report': "Generating Excel report...",
         'excel_report_generated': "✅ Excel Report generated: {}",
         'download_excel_report': "📥 Download Excel Report",
@@ -150,7 +168,7 @@ TEXTS = {
         'select_comparison_mode': "Select comparison mode:",
         'compare_projects_month': "Compare Projects in a Month",
         'compare_projects_year': "Compare Projects in a Year",
-        'compare_one_project_over_time': "Compare One Project Over Time (Months/Years)",
+        'compare_projects_over_time': "Compare Projects Over Time (Months/Years)",
         'filter_data_for_comparison': "Filter Data for Comparison",
         'select_years': "Select Year(s):",
         'select_months_comp': "Select Month(s):",
@@ -160,6 +178,9 @@ TEXTS = {
         'data_filtered_success': "✅ Data filtered successfully for comparison.",
         'comparison_data_preview': "Comparison Data Preview",
         'generating_comparison_excel': "Generating Comparison Excel Report...",
+        'compare_projects_month': "Compare multiple projects in a month",
+        'compare_projects_year': "Compare multiple projects in a year",
+        'compare_projects_over_time': "Compare multiple projects across months/years",
         'comparison_excel_generated': "✅ Comparison Excel Report generated: {}",
         'download_comparison_excel': "📥 Download Comparison Excel",
         'generating_comparison_pdf': "Generating Comparison PDF Report...",
@@ -182,13 +203,17 @@ TEXTS = {
         'warning_select_export_format': "Please select at least one report export format (Excel or PDF).",
         'error_generating_report': "An error occurred while generating the report. Please try again.",
         # Add new messages for "Compare One Project Over Time" mode
-        'select_single_project_warning': "Please select ONLY ONE project for this mode.",
+        'select_at_least_two_projects_warning': "Please select at least two projects for comparison.",
         'select_years_for_over_time_months': "Select the year(s) for comparison:",
         'select_months_for_single_year': "Select month(s) within the chosen year:",
         'comparison_over_years_note': "Note: You have selected multiple years. The report will compare the project's data across the selected years. Month selection will be ignored.",
         'comparison_over_months_note': "Note: The report will compare the project's data across the selected months in year {}.",
         'no_comparison_criteria_selected': "Please select at least one year or month for comparison.",
-        'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year."
+        'no_month_selected_for_single_year': "Please select at least one month when comparing a single project within a specific year.",
+        'tab_help': "Help",
+        'preview_charts_title': "📊 Preview Charts",
+        "help_instruction_simple": "If you have any questions or need support, please email to Admin **ky@triaccomposites.com**. We will respond as soon as possible. Thank you!",
+        'select_all_projects_checkbox': "Select all projects"
     },
     'vi': {
         'app_title': "📊 Công cụ tạo báo cáo thời gian",
@@ -223,13 +248,14 @@ TEXTS = {
         'select_comparison_mode': "Chọn chế độ so sánh:",
         'compare_projects_month': "So Sánh Dự Án Trong Một Tháng",
         'compare_projects_year': "So Sánh Dự Án Trong Một Năm",
-        'compare_one_project_over_time': "So Sánh Một Dự Án Qua Các Tháng/Năm",
+        'compare_projects_over_time': "So Sánh Nhiều Dự Án Qua Các Tháng/Năm",
         'filter_data_for_comparison': "Lọc dữ liệu để so sánh",
         'select_years': "Chọn năm(các năm):", # Dùng chung cho các mode
         'select_months_comp': "Chọn tháng(các tháng):", # Dùng chung cho các mode
         'select_projects_comp': "Chọn dự án(các dự án):", # Dùng chung cho các mode
         'generate_comparison_report_btn': "🚀 Tạo báo cáo so sánh",
         'no_data_after_filter_comparison': "⚠️ {}",
+        'latest_update_date': "Dữ liệu được cập nhật đến ngày",
         'data_filtered_success': "✅ Dữ liệu đã được lọc thành công cho so sánh.",
         'comparison_data_preview': "Xem trước dữ liệu so sánh",
         'generating_comparison_excel': "Đang tạo báo cáo Excel so sánh...",
@@ -254,20 +280,34 @@ TEXTS = {
         'download_pdf': "Tải PDF",
         'warning_select_export_format': "Vui lòng chọn ít nhất một định dạng xuất báo cáo (Excel hoặc PDF).",
         'error_generating_report': "Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại.",
-        # Thêm các tin nhắn mới cho mode "So Sánh Một Dự Án Qua Các Tháng/Năm"
-        'select_single_project_warning': "Vui lòng chọn CHỈ MỘT dự án cho chế độ này.",
+        # Thêm các tin nhắn mới cho mode "So Sánh Các Dự Án Qua Các Tháng/Năm"
+        'select_at_least_two_projects_warning': "Vui lòng chọn ít nhất hai dự án để so sánh.",
         'select_years_for_over_time_months': "Chọn năm (hoặc các năm) bạn muốn so sánh:",
         'select_months_for_single_year': "Chọn tháng(các tháng) trong năm đã chọn:",
         'comparison_over_years_note': "Lưu ý: Bạn đã chọn nhiều năm. Báo cáo sẽ so sánh dữ liệu của dự án qua các năm đã chọn. Lựa chọn tháng sẽ bị bỏ qua.",
         'comparison_over_months_note': "Lưu ý: Báo cáo sẽ so sánh dữ liệu của dự án qua các tháng đã chọn trong năm {}.",
         'no_comparison_criteria_selected': "Vui lòng chọn ít nhất một năm hoặc một tháng để so sánh.",
-        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể."
+        'no_month_selected_for_single_year': "Vui lòng chọn ít nhất một tháng khi so sánh một dự án trong một năm cụ thể.",
+        'tab_help': "Trợ giúp",
+        'preview_charts_title': "📊 Biểu đồ xem trước",
+        "help_instruction_simple": "Nếu bạn có bất kỳ thắc mắc nào hoặc cần hỗ trợ, vui lòng gửi email đến Quản trị viên **ky@triaccomposites.com**. Chúng tôi sẽ phản hồi trong thời gian sớm nhất. Xin cảm ơn!",
+        'select_all_projects_checkbox': "Chọn tất cả dự án"
     }
 }
 
 # Lấy từ điển văn bản dựa trên lựa chọn ngôn ngữ hiện tại
-def get_text(key):
-    return TEXTS[st.session_state.lang].get(key, f"Missing text for {key}")
+def get_text(key, lang=None):
+    lang = lang or st.session_state.get("lang", "vi")
+    val = TEXTS.get(lang, {}).get(key)
+
+    if val is None:
+        return f"Missing text for {key}"
+
+    # ✅ Nếu là tuple, chọn theo lang
+    if isinstance(val, tuple):
+        return val[0] if lang == 'vi' else val[1]
+
+    return val
 
 # Header của ứng dụng
 col_logo_title, col_lang = st.columns([0.8, 0.2])
@@ -294,15 +334,45 @@ if not os.path.exists(path_dict['template_file']):
 @st.cache_data(ttl=1800)
 def cached_load():
     df_raw = load_raw_data(path_dict['template_file'])
+    df = df_raw.copy()
     config_data = read_configs(path_dict['template_file'])
     return df_raw, config_data
 
 with st.spinner(get_text('loading_data')):
     df_raw, config_data = cached_load()
+    df = df_raw.copy()  # ✅ THÊM DÒNG NÀY ở đây
+# Hiển thị ngày cập nhật mới nhất
+if 'Date' in df_raw.columns:
+    latest_date = pd.to_datetime(df_raw['Date'], errors='coerce').max()
+    if pd.notnull(latest_date):
+        st.info(f"📅 {get_text('latest_update_date')}: {latest_date.strftime('%d/%m/%Y')}")
+    else:
+        st.warning(get_text('no_valid_dates_found'))
+else:
+    st.warning(get_text('date_column_missing'))
 
 if df_raw.empty:
     st.error(get_text('failed_to_load_raw_data'))
     st.stop()
+    
+def create_hierarchy_chart(df_filtered, config=None):
+    if not all(col in df_filtered.columns for col in ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']):
+        return None
+
+    df_hierarchy = df_filtered.groupby(
+        ['Project name', 'Team', 'Workcentre', 'Task', 'Job']
+    )['Hours'].sum().reset_index()
+
+    fig = px.sunburst(
+        df_hierarchy,
+        path=['Project name', 'Team', 'Workcentre', 'Task', 'Job'],
+        values='Hours',
+        title="🔍 Phân Cấp Project → Team →  Workcentre → Task → Job",
+        template='plotly_white',
+        color='Project name'
+    )
+    fig.update_layout(margin=dict(t=40, l=10, r=10, b=10))
+    return fig
 
 # Get unique years, months, and projects from raw data for selectbox options
 all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist())
@@ -312,12 +382,114 @@ all_projects = sorted(df_raw['Project name'].dropna().unique().tolist())
 
 
 # Main interface tabs
-tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main = st.tabs([
+tab_dashboard_main, tab_standard_report_main, tab_comparison_report_main, tab_data_preview_main, tab_user_guide_main, tab_help_main = st.tabs([
+    "📈 Dashboard",
     get_text('tab_standard_report'),
     get_text('tab_comparison_report'),
     get_text('tab_data_preview'),
-    get_text('user_guide')
+    get_text('user_guide'),
+    get_text("tab_help")
 ])
+# Review charts
+def create_monthly_chart(df_filtered, config):
+    if 'MonthName' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    ordered_months = [
+        'January', 'February', 'March', 'April', 'May', 'June',
+        'July', 'August', 'September', 'October', 'November', 'December'
+    ]
+
+    df_month = (
+        df_filtered.groupby('MonthName')['Hours']
+        .sum()
+        .reindex(ordered_months)
+        .dropna()
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_month,
+        x='MonthName',
+        y='Hours',
+        title="📆 Monthly Total Hours",
+        color='MonthName',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Month", yaxis_title="Hours")
+    return fig
+
+def create_task_chart(df_filtered, config):
+    if 'Task' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_task = (
+        df_filtered.groupby('Task')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_task,
+        x='Hours',
+        y='Task',
+        orientation='h',
+        title="📋 Total Hours by Task",
+        color='Task',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Task")
+    return fig
+
+def create_workcentre_chart(df_filtered, config):
+    if 'Workcentre' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_wc = (
+        df_filtered.groupby('Workcentre')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_wc,
+        x='Hours',
+        y='Workcentre',
+        orientation='h',
+        title="🏭 Total Hours by Workcentre",
+        color='Workcentre',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Workcentre")
+    return fig
+def create_team_chart(df_filtered, config):
+    if 'Team' not in df_filtered.columns or 'Hours' not in df_filtered.columns:
+        return None
+
+    df_team = (
+        df_filtered.groupby('Team')['Hours']
+        .sum()
+        .sort_values(ascending=False)
+        .reset_index()
+    )
+
+    fig = px.bar(
+        df_team,
+        x='Hours',
+        y='Team',
+        orientation='h',
+        title="👥 Total Hours by Team",
+        color='Team',
+        template='plotly_white'
+    )
+    fig.update_layout(xaxis_title="Hours", yaxis_title="Team")
+    return fig
+
+
+
+
 
 # =========================================================================
 # STANDARD REPORT TAB
@@ -344,33 +516,25 @@ with tab_standard_report_main:
             index=mode_index,
             key='standard_mode_tab'
         )
-        st.session_state.standard_analysis_mode = mode # Update state
-
     with col2_std:
-        # State management for standard selected year
-        if 'standard_selected_year' not in st.session_state:
-            st.session_state.standard_selected_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
-        
-        default_std_year_index = 0
-        if st.session_state.standard_selected_year in all_years:
-            default_std_year_index = all_years.index(st.session_state.standard_selected_year)
-        elif all_years:
-            st.session_state.standard_selected_year = all_years[0] # Fallback
-            default_std_year_index = 0
-        elif st.session_state.standard_selected_year is None: # No years available at all
-            default_std_year_index = None
+        # State management for multi-year selection
+        if 'standard_selected_years' not in st.session_state:
+            # Gán giá trị mặc định từ config (nếu hợp lệ), nếu không thì chọn năm đầu tiên
+            default_year = config_data['year'] if config_data['year'] in all_years else (all_years[0] if all_years else None)
+            st.session_state.standard_selected_years = [default_year] if default_year else []
 
-
-        selected_year = st.selectbox(
+        selected_years = st.multiselect(
             get_text('select_year'),
             options=all_years,
-            index=default_std_year_index,
+            default=st.session_state.standard_selected_years,
             key='standard_year_tab'
         )
-        st.session_state.standard_selected_year = selected_year # Update state
 
-        if selected_year is None:
+        if selected_years:
+            st.session_state.standard_selected_years = selected_years
+        else:
             st.warning(get_text('no_year_in_data'))
+            st.stop()
 
     with col3_std:
         # State management for standard selected months
@@ -406,7 +570,7 @@ with tab_standard_report_main:
         st.session_state.standard_selected_projects = default_standard_projects
 
 # 🟩 Hỗ trợ chọn tất cả dự án
-    select_all_std_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_std_projects_checkbox")
+    select_all_std_projects = st.checkbox(get_text("select_all_projects_checkbox"), value=True, key="select_all_std_projects_checkbox")
 
     if select_all_std_projects:
         standard_project_selection = all_projects
@@ -423,7 +587,10 @@ with tab_standard_report_main:
             default=current_std_projects_default,
             key='standard_project_selection_tab'
         )
-    st.session_state.standard_selected_projects = standard_project_selection # Update state
+        # ✅ CHỈ cập nhật nếu có thay đổi → tránh Streamlit reload vô ích
+    if st.session_state.standard_selected_projects != standard_project_selection:
+        st.session_state.standard_selected_projects = standard_project_selection
+        
     st.markdown("---")
     st.subheader(get_text("export_options"))
     export_excel = st.checkbox(get_text("export_excel_option"), value=True, key='export_excel_std')
@@ -432,7 +599,7 @@ with tab_standard_report_main:
     if st.button(get_text('generate_standard_report_btn'), key='generate_standard_report_btn_tab'):
         if not export_excel and not export_pdf:
             st.warning(get_text("warning_select_export_format"))
-        elif selected_year is None:
+        elif not selected_years:
             st.error(get_text('no_year_selected_error'))
         elif not standard_project_selection:
             st.warning(get_text('no_project_selected_warning_standard'))
@@ -444,7 +611,7 @@ with tab_standard_report_main:
 
             standard_report_config = {
                 'mode': mode,
-                'year': selected_year,
+                'year': selected_years,
                 'months': selected_months,
                 'project_filter_df': temp_project_filter_df_standard
             }
@@ -473,6 +640,25 @@ with tab_standard_report_main:
             if df_filtered_standard.empty:
                 st.warning(get_text('no_data_after_filter_standard'))
             else:
+                # 👇 CHỈ THÊM PHẦN NÀY
+                st.subheader(get_text("preview_charts_title"))  # ví dụ: "📊 Biểu đồ xem trước"
+                fig_monthly = create_monthly_chart(df_filtered_standard, standard_report_config)
+                if fig_monthly:
+                    st.plotly_chart(fig_monthly, use_container_width=True)
+
+                fig_task = create_task_chart(df_filtered_standard, standard_report_config)
+                if fig_task:
+                    st.plotly_chart(fig_task, use_container_width=True)
+
+                fig_workcentre = create_workcentre_chart(df_filtered_standard, standard_report_config)
+                if fig_workcentre:
+                    st.plotly_chart(fig_workcentre, use_container_width=True)
+                    
+                fig_hierarchy = create_hierarchy_chart(df_filtered_standard, standard_report_config)
+                if fig_hierarchy:
+                    st.plotly_chart(fig_hierarchy, use_container_width=True)
+                st.markdown("---")
+                
                 today_str = datetime.today().strftime("%Y-%m-%d")  # ✅ Đúng cú pháp
                 path_dict = {                                        # ✅ Bổ sung cần thiết
                 'output_file': f'outputs/standard/Time_report_Standard_{today_str}.xlsx',
@@ -524,84 +710,121 @@ with tab_comparison_report_main:
     internal_comparison_modes_map = {
         'compare_projects_month': ("So Sánh Dự Án Trong Một Tháng", "Compare Projects in a Month"),
         'compare_projects_year': ("So Sánh Dự Án Trong Một Năm", "Compare Projects in a Year"),
-        'compare_one_project_over_time': ("So Sánh Một Dự Án Qua Các Tháng/Năm", "Compare One Project Over Time (Months/Years)")
+        'compare_projects_over_time': ("So Sánh Nhiều Dự Án Qua Các Tháng/Năm", "Compare Projects Over Time (Months/Years)")
     }
+    current_language = st.session_state.get("lang", "vi")
+    # Lấy danh sách display_name tùy ngôn ngữ
+    comparison_mode_display_options = [
+        vi if current_language == 'vi' else en
+        for (_, (vi, en)) in internal_comparison_modes_map.items()
+    ]
 
-    # Khởi tạo giá trị mặc định nếu chưa có trong session_state
-    if 'selected_comparison_mode_key' not in st.session_state:
-        # Mặc định chọn key đầu tiên trong danh sách
-        st.session_state.selected_comparison_mode_key = list(internal_comparison_modes_map.keys())[0]
+    # Tạo map từ display → internal
+    display_to_internal_map = {
+        (vi if current_language == 'vi' else en): key
+        for key, (vi, en) in internal_comparison_modes_map.items()
+    }
+    # Lấy giá trị mặc định từ session
+    default_key = st.session_state.get('selected_comparison_mode_key', list(internal_comparison_modes_map.keys())[0])
+    vi_val, en_val = internal_comparison_modes_map[default_key]
+    default_display = vi_val if current_language == 'vi' else en_val
 
-    # Tạo list các options để hiển thị trong selectbox
-    # và một map để tìm key từ display text
-    display_options = []
-    display_to_key_map = {}
-    for key in internal_comparison_modes_map.keys():
-        display_text = get_text(key)
-        display_options.append(display_text)
-        display_to_key_map[display_text] = key
-
-    # Lấy giá trị hiển thị mặc định dựa trên key đã lưu
-    default_display_value = get_text(st.session_state.selected_comparison_mode_key)
-    
-    # Đảm bảo giá trị mặc định tồn tại trong display_options để tránh lỗi
-    # Nếu không tìm thấy, fallback về mục đầu tiên và cập nhật session_state
     try:
-        current_index = display_options.index(default_display_value)
+        current_index = comparison_mode_display_options.index(default_display)
     except ValueError:
         # Giá trị mặc định không tìm thấy trong options hiện tại, fallback về đầu tiên
         current_index = 0
-        st.session_state.selected_comparison_mode_key = display_to_key_map[display_options[0]]
-        default_display_value = display_options[0] # Cập nhật lại default_display_value cho đúng
-
-    selected_comparison_display = st.selectbox(
-        get_text('select_comparison_mode'),
-        options=display_options,
-        index=current_index, # Đặt index dựa trên giá trị mặc định đã được kiểm tra
-        key='comparison_mode_select_tab_main'
+        default_key = list(internal_comparison_modes_map.keys())[0]
+        st.session_state.selected_comparison_mode_key = default_key
+        default_display = get_text(default_key)  # cập nhật lại display nếu fallback
+    # Hiển thị selectbox (dùng chính session key để giữ đồng bộ)
+    selected_display = st.selectbox(
+        get_text('comparison_mode_label'),
+        options=comparison_mode_display_options,
     )
-    
-    # Cập nhật key lựa chọn vào session_state khi người dùng thay đổi
-    current_selected_key = display_to_key_map[selected_comparison_display]
-    if st.session_state.selected_comparison_mode_key != current_selected_key:
-        st.session_state.selected_comparison_mode_key = current_selected_key
 
-
-    # Lấy giá trị chuỗi nội bộ (internal string) để truyền vào backend
+    # Chuyển lại thành key nội bộ
+    comparison_mode_selected = display_to_internal_map[selected_display]
     # Dựa trên key đã lưu và ngôn ngữ hiện tại
-    vi_val, en_val = internal_comparison_modes_map[st.session_state.selected_comparison_mode_key]
-    if st.session_state.lang == 'vi':
-        comparison_mode = vi_val
-    else: # 'en'
-        comparison_mode = en_val
-
+    vi_val, en_val = internal_comparison_modes_map[comparison_mode_selected]
+    comparison_mode = vi_val if st.session_state.lang == 'vi' else en_val
+    
     st.subheader(get_text('filter_data_for_comparison'))
+    # Display options và mapping display → internal
+    if st.session_state.lang == 'vi':
+        filter_mode_display_options = ["Theo Tổng Giờ", "Theo Task", "Theo Workcentre"]
+    else:
+        filter_mode_display_options = ["By Total hour", "By Task", "By Workcentre"]
 
-    comp_years = []
-    comp_months = []
-    comp_projects = []
-    validation_error = False # Flag to check input errors
+    # ✅ Map display string → internal string
+    display_to_internal = {
+        "Theo Tổng Giờ": "Total",
+        "Theo Task": "Task",
+        "Theo Workcentre": "Workcentre",
+        "By Total hour": "Total",
+        "By Task": "Task",
+        "By Workcentre": "Workcentre"
+    }
+
+    # Lấy giá trị hiện tại từ session hoặc mặc định
+    current_display = st.session_state.get("selected_filter_display", filter_mode_display_options[0])
+    
+    # ✅ Fallback nếu không hợp lệ sau khi đổi ngôn ngữ
+    if current_display not in filter_mode_display_options:
+        current_display = filter_mode_display_options[0]
+        st.session_state.selected_filter_display = current_display
+        st.session_state.selected_filter_mode = display_to_internal[current_display]
+
+    # Hiển thị selectbox
+    selected_filter_display = st.selectbox(
+        "Comparison filter mode",
+        options=filter_mode_display_options,
+        index=filter_mode_display_options.index(current_display),
+        key="filter_mode_selectbox"
+    )
+
+    # Nếu người dùng thay đổi lựa chọn
+    if selected_filter_display != current_display:
+        st.session_state.selected_filter_display = selected_filter_display
+        st.session_state.selected_filter_mode = display_to_internal[selected_filter_display]
+
+      # ✅ Luôn lấy filter_mode (chuẩn hóa) từ session
+    filter_mode = st.session_state.get("selected_filter_mode", display_to_internal[current_display])
 
     # State management for comparison projects
     if 'comparison_selected_projects' not in st.session_state:
         st.session_state.comparison_selected_projects = [] # Default to empty
+    # Đặt ở đây, trước khi bắt đầu kiểm tra từng chế độ
+    validation_error = False
 
-    select_all_projects = st.checkbox("Chọn tất cả dự án", value=True, key="select_all_projects_checkbox")
+    # Lưu trạng thái checkbox chọn tất cả
+    if "select_all_projects_checkbox" not in st.session_state:
+        st.session_state.select_all_projects_checkbox = True
+
+    select_all_projects = st.checkbox(
+        get_text("select_all_projects_checkbox"),
+        value=st.session_state.select_all_projects_checkbox,
+        key="select_all_projects_checkbox"
+    )
+
+    # Reset hoặc cập nhật danh sách project đã chọn
     if select_all_projects:
-        comp_projects = all_projects
+        comp_projects = all_projects  # ✅ Gán vào biến comp_projects
+        if st.session_state.comparison_selected_projects != all_projects:
+            st.session_state.comparison_selected_projects = all_projects
     else:
         comp_projects = st.multiselect(
             get_text('select_projects_comp'),
             options=all_projects,
-            default=[p for p in st.session_state.comparison_selected_projects if p in all_projects],
+            default=st.session_state.comparison_selected_projects,
             key='comp_projects_select_tab_common'
         )
-    st.session_state.comparison_selected_projects = comp_projects # Update state
+        if comp_projects != st.session_state.comparison_selected_projects:
+            st.session_state.comparison_selected_projects = comp_projects
 
-
-    if comparison_mode == "So Sánh Một Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare One Project Over Time (Months/Years)":
-        if len(comp_projects) != 1:
-            st.warning(get_text('select_single_project_warning'))
+    if comparison_mode == "So Sánh Nhiều Dự Án Qua Các Tháng/Năm" or comparison_mode == "Compare Projects Over Time (Months/Years)":
+        if len(comp_projects) < 1:
+            st.warning(get_text('no_project_selected_warning_standard'))  # báo lỗi nếu không chọn gì
             validation_error = True
 
         # State management for selected years in "Over Time" mode
@@ -611,10 +834,11 @@ with tab_comparison_report_main:
         selected_years_over_time = st.multiselect(
             get_text('select_years_for_over_time_months'),
             options=all_years,
-            default=[y for y in st.session_state.comparison_selected_years_over_time if y in all_years], # Ensure default is valid
+            default=st.session_state.comparison_selected_years_over_time,
             key='comp_years_select_tab_over_time'
         )
-        st.session_state.comparison_selected_years_over_time = selected_years_over_time # Update state
+        if selected_years_over_time != st.session_state.comparison_selected_years_over_time:
+            st.session_state.comparison_selected_years_over_time = selected_years_over_time
         comp_years = selected_years_over_time # Assign to comp_years for config
 
         # State management for selected months in "Over Time" mode (if single year selected)
@@ -714,6 +938,7 @@ with tab_comparison_report_main:
                 'years': comp_years,
                 'months': comp_months,
                 'selected_projects': comp_projects,
+                'filter_mode': filter_mode   # ✅ THÊM DÒNG NÀY
                 # 'selected_months_over_time' không cần truyền riêng nếu đã gán vào comp_months
                 # nó đã được xử lý trong logic trên
             }
@@ -733,9 +958,14 @@ with tab_comparison_report_main:
             print(f"DEBUG: comparison_path_dict = {comparison_path_dict}")
             # ✅ Thêm dòng này sau khi path_dict đã tạo
             # Áp dụng filter
-            df_filtered_comparison, comparison_filter_message = apply_comparison_filters(
-                df_raw, comparison_config, comparison_mode
+            df_filtered_comparison, comparison_filter_message, filtered_projects = apply_comparison_filters(
+            df_raw, comparison_config, comparison_mode, filter_mode
             )
+            # ✅ Cảnh báo nếu có dự án được chọn nhưng không có dữ liệu thực tế
+            original_projects = comparison_config.get("selected_projects", [])
+            if len(filtered_projects) < len(original_projects):
+                removed = set(original_projects) - set(filtered_projects)
+                st.warning(f"⚠️ Một số dự án không có dữ liệu thực tế và đã bị loại khỏi báo cáo: {', '.join(removed)}")
 
             if df_filtered_comparison.empty:
                 # Đảm bảo thư mục chứa file output tồn tại
@@ -749,6 +979,26 @@ with tab_comparison_report_main:
                 st.success(get_text('data_filtered_success'))
                 st.subheader(get_text('comparison_data_preview'))
                 st.dataframe(df_filtered_comparison)
+                # 👇 Thêm biểu đồ xem trước (dùng plotly)
+                st.subheader(get_text("preview_charts_title"))  # 📊 Biểu đồ xem trước
+
+                fig_monthly = create_monthly_chart(df_filtered_comparison, comparison_config)
+                if fig_monthly:
+                    st.plotly_chart(fig_monthly, use_container_width=True)
+
+                fig_task = create_task_chart(df_filtered_comparison, comparison_config)
+                if fig_task:
+                    st.plotly_chart(fig_task, use_container_width=True)
+
+                fig_workcentre = create_workcentre_chart(df_filtered_comparison, comparison_config)
+                if fig_workcentre:
+                    st.plotly_chart(fig_workcentre, use_container_width=True)
+                    
+                if 'df_filtered_comparison' in locals():
+                    fig_hierarchy = create_hierarchy_chart(df_filtered_comparison, comparison_config)
+                    if fig_hierarchy:
+                        st.plotly_chart(fig_hierarchy, use_container_width=True)
+                st.markdown("---")
 
                 report_generated_comp = False
                 if export_excel_comp:
@@ -759,6 +1009,7 @@ with tab_comparison_report_main:
                                 comparison_config,
                                 comparison_path_dict['comparison_output_file'],
                                 comparison_mode,
+                                filter_mode
                                 )
                         except Exception as e:
                             excel_success_comp = False
@@ -787,7 +1038,8 @@ with tab_comparison_report_main:
                                 comparison_config,
                                 pdf_path,
                                 comparison_mode,
-                                comparison_path_dict['logo']                    # ✅ thêm logo_path
+                                comparison_path_dict['logo'],                   # ✅ thêm logo_path
+                                filter_mode
                             )
                             print("✅ PDF Success?", pdf_success_comp)
                             print("📁 File tồn tại?", os.path.exists(pdf_path))
@@ -865,3 +1117,95 @@ with tab_user_guide_main:
     if "access_log" in st.session_state:
         st.write("📜 Current session access log:")
         st.dataframe(pd.DataFrame(st.session_state.access_log))
+# HELP TAB
+# =========================================================================
+with tab_help_main:
+    lang = st.session_state.get("lang", "vi")
+
+    st.markdown(f"### {get_text('tab_help', lang)}")
+    st.markdown(get_text("help_instruction_simple", lang))
+    
+with tab_dashboard_main:
+    st.subheader("📊 Quick Overview")
+
+    today = datetime.today()
+    current_year = today.year
+    current_month = today.strftime('%B')
+    current_week = today.isocalendar()[1]
+
+    def get_week_date_range(year, week_num):
+        d = datetime.strptime(f'{year}-W{week_num}-1', "%Y-W%W-%w")  # Monday
+        start_date = d.strftime('%d/%m')
+        end_date = (d + timedelta(days=6)).strftime('%d/%m')
+        return f"Week {week_num} ({start_date} → {end_date})"
+
+    available_weeks = sorted(
+        df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]['Week'].unique()
+    )
+    week_labels = {w: get_week_date_range(current_year, w) for w in available_weeks}
+
+    selected_week_num = st.selectbox(
+        "🗓️ Select a week in the current month",
+        options=available_weeks,
+        format_func=lambda x: week_labels.get(x, f"Week {x}"),
+        index=len(available_weeks) - 1
+    )
+
+    df_week = df[(df['Year'] == current_year) & (df['Week'] == selected_week_num)]
+    df_month = df[(df['Year'] == current_year) & (df['MonthName'] == current_month)]
+
+    total_hours_week = df_week['Hours'].sum()
+    total_hours_month = df_month['Hours'].sum()
+
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("🗓️ Total Weekly Hours", f"{total_hours_week:.1f}h")
+    with col2:
+        st.metric("📆 Total Monthly Hours", f"{total_hours_month:.1f}h")
+
+    top_projects = (
+        df_week.groupby("Project name")["Hours"]
+        .sum()
+        .sort_values(ascending=False)
+        .head(5)
+        .reset_index()
+    )
+    fig1 = px.bar(
+        top_projects, x="Project name", y="Hours", color="Project name",
+        title="🔝 Top 5 Projects by Hours", template="plotly_white"
+    )
+    st.plotly_chart(fig1, use_container_width=True)
+
+    team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
+    fig2 = px.pie(
+        team_ratio, names="Workcentre", values="Hours",
+        title="🧩 Hour Distribution by Team", template="plotly_white"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+    team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
+    fig3 = px.bar(
+        team_project, x="Project name", y="Hours", color="Workcentre",
+        title="🏗️ Team Allocation by Project", template="plotly_white"
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+    
+        # 👥 Biểu đồ phân tích theo Team
+    fig_team = create_team_chart(df_week, config_data)
+    if fig_team:
+        st.plotly_chart(fig_team, use_container_width=True)
+    else:
+        st.info("⚠️ Not enough data to display team chart.")
+
+    # 🔽 Phân tích phân cấp
+    st.markdown("---")
+    st.subheader("🧭 Hierarchical Analysis (Project → Team → Workcentre → Task → Job)")
+
+    df_hierarchy_base = df_week if not df_week.empty else df_month
+
+    if all(col in df_hierarchy_base.columns for col in ['Project name','Team', 'Workcentre', 'Task', 'Job', 'Hours']):
+        fig_hierarchy = create_hierarchy_chart(df_hierarchy_base)
+        if fig_hierarchy:
+            st.plotly_chart(fig_hierarchy, use_container_width=True)
+    else:
+        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Team, Workcentre, Task, Job, Hours)")

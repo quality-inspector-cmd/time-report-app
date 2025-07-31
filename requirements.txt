@@ -9,3 +9,5 @@ reportlab
 plotly
 kaleido
 fpdf2==2.7.8
+pdfkit
+jinja2
