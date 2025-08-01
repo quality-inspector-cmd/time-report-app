@@ -1143,8 +1143,18 @@ with tab_dashboard_main:
     st.subheader("📊 Quick Overview")
 
     today = datetime.today()
-    current_year = today.year
-    current_month = today.strftime('%B')
+    first_day_this_month = today.replace(day=1)
+    first_day_last_month = (first_day_this_month - timedelta(days=1)).replace(day=1)
+
+    # 📌 Cho người dùng chọn giữa tháng này và tháng trước
+    month_options = {
+        f"{first_day_this_month.strftime('%B %Y')}": (first_day_this_month.year, first_day_this_month.strftime('%B')),
+        f"{first_day_last_month.strftime('%B %Y')}": (first_day_last_month.year, first_day_last_month.strftime('%B'))
+    }
+
+    selected_month_label = st.selectbox("📅 Select month", list(month_options.keys()), index=0)
+    current_year, current_month = month_options[selected_month_label]
+
     current_week = today.isocalendar()[1]
 
     def get_week_date_range(year, week_num):
