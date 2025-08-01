@@ -11,6 +11,7 @@ import tempfile
 from datetime import datetime, timedelta
 import seaborn as sns
 import matplotlib.pyplot as plt
+import plotly.io as pio
 
 
 
@@ -1138,6 +1139,7 @@ with tab_help_main:
     st.markdown(get_text("help_instruction_simple", lang))
     
 with tab_dashboard_main:
+    template_name = "plotly_white" if "plotly_white" in pio.templates else None
     st.subheader("📊 Quick Overview")
 
     today = datetime.today()
@@ -1181,24 +1183,24 @@ with tab_dashboard_main:
         .sort_values(ascending=False)
         .head(5)
         .reset_index()
-    )
+    )    
     fig1 = px.bar(
         top_projects, x="Project name", y="Hours", color="Project name",
-        title="🔝 Top 5 Projects by Hours", template="plotly_white"
+        title="🔝 Top 5 Projects by Hours", template=template_name
     )
     st.plotly_chart(fig1, use_container_width=True)
 
     team_ratio = df_week.groupby("Workcentre")["Hours"].sum().reset_index()
     fig2 = px.pie(
         team_ratio, names="Workcentre", values="Hours",
-        title="🧩 Hour Distribution by Team", template="plotly_white"
+        title="🧩 Hour Distribution by Team", template=template_name
     )
     st.plotly_chart(fig2, use_container_width=True)
 
     team_project = df_week.groupby(["Project name", "Workcentre"])["Hours"].sum().reset_index()
     fig3 = px.bar(
         team_project, x="Project name", y="Hours", color="Workcentre",
-        title="🏗️ Team Allocation by Project", template="plotly_white"
+        title="🏗️ Team Allocation by Project", template=template_name
     )
     st.plotly_chart(fig3, use_container_width=True)
     
