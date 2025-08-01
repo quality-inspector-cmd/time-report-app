@@ -1139,6 +1139,7 @@ with tab_help_main:
     st.markdown(get_text("help_instruction_simple", lang))
     
 with tab_dashboard_main:
+    template_name = "plotly_white" if "plotly_white" in pio.templates else None
     st.subheader("📊 Quick Overview")
 
     today = datetime.today()
@@ -1182,9 +1183,7 @@ with tab_dashboard_main:
         .sort_values(ascending=False)
         .head(5)
         .reset_index()
-    )
-    template_name = "plotly_white" if "plotly_white" in pio.templates else None
-    
+    )    
     fig1 = px.bar(
         top_projects, x="Project name", y="Hours", color="Project name",
         title="🔝 Top 5 Projects by Hours", template=template_name
