@@ -356,18 +356,30 @@ if df_raw.empty:
     st.stop()
     
 def create_hierarchy_chart(df_filtered, config=None):
-    if not all(col in df_filtered.columns for col in ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']):
+    required_cols = ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']
+    if not all(col in df_filtered.columns for col in required_cols):
         return None
 
-    df_hierarchy = df_filtered.groupby(
+    # Loại bỏ các dòng có giá trị thiếu hoặc giờ <= 0
+    df_valid = df_filtered.dropna(subset=required_cols)
+    df_valid = df_valid[df_valid['Hours'] > 0]
+
+    if df_valid.empty:
+        return None
+
+    # Gom nhóm và tạo biểu đồ phân cấp
+    df_hierarchy = df_valid.groupby(
         ['Project name', 'Team', 'Workcentre', 'Task', 'Job']
     )['Hours'].sum().reset_index()
+
+    if df_hierarchy.empty:
+        return None
 
     fig = px.sunburst(
         df_hierarchy,
         path=['Project name', 'Team', 'Workcentre', 'Task', 'Job'],
         values='Hours',
-        title="🔍 Phân Cấp Project → Team →  Workcentre → Task → Job",
+        title="🔍 Phân Cấp Project → Team → Workcentre → Task → Job",
         template='plotly_white',
         color='Project name'
     )
