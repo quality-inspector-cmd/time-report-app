@@ -358,22 +358,36 @@ if df_raw.empty:
     st.stop()
     
 def create_hierarchy_chart(df):
-    required_cols = ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']
+    path_levels = ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Employee']
+    required_cols = path_levels + ['Hours']
+
     if df.empty or not all(col in df.columns for col in required_cols):
         return None
 
     if 'Team leader' not in df.columns:
         df['Team leader'] = 'Unknown'
 
-    fig = px.sunburst(
-        df,
-        path=['Project name', 'Team', 'Workcentre', 'Task', 'Job'],
-        values='Hours',
-        hover_data=['Team leader'],
-        title='📌 Project → Team → Workcentre → Task → Job',
-        template='plotly_white'
-    )
+    if len(path_levels) > 5:
+        fig = px.treemap(
+            df,
+            path=path_levels,
+            values='Hours',
+            hover_data=['Team leader'],
+            title='📌 Hierarchical View (Project → ... → Employee)',
+            template='plotly_white'
+        )
+    else:
+        fig = px.sunburst(
+            df,
+            path=path_levels,
+            values='Hours',
+            hover_data=['Team leader'],
+            title='📌 Hierarchical View (Project → ... → Employee)',
+            template='plotly_white'
+        )
+
     return fig
+
 
 # Get unique years, months, and projects from raw data for selectbox options
 all_years = sorted(df_raw['Year'].dropna().unique().astype(int).tolist())
@@ -1120,8 +1134,7 @@ with tab_help_main:
 
     st.markdown(f"### {get_text('tab_help', lang)}")
     st.markdown(get_text("help_instruction_simple", lang))
-# DASHBOARD TAB
-# =========================================================================
+
 with tab_dashboard_main:
     import plotly.io as pio
     template_name = "plotly_white" if "plotly_white" in pio.templates else None
@@ -1285,15 +1298,16 @@ with tab_dashboard_main:
 
     # 🔽 Phân tích phân cấp
     st.markdown("---")
-    st.subheader("🧭 Hierarchical Analysis (Project → Team → Workcentre → Task → Job)")
+    st.subheader("🧭 Hierarchical Analysis (Project → Team → Workcentre → Task → Job → Employee)")
 
     df_hierarchy_base = df_week if not df_week.empty else df_month
-    required_cols = ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Hours']
+    required_cols = ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Employee', 'Hours']
 
     if all(col in df_hierarchy_base.columns for col in required_cols):
         fig_hierarchy = create_hierarchy_chart(df_hierarchy_base)
         if fig_hierarchy:
             st.plotly_chart(fig_hierarchy, use_container_width=True)
+        else:
+            st.info("⚠️ Not enough data to generate the hierarchy chart.")
     else:
-        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Team, Workcentre, Task, Job, Hours)")
-
+        st.info("⚠️ Not enough data to display hierarchy chart (columns required: Project name, Team, Workcentre, Task, Job, Employee, Hours)")
