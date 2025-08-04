@@ -388,18 +388,6 @@ def create_hierarchy_chart(df):
             template='plotly'
         )
 
-    # 🎨 Tùy chỉnh giao diện hiển thị text rõ hơn
-    fig.update_traces(
-        insidetextfont=dict(color='black', size=13),
-        outsidetextfont=dict(color='black', size=13),
-        marker=dict(line=dict(width=0.5, color='gray'))
-    )
-
-    fig.update_layout(
-        uniformtext=dict(minsize=12, mode='show'),
-        margin=dict(t=60, l=0, r=0, b=0)
-    )
-
     return fig
 
 # Get unique years, months, and projects from raw data for selectbox options
