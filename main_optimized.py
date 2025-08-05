@@ -663,7 +663,7 @@ with tab_standard_report_main:
                 st.markdown("### 🧭 Chọn cấp độ phân tích")
                 hierarchy_level = st.selectbox(
                     "Chọn cấp phân tích cho biểu đồ phân cấp:",
-                    ["Full"],
+                    ["Workcentre", "Task", "Job", "Employee", "Full"],
                     index=4,  # mặc định là 'Full'
                     key="hierarchy_level_std"
                 )
