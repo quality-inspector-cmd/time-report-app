@@ -366,13 +366,16 @@ def create_hierarchy_chart(df, level="Full"):
         "Full": ['Project name', 'Team', 'Workcentre', 'Task', 'Job', 'Employee']
     }
 
-    path_levels = level_options.get(level, level_options["Full"])
+    # Fix lỗi: nếu level là dict thì xử lý để lấy đúng key level
+    if isinstance(level, dict):
+        level = level.get("level", "Full")
+
+    path_levels = level_options.get(str(level), level_options["Full"])
     required_cols = path_levels + ['Hours']
 
     if df.empty or not all(col in df.columns for col in required_cols):
         return None
 
-    # 🔍 Bổ sung: xử lý thiếu giá trị trong các cấp
     for col in path_levels:
         df[col] = df[col].fillna("Unknown")
 
