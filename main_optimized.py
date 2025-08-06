@@ -372,6 +372,10 @@ def create_hierarchy_chart(df, level="Full"):
     if df.empty or not all(col in df.columns for col in required_cols):
         return None
 
+    # 🔍 Bổ sung: xử lý thiếu giá trị trong các cấp
+    for col in path_levels:
+        df[col] = df[col].fillna("Unknown")
+
     if 'Team leader' not in df.columns:
         df['Team leader'] = 'Unknown'
 
